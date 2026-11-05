@@ -5,16 +5,14 @@ import (
 	"github.com/go-kratos/kratos-layout/internal/conf"
 	"github.com/go-kratos/kratos-layout/internal/service"
 
-	"github.com/go-kratos/kratos/v3/middleware/recovery"
 	"github.com/go-kratos/kratos/v3/transport/grpc"
 )
 
 // NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, todo *service.TodoService) *grpc.Server {
+func NewGRPCServer(c *conf.Server, todo *service.TodoService, mw *Middlewares) *grpc.Server {
 	var opts = []grpc.ServerOption{
-		grpc.Middleware(
-			recovery.Recovery(),
-		),
+		grpc.Middleware(mw.Server...),
+		grpc.StreamMiddleware(mw.Stream...),
 	}
 	if c.Grpc.Network != "" {
 		opts = append(opts, grpc.Network(c.Grpc.Network))
@@ -26,6 +24,10 @@ func NewGRPCServer(c *conf.Server, todo *service.TodoService) *grpc.Server {
 		opts = append(opts, grpc.Timeout(c.Grpc.Timeout.AsDuration()))
 	}
 	srv := grpc.NewServer(opts...)
+	// Per-operation middleware, matched against canonical RPC operations.
+	for _, route := range mw.Routes {
+		srv.Use(route.Pattern, route.Middlewares...)
+	}
 	v1.RegisterTodoServiceServer(srv, todo)
 	return srv
 }

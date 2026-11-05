@@ -11,8 +11,15 @@ import (
 	"github.com/google/wire"
 )
 
-// ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewTodoRepo)
+// ProviderSet is data providers. NewRateLimiter, NewCircuitBreakerFactory and
+// NewAuthKeyProvider implement the middleware policy ports declared in biz.
+var ProviderSet = wire.NewSet(
+	NewData,
+	NewTodoRepo,
+	NewRateLimiter,
+	NewCircuitBreakerFactory,
+	NewAuthKeyProvider,
+)
 
 // Data holds the long-lived storage clients shared by repos.
 type Data struct {

@@ -8,6 +8,41 @@ import "google/protobuf/duration.proto";
 message Bootstrap {
   Server server = 1;
   Data data = 2;
+  Middleware middleware = 3;
+}
+
+// Middleware configures the cross-cutting transport middleware chain.
+// Every switch is opt-in: an empty message installs no middleware.
+message Middleware {
+  // Per-middleware switches.
+  bool logging = 1;
+  bool recovery = 2;
+  bool validate = 3;
+  bool metadata = 4;
+  bool ratelimit = 5;
+  bool metrics = 6;
+  bool tracing = 7;
+  bool jwt = 8;
+  bool circuit_breaker = 9;
+  // Install jwt.Client on the outbound chain. Off by default: signing
+  // credentials for downstream services is an explicit application decision.
+  bool jwt_client = 10;
+
+  // Prefixes propagated between service calls by the metadata middleware.
+  repeated string propagated_prefix = 11;
+  // Canonical RPC operations that bypass JWT auth, e.g.
+  // "/todo.v1.TodoService/ListTodos". Not HTTP paths.
+  repeated string public_operations = 12;
+  // Signing key for inbound JWTs. Supply via ${JWT_SIGNING_KEY:} in
+  // config.yaml; never commit a real key to version control.
+  string jwt_signing_key = 13;
+  // Names used for OpenTelemetry tracer and meter instruments.
+  string tracer_name = 14;
+  string meter_name = 15;
+  // Maximum concurrent requests admitted by the application rate limiter.
+  int64 rate_limit = 16;
+  // Consecutive failures before a circuit breaker opens.
+  int64 circuit_breaker_threshold = 17;
 }
 
 message Server {

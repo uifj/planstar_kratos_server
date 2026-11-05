@@ -17,3 +17,28 @@ data:
     addr: ${REDIS_ADDR:127.0.0.1:6379}
     read_timeout: 0.2s
     write_timeout: 0.2s
+
+# Cross-cutting transport middleware. Every switch is opt-in.
+# See MIDDLEWARE.md for chain order and clean-architecture mapping.
+middleware:
+  logging: true
+  recovery: true
+  validate: true
+  metadata: true
+  ratelimit: true
+  metrics: true
+  tracing: true
+  circuit_breaker: true
+  # JWT is disabled until a signing key is provided. Never commit a real key:
+  # set JWT_SIGNING_KEY in the deployment environment and flip this to true.
+  jwt: false
+  jwt_client: false
+  propagated_prefix:
+    - x-md-
+  public_operations:
+    - /todo.v1.TodoService/ListTodos
+  jwt_signing_key: ${JWT_SIGNING_KEY:}
+  tracer_name: kratos-layout
+  meter_name: kratos-layout
+  rate_limit: 64
+  circuit_breaker_threshold: 5

@@ -35,8 +35,10 @@ go test ./...
 - OpenAPI generation.
 - Wire-based dependency injection.
 - Layered `service`, `biz`, and `data` packages.
-- A lightweight in-memory repository for the sample resource.
-- Unit tests for the service layer.
+- Ent-backed repository (MySQL at runtime, SQLite in tests).
+- All documented Kratos middleware, composed in `internal/server` (see
+  [MIDDLEWARE.md](MIDDLEWARE.md)).
+- Unit tests for the service, data, and server layers.
 - Server-streaming and bidirectional-streaming examples.
 
 ## Project Layout
@@ -65,9 +67,27 @@ The sample CRUD API demonstrates common conventions for Kratos projects:
 - Partial updates with `google.protobuf.FieldMask` and `fieldmask.Update`.
 - Streaming RPC definitions for one-way and bidirectional streams.
 
-The in-memory data layer intentionally stays simple. It demonstrates flow across
-layers, but does not implement a full query engine. Real repositories can apply
-parsed filters and ordering in SQL, Ent, or another storage layer.
+The Ent-backed data layer demonstrates the flow across layers. Real repositories
+can apply parsed filters and ordering in SQL, Ent, or another storage layer.
+
+## Middleware
+
+Every middleware documented in the Kratos v3 component docs is wired into this
+template through `internal/server/middleware.go`, following the clean-architecture
+layering contract in `AGENTS.md`:
+
+- **Core**: `metadata`, `logging`, `recovery`, `validate`, `ratelimit`,
+  `selector`, `circuitbreaker`, plus `middleware.Chain`.
+- **Contrib**: JWT (`contrib/middleware/jwt/v3`), OpenTelemetry tracing and
+  metrics (`contrib/otel/v3`).
+
+`internal/biz` declares the policy ports, `internal/data` implements them,
+`internal/server` composes the chains, and `cmd/server` wires everything with
+Wire. All middleware is toggled from the `middleware:` section of
+`configs/config.yaml`; JWT is off by default until `JWT_SIGNING_KEY` is set.
+
+See [MIDDLEWARE.md](MIDDLEWARE.md) for the full inventory, chain ordering,
+configuration reference, and the client-side chain usage note.
 
 ## Development Commands
 

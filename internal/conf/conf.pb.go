@@ -26,6 +26,7 @@ type Bootstrap struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Server        *Server                `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"`
 	Data          *Data                  `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	Middleware    *Middleware            `protobuf:"bytes,3,opt,name=middleware,proto3" json:"middleware,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -74,6 +75,198 @@ func (x *Bootstrap) GetData() *Data {
 	return nil
 }
 
+func (x *Bootstrap) GetMiddleware() *Middleware {
+	if x != nil {
+		return x.Middleware
+	}
+	return nil
+}
+
+// Middleware configures the cross-cutting transport middleware chain.
+// Every switch is opt-in: an empty message installs no middleware.
+type Middleware struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Per-middleware switches.
+	Logging        bool `protobuf:"varint,1,opt,name=logging,proto3" json:"logging,omitempty"`
+	Recovery       bool `protobuf:"varint,2,opt,name=recovery,proto3" json:"recovery,omitempty"`
+	Validate       bool `protobuf:"varint,3,opt,name=validate,proto3" json:"validate,omitempty"`
+	Metadata       bool `protobuf:"varint,4,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	Ratelimit      bool `protobuf:"varint,5,opt,name=ratelimit,proto3" json:"ratelimit,omitempty"`
+	Metrics        bool `protobuf:"varint,6,opt,name=metrics,proto3" json:"metrics,omitempty"`
+	Tracing        bool `protobuf:"varint,7,opt,name=tracing,proto3" json:"tracing,omitempty"`
+	Jwt            bool `protobuf:"varint,8,opt,name=jwt,proto3" json:"jwt,omitempty"`
+	CircuitBreaker bool `protobuf:"varint,9,opt,name=circuit_breaker,json=circuitBreaker,proto3" json:"circuit_breaker,omitempty"`
+	// Install jwt.Client on the outbound chain. Off by default: signing
+	// credentials for downstream services is an explicit application decision.
+	JwtClient bool `protobuf:"varint,10,opt,name=jwt_client,json=jwtClient,proto3" json:"jwt_client,omitempty"`
+	// Prefixes propagated between service calls by the metadata middleware.
+	PropagatedPrefix []string `protobuf:"bytes,11,rep,name=propagated_prefix,json=propagatedPrefix,proto3" json:"propagated_prefix,omitempty"`
+	// Canonical RPC operations that bypass JWT auth, e.g.
+	// "/todo.v1.TodoService/ListTodos". Not HTTP paths.
+	PublicOperations []string `protobuf:"bytes,12,rep,name=public_operations,json=publicOperations,proto3" json:"public_operations,omitempty"`
+	// Signing key for inbound JWTs. Supply via ${JWT_SIGNING_KEY:} in
+	// config.yaml; never commit a real key to version control.
+	JwtSigningKey string `protobuf:"bytes,13,opt,name=jwt_signing_key,json=jwtSigningKey,proto3" json:"jwt_signing_key,omitempty"`
+	// Names used for OpenTelemetry tracer and meter instruments.
+	TracerName string `protobuf:"bytes,14,opt,name=tracer_name,json=tracerName,proto3" json:"tracer_name,omitempty"`
+	MeterName  string `protobuf:"bytes,15,opt,name=meter_name,json=meterName,proto3" json:"meter_name,omitempty"`
+	// Maximum concurrent requests admitted by the application rate limiter.
+	RateLimit int64 `protobuf:"varint,16,opt,name=rate_limit,json=rateLimit,proto3" json:"rate_limit,omitempty"`
+	// Consecutive failures before a circuit breaker opens.
+	CircuitBreakerThreshold int64 `protobuf:"varint,17,opt,name=circuit_breaker_threshold,json=circuitBreakerThreshold,proto3" json:"circuit_breaker_threshold,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *Middleware) Reset() {
+	*x = Middleware{}
+	mi := &file_conf_conf_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Middleware) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Middleware) ProtoMessage() {}
+
+func (x *Middleware) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_conf_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Middleware.ProtoReflect.Descriptor instead.
+func (*Middleware) Descriptor() ([]byte, []int) {
+	return file_conf_conf_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Middleware) GetLogging() bool {
+	if x != nil {
+		return x.Logging
+	}
+	return false
+}
+
+func (x *Middleware) GetRecovery() bool {
+	if x != nil {
+		return x.Recovery
+	}
+	return false
+}
+
+func (x *Middleware) GetValidate() bool {
+	if x != nil {
+		return x.Validate
+	}
+	return false
+}
+
+func (x *Middleware) GetMetadata() bool {
+	if x != nil {
+		return x.Metadata
+	}
+	return false
+}
+
+func (x *Middleware) GetRatelimit() bool {
+	if x != nil {
+		return x.Ratelimit
+	}
+	return false
+}
+
+func (x *Middleware) GetMetrics() bool {
+	if x != nil {
+		return x.Metrics
+	}
+	return false
+}
+
+func (x *Middleware) GetTracing() bool {
+	if x != nil {
+		return x.Tracing
+	}
+	return false
+}
+
+func (x *Middleware) GetJwt() bool {
+	if x != nil {
+		return x.Jwt
+	}
+	return false
+}
+
+func (x *Middleware) GetCircuitBreaker() bool {
+	if x != nil {
+		return x.CircuitBreaker
+	}
+	return false
+}
+
+func (x *Middleware) GetJwtClient() bool {
+	if x != nil {
+		return x.JwtClient
+	}
+	return false
+}
+
+func (x *Middleware) GetPropagatedPrefix() []string {
+	if x != nil {
+		return x.PropagatedPrefix
+	}
+	return nil
+}
+
+func (x *Middleware) GetPublicOperations() []string {
+	if x != nil {
+		return x.PublicOperations
+	}
+	return nil
+}
+
+func (x *Middleware) GetJwtSigningKey() string {
+	if x != nil {
+		return x.JwtSigningKey
+	}
+	return ""
+}
+
+func (x *Middleware) GetTracerName() string {
+	if x != nil {
+		return x.TracerName
+	}
+	return ""
+}
+
+func (x *Middleware) GetMeterName() string {
+	if x != nil {
+		return x.MeterName
+	}
+	return ""
+}
+
+func (x *Middleware) GetRateLimit() int64 {
+	if x != nil {
+		return x.RateLimit
+	}
+	return 0
+}
+
+func (x *Middleware) GetCircuitBreakerThreshold() int64 {
+	if x != nil {
+		return x.CircuitBreakerThreshold
+	}
+	return 0
+}
+
 type Server struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Http          *Server_HTTP           `protobuf:"bytes,1,opt,name=http,proto3" json:"http,omitempty"`
@@ -84,7 +277,7 @@ type Server struct {
 
 func (x *Server) Reset() {
 	*x = Server{}
-	mi := &file_conf_conf_proto_msgTypes[1]
+	mi := &file_conf_conf_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -96,7 +289,7 @@ func (x *Server) String() string {
 func (*Server) ProtoMessage() {}
 
 func (x *Server) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[1]
+	mi := &file_conf_conf_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -109,7 +302,7 @@ func (x *Server) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Server.ProtoReflect.Descriptor instead.
 func (*Server) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{1}
+	return file_conf_conf_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Server) GetHttp() *Server_HTTP {
@@ -136,7 +329,7 @@ type Data struct {
 
 func (x *Data) Reset() {
 	*x = Data{}
-	mi := &file_conf_conf_proto_msgTypes[2]
+	mi := &file_conf_conf_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -148,7 +341,7 @@ func (x *Data) String() string {
 func (*Data) ProtoMessage() {}
 
 func (x *Data) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[2]
+	mi := &file_conf_conf_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -161,7 +354,7 @@ func (x *Data) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Data.ProtoReflect.Descriptor instead.
 func (*Data) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{2}
+	return file_conf_conf_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Data) GetDatabase() *Data_Database {
@@ -189,7 +382,7 @@ type Server_HTTP struct {
 
 func (x *Server_HTTP) Reset() {
 	*x = Server_HTTP{}
-	mi := &file_conf_conf_proto_msgTypes[3]
+	mi := &file_conf_conf_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -201,7 +394,7 @@ func (x *Server_HTTP) String() string {
 func (*Server_HTTP) ProtoMessage() {}
 
 func (x *Server_HTTP) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[3]
+	mi := &file_conf_conf_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +407,7 @@ func (x *Server_HTTP) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Server_HTTP.ProtoReflect.Descriptor instead.
 func (*Server_HTTP) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{1, 0}
+	return file_conf_conf_proto_rawDescGZIP(), []int{2, 0}
 }
 
 func (x *Server_HTTP) GetNetwork() string {
@@ -249,7 +442,7 @@ type Server_GRPC struct {
 
 func (x *Server_GRPC) Reset() {
 	*x = Server_GRPC{}
-	mi := &file_conf_conf_proto_msgTypes[4]
+	mi := &file_conf_conf_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -261,7 +454,7 @@ func (x *Server_GRPC) String() string {
 func (*Server_GRPC) ProtoMessage() {}
 
 func (x *Server_GRPC) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[4]
+	mi := &file_conf_conf_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -274,7 +467,7 @@ func (x *Server_GRPC) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Server_GRPC.ProtoReflect.Descriptor instead.
 func (*Server_GRPC) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{1, 1}
+	return file_conf_conf_proto_rawDescGZIP(), []int{2, 1}
 }
 
 func (x *Server_GRPC) GetNetwork() string {
@@ -315,7 +508,7 @@ type Data_Database struct {
 
 func (x *Data_Database) Reset() {
 	*x = Data_Database{}
-	mi := &file_conf_conf_proto_msgTypes[5]
+	mi := &file_conf_conf_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -327,7 +520,7 @@ func (x *Data_Database) String() string {
 func (*Data_Database) ProtoMessage() {}
 
 func (x *Data_Database) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[5]
+	mi := &file_conf_conf_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -340,7 +533,7 @@ func (x *Data_Database) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Data_Database.ProtoReflect.Descriptor instead.
 func (*Data_Database) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{2, 0}
+	return file_conf_conf_proto_rawDescGZIP(), []int{3, 0}
 }
 
 func (x *Data_Database) GetDriver() string {
@@ -383,7 +576,7 @@ type Data_Redis struct {
 
 func (x *Data_Redis) Reset() {
 	*x = Data_Redis{}
-	mi := &file_conf_conf_proto_msgTypes[6]
+	mi := &file_conf_conf_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -395,7 +588,7 @@ func (x *Data_Redis) String() string {
 func (*Data_Redis) ProtoMessage() {}
 
 func (x *Data_Redis) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[6]
+	mi := &file_conf_conf_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -408,7 +601,7 @@ func (x *Data_Redis) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Data_Redis.ProtoReflect.Descriptor instead.
 func (*Data_Redis) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{2, 1}
+	return file_conf_conf_proto_rawDescGZIP(), []int{3, 1}
 }
 
 func (x *Data_Redis) GetNetwork() string {
@@ -444,10 +637,37 @@ var File_conf_conf_proto protoreflect.FileDescriptor
 const file_conf_conf_proto_rawDesc = "" +
 	"\n" +
 	"\x0fconf/conf.proto\x12\n" +
-	"kratos.api\x1a\x1egoogle/protobuf/duration.proto\"]\n" +
+	"kratos.api\x1a\x1egoogle/protobuf/duration.proto\"\x95\x01\n" +
 	"\tBootstrap\x12*\n" +
 	"\x06server\x18\x01 \x01(\v2\x12.kratos.api.ServerR\x06server\x12$\n" +
-	"\x04data\x18\x02 \x01(\v2\x10.kratos.api.DataR\x04data\"\xb8\x02\n" +
+	"\x04data\x18\x02 \x01(\v2\x10.kratos.api.DataR\x04data\x126\n" +
+	"\n" +
+	"middleware\x18\x03 \x01(\v2\x16.kratos.api.MiddlewareR\n" +
+	"middleware\"\xc3\x04\n" +
+	"\n" +
+	"Middleware\x12\x18\n" +
+	"\alogging\x18\x01 \x01(\bR\alogging\x12\x1a\n" +
+	"\brecovery\x18\x02 \x01(\bR\brecovery\x12\x1a\n" +
+	"\bvalidate\x18\x03 \x01(\bR\bvalidate\x12\x1a\n" +
+	"\bmetadata\x18\x04 \x01(\bR\bmetadata\x12\x1c\n" +
+	"\tratelimit\x18\x05 \x01(\bR\tratelimit\x12\x18\n" +
+	"\ametrics\x18\x06 \x01(\bR\ametrics\x12\x18\n" +
+	"\atracing\x18\a \x01(\bR\atracing\x12\x10\n" +
+	"\x03jwt\x18\b \x01(\bR\x03jwt\x12'\n" +
+	"\x0fcircuit_breaker\x18\t \x01(\bR\x0ecircuitBreaker\x12\x1d\n" +
+	"\n" +
+	"jwt_client\x18\n" +
+	" \x01(\bR\tjwtClient\x12+\n" +
+	"\x11propagated_prefix\x18\v \x03(\tR\x10propagatedPrefix\x12+\n" +
+	"\x11public_operations\x18\f \x03(\tR\x10publicOperations\x12&\n" +
+	"\x0fjwt_signing_key\x18\r \x01(\tR\rjwtSigningKey\x12\x1f\n" +
+	"\vtracer_name\x18\x0e \x01(\tR\n" +
+	"tracerName\x12\x1d\n" +
+	"\n" +
+	"meter_name\x18\x0f \x01(\tR\tmeterName\x12\x1d\n" +
+	"\n" +
+	"rate_limit\x18\x10 \x01(\x03R\trateLimit\x12:\n" +
+	"\x19circuit_breaker_threshold\x18\x11 \x01(\x03R\x17circuitBreakerThreshold\"\xb8\x02\n" +
 	"\x06Server\x12+\n" +
 	"\x04http\x18\x01 \x01(\v2\x17.kratos.api.Server.HTTPR\x04http\x12+\n" +
 	"\x04grpc\x18\x02 \x01(\v2\x17.kratos.api.Server.GRPCR\x04grpc\x1ai\n" +
@@ -485,33 +705,35 @@ func file_conf_conf_proto_rawDescGZIP() []byte {
 	return file_conf_conf_proto_rawDescData
 }
 
-var file_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_conf_conf_proto_goTypes = []any{
 	(*Bootstrap)(nil),           // 0: kratos.api.Bootstrap
-	(*Server)(nil),              // 1: kratos.api.Server
-	(*Data)(nil),                // 2: kratos.api.Data
-	(*Server_HTTP)(nil),         // 3: kratos.api.Server.HTTP
-	(*Server_GRPC)(nil),         // 4: kratos.api.Server.GRPC
-	(*Data_Database)(nil),       // 5: kratos.api.Data.Database
-	(*Data_Redis)(nil),          // 6: kratos.api.Data.Redis
-	(*durationpb.Duration)(nil), // 7: google.protobuf.Duration
+	(*Middleware)(nil),          // 1: kratos.api.Middleware
+	(*Server)(nil),              // 2: kratos.api.Server
+	(*Data)(nil),                // 3: kratos.api.Data
+	(*Server_HTTP)(nil),         // 4: kratos.api.Server.HTTP
+	(*Server_GRPC)(nil),         // 5: kratos.api.Server.GRPC
+	(*Data_Database)(nil),       // 6: kratos.api.Data.Database
+	(*Data_Redis)(nil),          // 7: kratos.api.Data.Redis
+	(*durationpb.Duration)(nil), // 8: google.protobuf.Duration
 }
 var file_conf_conf_proto_depIdxs = []int32{
-	1,  // 0: kratos.api.Bootstrap.server:type_name -> kratos.api.Server
-	2,  // 1: kratos.api.Bootstrap.data:type_name -> kratos.api.Data
-	3,  // 2: kratos.api.Server.http:type_name -> kratos.api.Server.HTTP
-	4,  // 3: kratos.api.Server.grpc:type_name -> kratos.api.Server.GRPC
-	5,  // 4: kratos.api.Data.database:type_name -> kratos.api.Data.Database
-	6,  // 5: kratos.api.Data.redis:type_name -> kratos.api.Data.Redis
-	7,  // 6: kratos.api.Server.HTTP.timeout:type_name -> google.protobuf.Duration
-	7,  // 7: kratos.api.Server.GRPC.timeout:type_name -> google.protobuf.Duration
-	7,  // 8: kratos.api.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
-	7,  // 9: kratos.api.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	2,  // 0: kratos.api.Bootstrap.server:type_name -> kratos.api.Server
+	3,  // 1: kratos.api.Bootstrap.data:type_name -> kratos.api.Data
+	1,  // 2: kratos.api.Bootstrap.middleware:type_name -> kratos.api.Middleware
+	4,  // 3: kratos.api.Server.http:type_name -> kratos.api.Server.HTTP
+	5,  // 4: kratos.api.Server.grpc:type_name -> kratos.api.Server.GRPC
+	6,  // 5: kratos.api.Data.database:type_name -> kratos.api.Data.Database
+	7,  // 6: kratos.api.Data.redis:type_name -> kratos.api.Data.Redis
+	8,  // 7: kratos.api.Server.HTTP.timeout:type_name -> google.protobuf.Duration
+	8,  // 8: kratos.api.Server.GRPC.timeout:type_name -> google.protobuf.Duration
+	8,  // 9: kratos.api.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
+	8,  // 10: kratos.api.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_conf_conf_proto_init() }
@@ -525,7 +747,7 @@ func file_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_conf_conf_proto_rawDesc), len(file_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
