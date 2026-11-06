@@ -37,8 +37,49 @@ middleware:
     - x-md-
   public_operations:
     - /todo.v1.TodoService/ListTodos
+    - /mall.v1.ShopService/Register
+    - /mall.v1.ShopService/Login
+    - /mall.v1.ShopService/Captcha
+    - /mall.v1.ShopService/RefreshToken
+    - /mall.v1.ShopService/GoodsList
+    - /mall.v1.ShopService/GoodsDetail
+    - /mall.v1.AdminService/Register
+    - /mall.v1.AdminService/Login
+    - /mall.v1.AdminService/Captcha
+    - /mall.v1.AdminService/RefreshToken
   jwt_signing_key: ${JWT_SIGNING_KEY:}
   tracer_name: kratos-layout
   meter_name: kratos-layout
   rate_limit: 64
   circuit_breaker_threshold: 5
+
+# Mall: async/event-driven infrastructure. Addresses use ${VAR:default} so a
+# local (non-Docker) run points at 127.0.0.1 while compose overrides them with
+# service names. Durations must be protobuf Duration strings ("300s"), not
+# "30d"/"30m". Never put a placeholder on a bool field.
+mall:
+  mq:
+    addr: ${MQ_ADDR:amqp://guest:guest@127.0.0.1:5672/}
+    order_exchange: order.exchange
+    inventory_exchange: inventory.exchange
+    payment_exchange: payment.exchange
+    dlx_exchange: mall.dlx
+    order_created_queue: q.order.created
+    inventory_result_queue: q.inventory.result
+    payment_success_queue: q.payment.success
+    order_paid_goods_queue: q.order.paid.goods
+    max_retry: 5
+  search:
+    addresses:
+      - ${ES_ADDR:http://127.0.0.1:9200}
+    goods_index: goods
+  auth:
+    jwt_expire: 2592000s
+    issuer: kratos-mall
+    pbkdf2_iterations: 10000
+  business:
+    captcha_ttl: 300s
+    outbox_scan_interval: 1s
+    order_pay_timeout: 900s
+    timeout_loop_interval: 30s
+    outbox_batch_size: 50

@@ -1,0 +1,79 @@
+# Container configuration. Mounted read-only at /data/conf by docker-compose.
+# All addresses are compose service names, never 127.0.0.1.
+server:
+  http:
+    addr: 0.0.0.0:8000
+    timeout: 1s
+  grpc:
+    addr: 0.0.0.0:9000
+    timeout: 1s
+data:
+  database:
+    driver: mysql
+    source: 'root:root@tcp(mysql:3306)/mall?timeout=5s&parseTime=True&loc=Local&charset=utf8mb4'
+    debug: false
+    auto_migrate: true
+  redis:
+    addr: redis:6379
+    read_timeout: 0.2s
+    write_timeout: 0.2s
+
+middleware:
+  logging: true
+  recovery: true
+  validate: true
+  metadata: true
+  ratelimit: true
+  metrics: true
+  tracing: true
+  circuit_breaker: true
+  jwt: true
+  jwt_client: false
+  propagated_prefix:
+    - x-md-
+  public_operations:
+    - /todo.v1.TodoService/ListTodos
+    - /mall.v1.ShopService/Register
+    - /mall.v1.ShopService/Login
+    - /mall.v1.ShopService/Captcha
+    - /mall.v1.ShopService/RefreshToken
+    - /mall.v1.ShopService/GoodsList
+    - /mall.v1.ShopService/GoodsDetail
+    - /mall.v1.AdminService/Register
+    - /mall.v1.AdminService/Login
+    - /mall.v1.AdminService/Captcha
+    - /mall.v1.AdminService/RefreshToken
+  # KRATOS_JWT_SIGNING_KEY is injected by compose; env.NewSource("KRATOS")
+  # strips the prefix, so ${JWT_SIGNING_KEY:...} resolves to it.
+  jwt_signing_key: ${JWT_SIGNING_KEY:dev-only-change-me}
+  tracer_name: kratos-layout
+  meter_name: kratos-layout
+  rate_limit: 64
+  circuit_breaker_threshold: 5
+
+mall:
+  mq:
+    addr: 'amqp://guest:guest@rabbitmq:5672/'
+    order_exchange: order.exchange
+    inventory_exchange: inventory.exchange
+    payment_exchange: payment.exchange
+    dlx_exchange: mall.dlx
+    order_created_queue: q.order.created
+    inventory_result_queue: q.inventory.result
+    payment_success_queue: q.payment.success
+    order_paid_goods_queue: q.order.paid.goods
+    max_retry: 5
+  search:
+    addresses:
+      - 'http://elasticsearch:9200'
+    goods_index: goods
+  auth:
+    jwt_expire: 2592000s
+    issuer: kratos-mall
+    pbkdf2_iterations: 10000
+  business:
+    captcha_ttl: 300s
+    outbox_scan_interval: 1s
+    order_pay_timeout: 900s
+    timeout_loop_interval: 30s
+    outbox_batch_size: 50

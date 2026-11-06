@@ -1,0 +1,13 @@
+.git
+.github
+.workbuddy-ai
+_archive
+bin
+*.md
+openapi.yaml
+.env
+.env.*
+**/*_test.go
+*.log
+*.out
+*.test

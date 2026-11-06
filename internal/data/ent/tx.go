@@ -12,8 +12,46 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Brand is the client for interacting with the Brand builders.
+	Brand *BrandClient
+	// Category is the client for interacting with the Category builders.
+	Category *CategoryClient
+	// ConsumedEvent is the client for interacting with the ConsumedEvent builders.
+	ConsumedEvent *ConsumedEventClient
+	// Goods is the client for interacting with the Goods builders.
+	Goods *GoodsClient
+	// GoodsImage is the client for interacting with the GoodsImage builders.
+	GoodsImage *GoodsImageClient
+	// GoodsSku is the client for interacting with the GoodsSku builders.
+	GoodsSku *GoodsSkuClient
+	// Inventory is the client for interacting with the Inventory builders.
+	Inventory *InventoryClient
+	// InventoryFlow is the client for interacting with the InventoryFlow builders.
+	InventoryFlow *InventoryFlowClient
+	// InventoryLock is the client for interacting with the InventoryLock builders.
+	InventoryLock *InventoryLockClient
+	// Order is the client for interacting with the Order builders.
+	Order *OrderClient
+	// OrderAddress is the client for interacting with the OrderAddress builders.
+	OrderAddress *OrderAddressClient
+	// OrderEventOutbox is the client for interacting with the OrderEventOutbox builders.
+	OrderEventOutbox *OrderEventOutboxClient
+	// OrderGoods is the client for interacting with the OrderGoods builders.
+	OrderGoods *OrderGoodsClient
+	// Payment is the client for interacting with the Payment builders.
+	Payment *PaymentClient
+	// Permission is the client for interacting with the Permission builders.
+	Permission *PermissionClient
+	// RolePermission is the client for interacting with the RolePermission builders.
+	RolePermission *RolePermissionClient
+	// ShopCart is the client for interacting with the ShopCart builders.
+	ShopCart *ShopCartClient
 	// Todo is the client for interacting with the Todo builders.
 	Todo *TodoClient
+	// User is the client for interacting with the User builders.
+	User *UserClient
+	// UserAddress is the client for interacting with the UserAddress builders.
+	UserAddress *UserAddressClient
 
 	// lazily loaded.
 	client     *Client
@@ -145,7 +183,26 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Brand = NewBrandClient(tx.config)
+	tx.Category = NewCategoryClient(tx.config)
+	tx.ConsumedEvent = NewConsumedEventClient(tx.config)
+	tx.Goods = NewGoodsClient(tx.config)
+	tx.GoodsImage = NewGoodsImageClient(tx.config)
+	tx.GoodsSku = NewGoodsSkuClient(tx.config)
+	tx.Inventory = NewInventoryClient(tx.config)
+	tx.InventoryFlow = NewInventoryFlowClient(tx.config)
+	tx.InventoryLock = NewInventoryLockClient(tx.config)
+	tx.Order = NewOrderClient(tx.config)
+	tx.OrderAddress = NewOrderAddressClient(tx.config)
+	tx.OrderEventOutbox = NewOrderEventOutboxClient(tx.config)
+	tx.OrderGoods = NewOrderGoodsClient(tx.config)
+	tx.Payment = NewPaymentClient(tx.config)
+	tx.Permission = NewPermissionClient(tx.config)
+	tx.RolePermission = NewRolePermissionClient(tx.config)
+	tx.ShopCart = NewShopCartClient(tx.config)
 	tx.Todo = NewTodoClient(tx.config)
+	tx.User = NewUserClient(tx.config)
+	tx.UserAddress = NewUserAddressClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
@@ -155,7 +212,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Todo.QueryXXX(), the query will be executed
+// applies a query, for example: Brand.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

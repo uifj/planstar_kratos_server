@@ -6,8 +6,27 @@ import (
 	"time"
 
 	"github.com/go-kratos/kratos-layout/internal/biz"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/brand"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/category"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/consumedevent"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/goods"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/goodsimage"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/goodssku"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/inventory"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/inventoryflow"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/inventorylock"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/order"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/orderaddress"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/ordereventoutbox"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/ordergoods"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/payment"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/permission"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/rolepermission"
 	"github.com/go-kratos/kratos-layout/internal/data/ent/schema"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/shopcart"
 	"github.com/go-kratos/kratos-layout/internal/data/ent/todo"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/user"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/useraddress"
 	"github.com/google/uuid"
 )
 
@@ -15,6 +34,759 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	brandMixin := schema.Brand{}.Mixin()
+	brandMixinFields0 := brandMixin[0].Fields()
+	_ = brandMixinFields0
+	brandMixinFields1 := brandMixin[1].Fields()
+	_ = brandMixinFields1
+	brandFields := schema.Brand{}.Fields()
+	_ = brandFields
+	// brandDescCreatedAt is the schema descriptor for created_at field.
+	brandDescCreatedAt := brandMixinFields1[0].Descriptor()
+	// brand.DefaultCreatedAt holds the default value on creation for the created_at field.
+	brand.DefaultCreatedAt = brandDescCreatedAt.Default.(func() time.Time)
+	// brandDescUpdatedAt is the schema descriptor for updated_at field.
+	brandDescUpdatedAt := brandMixinFields1[1].Descriptor()
+	// brand.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	brand.DefaultUpdatedAt = brandDescUpdatedAt.Default.(func() time.Time)
+	// brand.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	brand.UpdateDefaultUpdatedAt = brandDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// brandDescName is the schema descriptor for name field.
+	brandDescName := brandFields[0].Descriptor()
+	// brand.DefaultName holds the default value on creation for the name field.
+	brand.DefaultName = brandDescName.Default.(string)
+	// brandDescLogo is the schema descriptor for logo field.
+	brandDescLogo := brandFields[1].Descriptor()
+	// brand.DefaultLogo holds the default value on creation for the logo field.
+	brand.DefaultLogo = brandDescLogo.Default.(string)
+	// brandDescStatus is the schema descriptor for status field.
+	brandDescStatus := brandFields[2].Descriptor()
+	// brand.DefaultStatus holds the default value on creation for the status field.
+	brand.DefaultStatus = brandDescStatus.Default.(int32)
+	// brandDescID is the schema descriptor for id field.
+	brandDescID := brandMixinFields0[0].Descriptor()
+	// brand.DefaultID holds the default value on creation for the id field.
+	brand.DefaultID = brandDescID.Default.(func() uuid.UUID)
+	categoryMixin := schema.Category{}.Mixin()
+	categoryMixinFields0 := categoryMixin[0].Fields()
+	_ = categoryMixinFields0
+	categoryMixinFields1 := categoryMixin[1].Fields()
+	_ = categoryMixinFields1
+	categoryFields := schema.Category{}.Fields()
+	_ = categoryFields
+	// categoryDescCreatedAt is the schema descriptor for created_at field.
+	categoryDescCreatedAt := categoryMixinFields1[0].Descriptor()
+	// category.DefaultCreatedAt holds the default value on creation for the created_at field.
+	category.DefaultCreatedAt = categoryDescCreatedAt.Default.(func() time.Time)
+	// categoryDescUpdatedAt is the schema descriptor for updated_at field.
+	categoryDescUpdatedAt := categoryMixinFields1[1].Descriptor()
+	// category.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	category.DefaultUpdatedAt = categoryDescUpdatedAt.Default.(func() time.Time)
+	// category.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	category.UpdateDefaultUpdatedAt = categoryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// categoryDescName is the schema descriptor for name field.
+	categoryDescName := categoryFields[0].Descriptor()
+	// category.DefaultName holds the default value on creation for the name field.
+	category.DefaultName = categoryDescName.Default.(string)
+	// categoryDescParentCategory is the schema descriptor for parent_category field.
+	categoryDescParentCategory := categoryFields[1].Descriptor()
+	// category.DefaultParentCategory holds the default value on creation for the parent_category field.
+	category.DefaultParentCategory = categoryDescParentCategory.Default.(string)
+	// categoryDescLevel is the schema descriptor for level field.
+	categoryDescLevel := categoryFields[2].Descriptor()
+	// category.DefaultLevel holds the default value on creation for the level field.
+	category.DefaultLevel = categoryDescLevel.Default.(int32)
+	// categoryDescSort is the schema descriptor for sort field.
+	categoryDescSort := categoryFields[3].Descriptor()
+	// category.DefaultSort holds the default value on creation for the sort field.
+	category.DefaultSort = categoryDescSort.Default.(int32)
+	// categoryDescStatus is the schema descriptor for status field.
+	categoryDescStatus := categoryFields[4].Descriptor()
+	// category.DefaultStatus holds the default value on creation for the status field.
+	category.DefaultStatus = categoryDescStatus.Default.(int32)
+	// categoryDescID is the schema descriptor for id field.
+	categoryDescID := categoryMixinFields0[0].Descriptor()
+	// category.DefaultID holds the default value on creation for the id field.
+	category.DefaultID = categoryDescID.Default.(func() uuid.UUID)
+	consumedeventMixin := schema.ConsumedEvent{}.Mixin()
+	consumedeventMixinFields0 := consumedeventMixin[0].Fields()
+	_ = consumedeventMixinFields0
+	consumedeventMixinFields1 := consumedeventMixin[1].Fields()
+	_ = consumedeventMixinFields1
+	consumedeventFields := schema.ConsumedEvent{}.Fields()
+	_ = consumedeventFields
+	// consumedeventDescCreatedAt is the schema descriptor for created_at field.
+	consumedeventDescCreatedAt := consumedeventMixinFields1[0].Descriptor()
+	// consumedevent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	consumedevent.DefaultCreatedAt = consumedeventDescCreatedAt.Default.(func() time.Time)
+	// consumedeventDescUpdatedAt is the schema descriptor for updated_at field.
+	consumedeventDescUpdatedAt := consumedeventMixinFields1[1].Descriptor()
+	// consumedevent.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	consumedevent.DefaultUpdatedAt = consumedeventDescUpdatedAt.Default.(func() time.Time)
+	// consumedevent.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	consumedevent.UpdateDefaultUpdatedAt = consumedeventDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// consumedeventDescEventID is the schema descriptor for event_id field.
+	consumedeventDescEventID := consumedeventFields[0].Descriptor()
+	// consumedevent.DefaultEventID holds the default value on creation for the event_id field.
+	consumedevent.DefaultEventID = consumedeventDescEventID.Default.(string)
+	// consumedeventDescConsumer is the schema descriptor for consumer field.
+	consumedeventDescConsumer := consumedeventFields[1].Descriptor()
+	// consumedevent.DefaultConsumer holds the default value on creation for the consumer field.
+	consumedevent.DefaultConsumer = consumedeventDescConsumer.Default.(string)
+	// consumedeventDescID is the schema descriptor for id field.
+	consumedeventDescID := consumedeventMixinFields0[0].Descriptor()
+	// consumedevent.DefaultID holds the default value on creation for the id field.
+	consumedevent.DefaultID = consumedeventDescID.Default.(func() uuid.UUID)
+	goodsMixin := schema.Goods{}.Mixin()
+	goodsMixinFields0 := goodsMixin[0].Fields()
+	_ = goodsMixinFields0
+	goodsMixinFields1 := goodsMixin[1].Fields()
+	_ = goodsMixinFields1
+	goodsFields := schema.Goods{}.Fields()
+	_ = goodsFields
+	// goodsDescCreatedAt is the schema descriptor for created_at field.
+	goodsDescCreatedAt := goodsMixinFields1[0].Descriptor()
+	// goods.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goods.DefaultCreatedAt = goodsDescCreatedAt.Default.(func() time.Time)
+	// goodsDescUpdatedAt is the schema descriptor for updated_at field.
+	goodsDescUpdatedAt := goodsMixinFields1[1].Descriptor()
+	// goods.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	goods.DefaultUpdatedAt = goodsDescUpdatedAt.Default.(func() time.Time)
+	// goods.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	goods.UpdateDefaultUpdatedAt = goodsDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// goodsDescCategoryID is the schema descriptor for category_id field.
+	goodsDescCategoryID := goodsFields[0].Descriptor()
+	// goods.DefaultCategoryID holds the default value on creation for the category_id field.
+	goods.DefaultCategoryID = goodsDescCategoryID.Default.(string)
+	// goodsDescBrandID is the schema descriptor for brand_id field.
+	goodsDescBrandID := goodsFields[1].Descriptor()
+	// goods.DefaultBrandID holds the default value on creation for the brand_id field.
+	goods.DefaultBrandID = goodsDescBrandID.Default.(string)
+	// goodsDescTypeID is the schema descriptor for type_id field.
+	goodsDescTypeID := goodsFields[2].Descriptor()
+	// goods.DefaultTypeID holds the default value on creation for the type_id field.
+	goods.DefaultTypeID = goodsDescTypeID.Default.(string)
+	// goodsDescName is the schema descriptor for name field.
+	goodsDescName := goodsFields[3].Descriptor()
+	// goods.DefaultName holds the default value on creation for the name field.
+	goods.DefaultName = goodsDescName.Default.(string)
+	// goodsDescNameAlias is the schema descriptor for name_alias field.
+	goodsDescNameAlias := goodsFields[4].Descriptor()
+	// goods.DefaultNameAlias holds the default value on creation for the name_alias field.
+	goods.DefaultNameAlias = goodsDescNameAlias.Default.(string)
+	// goodsDescGoodsBrief is the schema descriptor for goods_brief field.
+	goodsDescGoodsBrief := goodsFields[6].Descriptor()
+	// goods.DefaultGoodsBrief holds the default value on creation for the goods_brief field.
+	goods.DefaultGoodsBrief = goodsDescGoodsBrief.Default.(string)
+	// goodsDescGoodsFrontImage is the schema descriptor for goods_front_image field.
+	goodsDescGoodsFrontImage := goodsFields[7].Descriptor()
+	// goods.DefaultGoodsFrontImage holds the default value on creation for the goods_front_image field.
+	goods.DefaultGoodsFrontImage = goodsDescGoodsFrontImage.Default.(string)
+	// goodsDescMarketPrice is the schema descriptor for market_price field.
+	goodsDescMarketPrice := goodsFields[8].Descriptor()
+	// goods.DefaultMarketPrice holds the default value on creation for the market_price field.
+	goods.DefaultMarketPrice = goodsDescMarketPrice.Default.(int64)
+	// goodsDescOnSale is the schema descriptor for on_sale field.
+	goodsDescOnSale := goodsFields[9].Descriptor()
+	// goods.DefaultOnSale holds the default value on creation for the on_sale field.
+	goods.DefaultOnSale = goodsDescOnSale.Default.(bool)
+	// goodsDescShipFree is the schema descriptor for ship_free field.
+	goodsDescShipFree := goodsFields[10].Descriptor()
+	// goods.DefaultShipFree holds the default value on creation for the ship_free field.
+	goods.DefaultShipFree = goodsDescShipFree.Default.(bool)
+	// goodsDescIsNew is the schema descriptor for is_new field.
+	goodsDescIsNew := goodsFields[11].Descriptor()
+	// goods.DefaultIsNew holds the default value on creation for the is_new field.
+	goods.DefaultIsNew = goodsDescIsNew.Default.(bool)
+	// goodsDescIsHot is the schema descriptor for is_hot field.
+	goodsDescIsHot := goodsFields[12].Descriptor()
+	// goods.DefaultIsHot holds the default value on creation for the is_hot field.
+	goods.DefaultIsHot = goodsDescIsHot.Default.(bool)
+	// goodsDescSoldNum is the schema descriptor for sold_num field.
+	goodsDescSoldNum := goodsFields[13].Descriptor()
+	// goods.DefaultSoldNum holds the default value on creation for the sold_num field.
+	goods.DefaultSoldNum = goodsDescSoldNum.Default.(int64)
+	// goodsDescStatus is the schema descriptor for status field.
+	goodsDescStatus := goodsFields[14].Descriptor()
+	// goods.DefaultStatus holds the default value on creation for the status field.
+	goods.DefaultStatus = goodsDescStatus.Default.(int32)
+	// goodsDescID is the schema descriptor for id field.
+	goodsDescID := goodsMixinFields0[0].Descriptor()
+	// goods.DefaultID holds the default value on creation for the id field.
+	goods.DefaultID = goodsDescID.Default.(func() uuid.UUID)
+	goodsimageMixin := schema.GoodsImage{}.Mixin()
+	goodsimageMixinFields0 := goodsimageMixin[0].Fields()
+	_ = goodsimageMixinFields0
+	goodsimageMixinFields1 := goodsimageMixin[1].Fields()
+	_ = goodsimageMixinFields1
+	goodsimageFields := schema.GoodsImage{}.Fields()
+	_ = goodsimageFields
+	// goodsimageDescCreatedAt is the schema descriptor for created_at field.
+	goodsimageDescCreatedAt := goodsimageMixinFields1[0].Descriptor()
+	// goodsimage.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goodsimage.DefaultCreatedAt = goodsimageDescCreatedAt.Default.(func() time.Time)
+	// goodsimageDescUpdatedAt is the schema descriptor for updated_at field.
+	goodsimageDescUpdatedAt := goodsimageMixinFields1[1].Descriptor()
+	// goodsimage.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	goodsimage.DefaultUpdatedAt = goodsimageDescUpdatedAt.Default.(func() time.Time)
+	// goodsimage.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	goodsimage.UpdateDefaultUpdatedAt = goodsimageDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// goodsimageDescGoodsID is the schema descriptor for goods_id field.
+	goodsimageDescGoodsID := goodsimageFields[0].Descriptor()
+	// goodsimage.DefaultGoodsID holds the default value on creation for the goods_id field.
+	goodsimage.DefaultGoodsID = goodsimageDescGoodsID.Default.(string)
+	// goodsimageDescURL is the schema descriptor for url field.
+	goodsimageDescURL := goodsimageFields[1].Descriptor()
+	// goodsimage.DefaultURL holds the default value on creation for the url field.
+	goodsimage.DefaultURL = goodsimageDescURL.Default.(string)
+	// goodsimageDescPosition is the schema descriptor for position field.
+	goodsimageDescPosition := goodsimageFields[2].Descriptor()
+	// goodsimage.DefaultPosition holds the default value on creation for the position field.
+	goodsimage.DefaultPosition = goodsimageDescPosition.Default.(int32)
+	// goodsimageDescIsMaster is the schema descriptor for is_master field.
+	goodsimageDescIsMaster := goodsimageFields[3].Descriptor()
+	// goodsimage.DefaultIsMaster holds the default value on creation for the is_master field.
+	goodsimage.DefaultIsMaster = goodsimageDescIsMaster.Default.(bool)
+	// goodsimageDescStatus is the schema descriptor for status field.
+	goodsimageDescStatus := goodsimageFields[4].Descriptor()
+	// goodsimage.DefaultStatus holds the default value on creation for the status field.
+	goodsimage.DefaultStatus = goodsimageDescStatus.Default.(int32)
+	// goodsimageDescID is the schema descriptor for id field.
+	goodsimageDescID := goodsimageMixinFields0[0].Descriptor()
+	// goodsimage.DefaultID holds the default value on creation for the id field.
+	goodsimage.DefaultID = goodsimageDescID.Default.(func() uuid.UUID)
+	goodsskuMixin := schema.GoodsSku{}.Mixin()
+	goodsskuMixinFields0 := goodsskuMixin[0].Fields()
+	_ = goodsskuMixinFields0
+	goodsskuMixinFields1 := goodsskuMixin[1].Fields()
+	_ = goodsskuMixinFields1
+	goodsskuFields := schema.GoodsSku{}.Fields()
+	_ = goodsskuFields
+	// goodsskuDescCreatedAt is the schema descriptor for created_at field.
+	goodsskuDescCreatedAt := goodsskuMixinFields1[0].Descriptor()
+	// goodssku.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goodssku.DefaultCreatedAt = goodsskuDescCreatedAt.Default.(func() time.Time)
+	// goodsskuDescUpdatedAt is the schema descriptor for updated_at field.
+	goodsskuDescUpdatedAt := goodsskuMixinFields1[1].Descriptor()
+	// goodssku.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	goodssku.DefaultUpdatedAt = goodsskuDescUpdatedAt.Default.(func() time.Time)
+	// goodssku.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	goodssku.UpdateDefaultUpdatedAt = goodsskuDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// goodsskuDescGoodsID is the schema descriptor for goods_id field.
+	goodsskuDescGoodsID := goodsskuFields[0].Descriptor()
+	// goodssku.DefaultGoodsID holds the default value on creation for the goods_id field.
+	goodssku.DefaultGoodsID = goodsskuDescGoodsID.Default.(string)
+	// goodsskuDescSkuName is the schema descriptor for sku_name field.
+	goodsskuDescSkuName := goodsskuFields[1].Descriptor()
+	// goodssku.DefaultSkuName holds the default value on creation for the sku_name field.
+	goodssku.DefaultSkuName = goodsskuDescSkuName.Default.(string)
+	// goodsskuDescBarCode is the schema descriptor for bar_code field.
+	goodsskuDescBarCode := goodsskuFields[3].Descriptor()
+	// goodssku.DefaultBarCode holds the default value on creation for the bar_code field.
+	goodssku.DefaultBarCode = goodsskuDescBarCode.Default.(string)
+	// goodsskuDescPrice is the schema descriptor for price field.
+	goodsskuDescPrice := goodsskuFields[4].Descriptor()
+	// goodssku.DefaultPrice holds the default value on creation for the price field.
+	goodssku.DefaultPrice = goodsskuDescPrice.Default.(int64)
+	// goodsskuDescPromotionPrice is the schema descriptor for promotion_price field.
+	goodsskuDescPromotionPrice := goodsskuFields[5].Descriptor()
+	// goodssku.DefaultPromotionPrice holds the default value on creation for the promotion_price field.
+	goodssku.DefaultPromotionPrice = goodsskuDescPromotionPrice.Default.(int64)
+	// goodsskuDescInventory is the schema descriptor for inventory field.
+	goodsskuDescInventory := goodsskuFields[6].Descriptor()
+	// goodssku.DefaultInventory holds the default value on creation for the inventory field.
+	goodssku.DefaultInventory = goodsskuDescInventory.Default.(int64)
+	// goodsskuDescOnSale is the schema descriptor for on_sale field.
+	goodsskuDescOnSale := goodsskuFields[7].Descriptor()
+	// goodssku.DefaultOnSale holds the default value on creation for the on_sale field.
+	goodssku.DefaultOnSale = goodsskuDescOnSale.Default.(bool)
+	// goodsskuDescPic is the schema descriptor for pic field.
+	goodsskuDescPic := goodsskuFields[8].Descriptor()
+	// goodssku.DefaultPic holds the default value on creation for the pic field.
+	goodssku.DefaultPic = goodsskuDescPic.Default.(string)
+	// goodsskuDescStatus is the schema descriptor for status field.
+	goodsskuDescStatus := goodsskuFields[10].Descriptor()
+	// goodssku.DefaultStatus holds the default value on creation for the status field.
+	goodssku.DefaultStatus = goodsskuDescStatus.Default.(int32)
+	// goodsskuDescID is the schema descriptor for id field.
+	goodsskuDescID := goodsskuMixinFields0[0].Descriptor()
+	// goodssku.DefaultID holds the default value on creation for the id field.
+	goodssku.DefaultID = goodsskuDescID.Default.(func() uuid.UUID)
+	inventoryMixin := schema.Inventory{}.Mixin()
+	inventoryMixinFields0 := inventoryMixin[0].Fields()
+	_ = inventoryMixinFields0
+	inventoryMixinFields1 := inventoryMixin[1].Fields()
+	_ = inventoryMixinFields1
+	inventoryFields := schema.Inventory{}.Fields()
+	_ = inventoryFields
+	// inventoryDescCreatedAt is the schema descriptor for created_at field.
+	inventoryDescCreatedAt := inventoryMixinFields1[0].Descriptor()
+	// inventory.DefaultCreatedAt holds the default value on creation for the created_at field.
+	inventory.DefaultCreatedAt = inventoryDescCreatedAt.Default.(func() time.Time)
+	// inventoryDescUpdatedAt is the schema descriptor for updated_at field.
+	inventoryDescUpdatedAt := inventoryMixinFields1[1].Descriptor()
+	// inventory.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	inventory.DefaultUpdatedAt = inventoryDescUpdatedAt.Default.(func() time.Time)
+	// inventory.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	inventory.UpdateDefaultUpdatedAt = inventoryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// inventoryDescTotal is the schema descriptor for total field.
+	inventoryDescTotal := inventoryFields[1].Descriptor()
+	// inventory.DefaultTotal holds the default value on creation for the total field.
+	inventory.DefaultTotal = inventoryDescTotal.Default.(int64)
+	// inventoryDescLocked is the schema descriptor for locked field.
+	inventoryDescLocked := inventoryFields[2].Descriptor()
+	// inventory.DefaultLocked holds the default value on creation for the locked field.
+	inventory.DefaultLocked = inventoryDescLocked.Default.(int64)
+	// inventoryDescSold is the schema descriptor for sold field.
+	inventoryDescSold := inventoryFields[3].Descriptor()
+	// inventory.DefaultSold holds the default value on creation for the sold field.
+	inventory.DefaultSold = inventoryDescSold.Default.(int64)
+	// inventoryDescVersion is the schema descriptor for version field.
+	inventoryDescVersion := inventoryFields[4].Descriptor()
+	// inventory.DefaultVersion holds the default value on creation for the version field.
+	inventory.DefaultVersion = inventoryDescVersion.Default.(int64)
+	// inventoryDescID is the schema descriptor for id field.
+	inventoryDescID := inventoryMixinFields0[0].Descriptor()
+	// inventory.DefaultID holds the default value on creation for the id field.
+	inventory.DefaultID = inventoryDescID.Default.(func() uuid.UUID)
+	inventoryflowMixin := schema.InventoryFlow{}.Mixin()
+	inventoryflowMixinFields0 := inventoryflowMixin[0].Fields()
+	_ = inventoryflowMixinFields0
+	inventoryflowMixinFields1 := inventoryflowMixin[1].Fields()
+	_ = inventoryflowMixinFields1
+	inventoryflowFields := schema.InventoryFlow{}.Fields()
+	_ = inventoryflowFields
+	// inventoryflowDescCreatedAt is the schema descriptor for created_at field.
+	inventoryflowDescCreatedAt := inventoryflowMixinFields1[0].Descriptor()
+	// inventoryflow.DefaultCreatedAt holds the default value on creation for the created_at field.
+	inventoryflow.DefaultCreatedAt = inventoryflowDescCreatedAt.Default.(func() time.Time)
+	// inventoryflowDescUpdatedAt is the schema descriptor for updated_at field.
+	inventoryflowDescUpdatedAt := inventoryflowMixinFields1[1].Descriptor()
+	// inventoryflow.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	inventoryflow.DefaultUpdatedAt = inventoryflowDescUpdatedAt.Default.(func() time.Time)
+	// inventoryflow.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	inventoryflow.UpdateDefaultUpdatedAt = inventoryflowDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// inventoryflowDescSkuID is the schema descriptor for sku_id field.
+	inventoryflowDescSkuID := inventoryflowFields[0].Descriptor()
+	// inventoryflow.DefaultSkuID holds the default value on creation for the sku_id field.
+	inventoryflow.DefaultSkuID = inventoryflowDescSkuID.Default.(string)
+	// inventoryflowDescOrderSn is the schema descriptor for order_sn field.
+	inventoryflowDescOrderSn := inventoryflowFields[1].Descriptor()
+	// inventoryflow.DefaultOrderSn holds the default value on creation for the order_sn field.
+	inventoryflow.DefaultOrderSn = inventoryflowDescOrderSn.Default.(string)
+	// inventoryflowDescNum is the schema descriptor for num field.
+	inventoryflowDescNum := inventoryflowFields[2].Descriptor()
+	// inventoryflow.DefaultNum holds the default value on creation for the num field.
+	inventoryflow.DefaultNum = inventoryflowDescNum.Default.(int32)
+	// inventoryflowDescFlowType is the schema descriptor for flow_type field.
+	inventoryflowDescFlowType := inventoryflowFields[3].Descriptor()
+	// inventoryflow.DefaultFlowType holds the default value on creation for the flow_type field.
+	inventoryflow.DefaultFlowType = inventoryflowDescFlowType.Default.(int32)
+	// inventoryflowDescID is the schema descriptor for id field.
+	inventoryflowDescID := inventoryflowMixinFields0[0].Descriptor()
+	// inventoryflow.DefaultID holds the default value on creation for the id field.
+	inventoryflow.DefaultID = inventoryflowDescID.Default.(func() uuid.UUID)
+	inventorylockMixin := schema.InventoryLock{}.Mixin()
+	inventorylockMixinFields0 := inventorylockMixin[0].Fields()
+	_ = inventorylockMixinFields0
+	inventorylockMixinFields1 := inventorylockMixin[1].Fields()
+	_ = inventorylockMixinFields1
+	inventorylockFields := schema.InventoryLock{}.Fields()
+	_ = inventorylockFields
+	// inventorylockDescCreatedAt is the schema descriptor for created_at field.
+	inventorylockDescCreatedAt := inventorylockMixinFields1[0].Descriptor()
+	// inventorylock.DefaultCreatedAt holds the default value on creation for the created_at field.
+	inventorylock.DefaultCreatedAt = inventorylockDescCreatedAt.Default.(func() time.Time)
+	// inventorylockDescUpdatedAt is the schema descriptor for updated_at field.
+	inventorylockDescUpdatedAt := inventorylockMixinFields1[1].Descriptor()
+	// inventorylock.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	inventorylock.DefaultUpdatedAt = inventorylockDescUpdatedAt.Default.(func() time.Time)
+	// inventorylock.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	inventorylock.UpdateDefaultUpdatedAt = inventorylockDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// inventorylockDescOrderSn is the schema descriptor for order_sn field.
+	inventorylockDescOrderSn := inventorylockFields[0].Descriptor()
+	// inventorylock.DefaultOrderSn holds the default value on creation for the order_sn field.
+	inventorylock.DefaultOrderSn = inventorylockDescOrderSn.Default.(string)
+	// inventorylockDescSkuID is the schema descriptor for sku_id field.
+	inventorylockDescSkuID := inventorylockFields[1].Descriptor()
+	// inventorylock.DefaultSkuID holds the default value on creation for the sku_id field.
+	inventorylock.DefaultSkuID = inventorylockDescSkuID.Default.(string)
+	// inventorylockDescNum is the schema descriptor for num field.
+	inventorylockDescNum := inventorylockFields[2].Descriptor()
+	// inventorylock.DefaultNum holds the default value on creation for the num field.
+	inventorylock.DefaultNum = inventorylockDescNum.Default.(int32)
+	// inventorylockDescStatus is the schema descriptor for status field.
+	inventorylockDescStatus := inventorylockFields[3].Descriptor()
+	// inventorylock.DefaultStatus holds the default value on creation for the status field.
+	inventorylock.DefaultStatus = inventorylockDescStatus.Default.(int32)
+	// inventorylockDescID is the schema descriptor for id field.
+	inventorylockDescID := inventorylockMixinFields0[0].Descriptor()
+	// inventorylock.DefaultID holds the default value on creation for the id field.
+	inventorylock.DefaultID = inventorylockDescID.Default.(func() uuid.UUID)
+	orderMixin := schema.Order{}.Mixin()
+	orderMixinFields0 := orderMixin[0].Fields()
+	_ = orderMixinFields0
+	orderMixinFields1 := orderMixin[1].Fields()
+	_ = orderMixinFields1
+	orderFields := schema.Order{}.Fields()
+	_ = orderFields
+	// orderDescCreatedAt is the schema descriptor for created_at field.
+	orderDescCreatedAt := orderMixinFields1[0].Descriptor()
+	// order.DefaultCreatedAt holds the default value on creation for the created_at field.
+	order.DefaultCreatedAt = orderDescCreatedAt.Default.(func() time.Time)
+	// orderDescUpdatedAt is the schema descriptor for updated_at field.
+	orderDescUpdatedAt := orderMixinFields1[1].Descriptor()
+	// order.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	order.DefaultUpdatedAt = orderDescUpdatedAt.Default.(func() time.Time)
+	// order.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	order.UpdateDefaultUpdatedAt = orderDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// orderDescUserID is the schema descriptor for user_id field.
+	orderDescUserID := orderFields[0].Descriptor()
+	// order.DefaultUserID holds the default value on creation for the user_id field.
+	order.DefaultUserID = orderDescUserID.Default.(string)
+	// orderDescStatus is the schema descriptor for status field.
+	orderDescStatus := orderFields[2].Descriptor()
+	// order.DefaultStatus holds the default value on creation for the status field.
+	order.DefaultStatus = orderDescStatus.Default.(int32)
+	// orderDescPost is the schema descriptor for post field.
+	orderDescPost := orderFields[3].Descriptor()
+	// order.DefaultPost holds the default value on creation for the post field.
+	order.DefaultPost = orderDescPost.Default.(string)
+	// orderDescTotal is the schema descriptor for total field.
+	orderDescTotal := orderFields[4].Descriptor()
+	// order.DefaultTotal holds the default value on creation for the total field.
+	order.DefaultTotal = orderDescTotal.Default.(int64)
+	// orderDescAddress is the schema descriptor for address field.
+	orderDescAddress := orderFields[5].Descriptor()
+	// order.DefaultAddress holds the default value on creation for the address field.
+	order.DefaultAddress = orderDescAddress.Default.(string)
+	// orderDescName is the schema descriptor for name field.
+	orderDescName := orderFields[6].Descriptor()
+	// order.DefaultName holds the default value on creation for the name field.
+	order.DefaultName = orderDescName.Default.(string)
+	// orderDescMobile is the schema descriptor for mobile field.
+	orderDescMobile := orderFields[7].Descriptor()
+	// order.DefaultMobile holds the default value on creation for the mobile field.
+	order.DefaultMobile = orderDescMobile.Default.(string)
+	// orderDescAddTime is the schema descriptor for add_time field.
+	orderDescAddTime := orderFields[8].Descriptor()
+	// order.DefaultAddTime holds the default value on creation for the add_time field.
+	order.DefaultAddTime = orderDescAddTime.Default.(int64)
+	// orderDescPayTime is the schema descriptor for pay_time field.
+	orderDescPayTime := orderFields[9].Descriptor()
+	// order.DefaultPayTime holds the default value on creation for the pay_time field.
+	order.DefaultPayTime = orderDescPayTime.Default.(int64)
+	// orderDescID is the schema descriptor for id field.
+	orderDescID := orderMixinFields0[0].Descriptor()
+	// order.DefaultID holds the default value on creation for the id field.
+	order.DefaultID = orderDescID.Default.(func() uuid.UUID)
+	orderaddressMixin := schema.OrderAddress{}.Mixin()
+	orderaddressMixinFields0 := orderaddressMixin[0].Fields()
+	_ = orderaddressMixinFields0
+	orderaddressMixinFields1 := orderaddressMixin[1].Fields()
+	_ = orderaddressMixinFields1
+	orderaddressFields := schema.OrderAddress{}.Fields()
+	_ = orderaddressFields
+	// orderaddressDescCreatedAt is the schema descriptor for created_at field.
+	orderaddressDescCreatedAt := orderaddressMixinFields1[0].Descriptor()
+	// orderaddress.DefaultCreatedAt holds the default value on creation for the created_at field.
+	orderaddress.DefaultCreatedAt = orderaddressDescCreatedAt.Default.(func() time.Time)
+	// orderaddressDescUpdatedAt is the schema descriptor for updated_at field.
+	orderaddressDescUpdatedAt := orderaddressMixinFields1[1].Descriptor()
+	// orderaddress.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	orderaddress.DefaultUpdatedAt = orderaddressDescUpdatedAt.Default.(func() time.Time)
+	// orderaddress.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	orderaddress.UpdateDefaultUpdatedAt = orderaddressDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// orderaddressDescOrderID is the schema descriptor for order_id field.
+	orderaddressDescOrderID := orderaddressFields[0].Descriptor()
+	// orderaddress.DefaultOrderID holds the default value on creation for the order_id field.
+	orderaddress.DefaultOrderID = orderaddressDescOrderID.Default.(string)
+	// orderaddressDescName is the schema descriptor for name field.
+	orderaddressDescName := orderaddressFields[1].Descriptor()
+	// orderaddress.DefaultName holds the default value on creation for the name field.
+	orderaddress.DefaultName = orderaddressDescName.Default.(string)
+	// orderaddressDescMobile is the schema descriptor for mobile field.
+	orderaddressDescMobile := orderaddressFields[2].Descriptor()
+	// orderaddress.DefaultMobile holds the default value on creation for the mobile field.
+	orderaddress.DefaultMobile = orderaddressDescMobile.Default.(string)
+	// orderaddressDescProvince is the schema descriptor for province field.
+	orderaddressDescProvince := orderaddressFields[3].Descriptor()
+	// orderaddress.DefaultProvince holds the default value on creation for the province field.
+	orderaddress.DefaultProvince = orderaddressDescProvince.Default.(string)
+	// orderaddressDescCity is the schema descriptor for city field.
+	orderaddressDescCity := orderaddressFields[4].Descriptor()
+	// orderaddress.DefaultCity holds the default value on creation for the city field.
+	orderaddress.DefaultCity = orderaddressDescCity.Default.(string)
+	// orderaddressDescDistricts is the schema descriptor for districts field.
+	orderaddressDescDistricts := orderaddressFields[5].Descriptor()
+	// orderaddress.DefaultDistricts holds the default value on creation for the districts field.
+	orderaddress.DefaultDistricts = orderaddressDescDistricts.Default.(string)
+	// orderaddressDescAddress is the schema descriptor for address field.
+	orderaddressDescAddress := orderaddressFields[6].Descriptor()
+	// orderaddress.DefaultAddress holds the default value on creation for the address field.
+	orderaddress.DefaultAddress = orderaddressDescAddress.Default.(string)
+	// orderaddressDescPostCode is the schema descriptor for post_code field.
+	orderaddressDescPostCode := orderaddressFields[7].Descriptor()
+	// orderaddress.DefaultPostCode holds the default value on creation for the post_code field.
+	orderaddress.DefaultPostCode = orderaddressDescPostCode.Default.(string)
+	// orderaddressDescID is the schema descriptor for id field.
+	orderaddressDescID := orderaddressMixinFields0[0].Descriptor()
+	// orderaddress.DefaultID holds the default value on creation for the id field.
+	orderaddress.DefaultID = orderaddressDescID.Default.(func() uuid.UUID)
+	ordereventoutboxMixin := schema.OrderEventOutbox{}.Mixin()
+	ordereventoutboxMixinFields0 := ordereventoutboxMixin[0].Fields()
+	_ = ordereventoutboxMixinFields0
+	ordereventoutboxMixinFields1 := ordereventoutboxMixin[1].Fields()
+	_ = ordereventoutboxMixinFields1
+	ordereventoutboxFields := schema.OrderEventOutbox{}.Fields()
+	_ = ordereventoutboxFields
+	// ordereventoutboxDescCreatedAt is the schema descriptor for created_at field.
+	ordereventoutboxDescCreatedAt := ordereventoutboxMixinFields1[0].Descriptor()
+	// ordereventoutbox.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ordereventoutbox.DefaultCreatedAt = ordereventoutboxDescCreatedAt.Default.(func() time.Time)
+	// ordereventoutboxDescUpdatedAt is the schema descriptor for updated_at field.
+	ordereventoutboxDescUpdatedAt := ordereventoutboxMixinFields1[1].Descriptor()
+	// ordereventoutbox.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ordereventoutbox.DefaultUpdatedAt = ordereventoutboxDescUpdatedAt.Default.(func() time.Time)
+	// ordereventoutbox.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ordereventoutbox.UpdateDefaultUpdatedAt = ordereventoutboxDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ordereventoutboxDescEventType is the schema descriptor for event_type field.
+	ordereventoutboxDescEventType := ordereventoutboxFields[1].Descriptor()
+	// ordereventoutbox.DefaultEventType holds the default value on creation for the event_type field.
+	ordereventoutbox.DefaultEventType = ordereventoutboxDescEventType.Default.(string)
+	// ordereventoutboxDescOrderSn is the schema descriptor for order_sn field.
+	ordereventoutboxDescOrderSn := ordereventoutboxFields[2].Descriptor()
+	// ordereventoutbox.DefaultOrderSn holds the default value on creation for the order_sn field.
+	ordereventoutbox.DefaultOrderSn = ordereventoutboxDescOrderSn.Default.(string)
+	// ordereventoutboxDescPayload is the schema descriptor for payload field.
+	ordereventoutboxDescPayload := ordereventoutboxFields[3].Descriptor()
+	// ordereventoutbox.DefaultPayload holds the default value on creation for the payload field.
+	ordereventoutbox.DefaultPayload = ordereventoutboxDescPayload.Default.(string)
+	// ordereventoutboxDescStatus is the schema descriptor for status field.
+	ordereventoutboxDescStatus := ordereventoutboxFields[4].Descriptor()
+	// ordereventoutbox.DefaultStatus holds the default value on creation for the status field.
+	ordereventoutbox.DefaultStatus = ordereventoutboxDescStatus.Default.(int32)
+	// ordereventoutboxDescRetryCount is the schema descriptor for retry_count field.
+	ordereventoutboxDescRetryCount := ordereventoutboxFields[5].Descriptor()
+	// ordereventoutbox.DefaultRetryCount holds the default value on creation for the retry_count field.
+	ordereventoutbox.DefaultRetryCount = ordereventoutboxDescRetryCount.Default.(int32)
+	// ordereventoutboxDescID is the schema descriptor for id field.
+	ordereventoutboxDescID := ordereventoutboxMixinFields0[0].Descriptor()
+	// ordereventoutbox.DefaultID holds the default value on creation for the id field.
+	ordereventoutbox.DefaultID = ordereventoutboxDescID.Default.(func() uuid.UUID)
+	ordergoodsMixin := schema.OrderGoods{}.Mixin()
+	ordergoodsMixinFields0 := ordergoodsMixin[0].Fields()
+	_ = ordergoodsMixinFields0
+	ordergoodsMixinFields1 := ordergoodsMixin[1].Fields()
+	_ = ordergoodsMixinFields1
+	ordergoodsFields := schema.OrderGoods{}.Fields()
+	_ = ordergoodsFields
+	// ordergoodsDescCreatedAt is the schema descriptor for created_at field.
+	ordergoodsDescCreatedAt := ordergoodsMixinFields1[0].Descriptor()
+	// ordergoods.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ordergoods.DefaultCreatedAt = ordergoodsDescCreatedAt.Default.(func() time.Time)
+	// ordergoodsDescUpdatedAt is the schema descriptor for updated_at field.
+	ordergoodsDescUpdatedAt := ordergoodsMixinFields1[1].Descriptor()
+	// ordergoods.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ordergoods.DefaultUpdatedAt = ordergoodsDescUpdatedAt.Default.(func() time.Time)
+	// ordergoods.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ordergoods.UpdateDefaultUpdatedAt = ordergoodsDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ordergoodsDescOrderID is the schema descriptor for order_id field.
+	ordergoodsDescOrderID := ordergoodsFields[0].Descriptor()
+	// ordergoods.DefaultOrderID holds the default value on creation for the order_id field.
+	ordergoods.DefaultOrderID = ordergoodsDescOrderID.Default.(string)
+	// ordergoodsDescSkuID is the schema descriptor for sku_id field.
+	ordergoodsDescSkuID := ordergoodsFields[1].Descriptor()
+	// ordergoods.DefaultSkuID holds the default value on creation for the sku_id field.
+	ordergoods.DefaultSkuID = ordergoodsDescSkuID.Default.(string)
+	// ordergoodsDescSkuName is the schema descriptor for sku_name field.
+	ordergoodsDescSkuName := ordergoodsFields[2].Descriptor()
+	// ordergoods.DefaultSkuName holds the default value on creation for the sku_name field.
+	ordergoods.DefaultSkuName = ordergoodsDescSkuName.Default.(string)
+	// ordergoodsDescSkuPrice is the schema descriptor for sku_price field.
+	ordergoodsDescSkuPrice := ordergoodsFields[3].Descriptor()
+	// ordergoods.DefaultSkuPrice holds the default value on creation for the sku_price field.
+	ordergoods.DefaultSkuPrice = ordergoodsDescSkuPrice.Default.(int64)
+	// ordergoodsDescNum is the schema descriptor for num field.
+	ordergoodsDescNum := ordergoodsFields[4].Descriptor()
+	// ordergoods.DefaultNum holds the default value on creation for the num field.
+	ordergoods.DefaultNum = ordergoodsDescNum.Default.(int32)
+	// ordergoodsDescTotalPrice is the schema descriptor for total_price field.
+	ordergoodsDescTotalPrice := ordergoodsFields[5].Descriptor()
+	// ordergoods.DefaultTotalPrice holds the default value on creation for the total_price field.
+	ordergoods.DefaultTotalPrice = ordergoodsDescTotalPrice.Default.(int64)
+	// ordergoodsDescID is the schema descriptor for id field.
+	ordergoodsDescID := ordergoodsMixinFields0[0].Descriptor()
+	// ordergoods.DefaultID holds the default value on creation for the id field.
+	ordergoods.DefaultID = ordergoodsDescID.Default.(func() uuid.UUID)
+	paymentMixin := schema.Payment{}.Mixin()
+	paymentMixinFields0 := paymentMixin[0].Fields()
+	_ = paymentMixinFields0
+	paymentMixinFields1 := paymentMixin[1].Fields()
+	_ = paymentMixinFields1
+	paymentFields := schema.Payment{}.Fields()
+	_ = paymentFields
+	// paymentDescCreatedAt is the schema descriptor for created_at field.
+	paymentDescCreatedAt := paymentMixinFields1[0].Descriptor()
+	// payment.DefaultCreatedAt holds the default value on creation for the created_at field.
+	payment.DefaultCreatedAt = paymentDescCreatedAt.Default.(func() time.Time)
+	// paymentDescUpdatedAt is the schema descriptor for updated_at field.
+	paymentDescUpdatedAt := paymentMixinFields1[1].Descriptor()
+	// payment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	payment.DefaultUpdatedAt = paymentDescUpdatedAt.Default.(func() time.Time)
+	// payment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	payment.UpdateDefaultUpdatedAt = paymentDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// paymentDescOrderSn is the schema descriptor for order_sn field.
+	paymentDescOrderSn := paymentFields[1].Descriptor()
+	// payment.DefaultOrderSn holds the default value on creation for the order_sn field.
+	payment.DefaultOrderSn = paymentDescOrderSn.Default.(string)
+	// paymentDescUserID is the schema descriptor for user_id field.
+	paymentDescUserID := paymentFields[2].Descriptor()
+	// payment.DefaultUserID holds the default value on creation for the user_id field.
+	payment.DefaultUserID = paymentDescUserID.Default.(string)
+	// paymentDescAmount is the schema descriptor for amount field.
+	paymentDescAmount := paymentFields[3].Descriptor()
+	// payment.DefaultAmount holds the default value on creation for the amount field.
+	payment.DefaultAmount = paymentDescAmount.Default.(int64)
+	// paymentDescChannel is the schema descriptor for channel field.
+	paymentDescChannel := paymentFields[4].Descriptor()
+	// payment.DefaultChannel holds the default value on creation for the channel field.
+	payment.DefaultChannel = paymentDescChannel.Default.(string)
+	// paymentDescStatus is the schema descriptor for status field.
+	paymentDescStatus := paymentFields[5].Descriptor()
+	// payment.DefaultStatus holds the default value on creation for the status field.
+	payment.DefaultStatus = paymentDescStatus.Default.(int32)
+	// paymentDescID is the schema descriptor for id field.
+	paymentDescID := paymentMixinFields0[0].Descriptor()
+	// payment.DefaultID holds the default value on creation for the id field.
+	payment.DefaultID = paymentDescID.Default.(func() uuid.UUID)
+	permissionMixin := schema.Permission{}.Mixin()
+	permissionMixinFields0 := permissionMixin[0].Fields()
+	_ = permissionMixinFields0
+	permissionMixinFields1 := permissionMixin[1].Fields()
+	_ = permissionMixinFields1
+	permissionFields := schema.Permission{}.Fields()
+	_ = permissionFields
+	// permissionDescCreatedAt is the schema descriptor for created_at field.
+	permissionDescCreatedAt := permissionMixinFields1[0].Descriptor()
+	// permission.DefaultCreatedAt holds the default value on creation for the created_at field.
+	permission.DefaultCreatedAt = permissionDescCreatedAt.Default.(func() time.Time)
+	// permissionDescUpdatedAt is the schema descriptor for updated_at field.
+	permissionDescUpdatedAt := permissionMixinFields1[1].Descriptor()
+	// permission.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	permission.DefaultUpdatedAt = permissionDescUpdatedAt.Default.(func() time.Time)
+	// permission.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	permission.UpdateDefaultUpdatedAt = permissionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// permissionDescName is the schema descriptor for name field.
+	permissionDescName := permissionFields[1].Descriptor()
+	// permission.DefaultName holds the default value on creation for the name field.
+	permission.DefaultName = permissionDescName.Default.(string)
+	// permissionDescGroupName is the schema descriptor for group_name field.
+	permissionDescGroupName := permissionFields[2].Descriptor()
+	// permission.DefaultGroupName holds the default value on creation for the group_name field.
+	permission.DefaultGroupName = permissionDescGroupName.Default.(string)
+	// permissionDescSort is the schema descriptor for sort field.
+	permissionDescSort := permissionFields[3].Descriptor()
+	// permission.DefaultSort holds the default value on creation for the sort field.
+	permission.DefaultSort = permissionDescSort.Default.(int32)
+	// permissionDescStatus is the schema descriptor for status field.
+	permissionDescStatus := permissionFields[4].Descriptor()
+	// permission.DefaultStatus holds the default value on creation for the status field.
+	permission.DefaultStatus = permissionDescStatus.Default.(int32)
+	// permissionDescID is the schema descriptor for id field.
+	permissionDescID := permissionMixinFields0[0].Descriptor()
+	// permission.DefaultID holds the default value on creation for the id field.
+	permission.DefaultID = permissionDescID.Default.(func() uuid.UUID)
+	rolepermissionMixin := schema.RolePermission{}.Mixin()
+	rolepermissionMixinFields0 := rolepermissionMixin[0].Fields()
+	_ = rolepermissionMixinFields0
+	rolepermissionMixinFields1 := rolepermissionMixin[1].Fields()
+	_ = rolepermissionMixinFields1
+	rolepermissionFields := schema.RolePermission{}.Fields()
+	_ = rolepermissionFields
+	// rolepermissionDescCreatedAt is the schema descriptor for created_at field.
+	rolepermissionDescCreatedAt := rolepermissionMixinFields1[0].Descriptor()
+	// rolepermission.DefaultCreatedAt holds the default value on creation for the created_at field.
+	rolepermission.DefaultCreatedAt = rolepermissionDescCreatedAt.Default.(func() time.Time)
+	// rolepermissionDescUpdatedAt is the schema descriptor for updated_at field.
+	rolepermissionDescUpdatedAt := rolepermissionMixinFields1[1].Descriptor()
+	// rolepermission.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	rolepermission.DefaultUpdatedAt = rolepermissionDescUpdatedAt.Default.(func() time.Time)
+	// rolepermission.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	rolepermission.UpdateDefaultUpdatedAt = rolepermissionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// rolepermissionDescRole is the schema descriptor for role field.
+	rolepermissionDescRole := rolepermissionFields[0].Descriptor()
+	// rolepermission.DefaultRole holds the default value on creation for the role field.
+	rolepermission.DefaultRole = rolepermissionDescRole.Default.(int32)
+	// rolepermissionDescPermissionCode is the schema descriptor for permission_code field.
+	rolepermissionDescPermissionCode := rolepermissionFields[1].Descriptor()
+	// rolepermission.DefaultPermissionCode holds the default value on creation for the permission_code field.
+	rolepermission.DefaultPermissionCode = rolepermissionDescPermissionCode.Default.(string)
+	// rolepermissionDescStatus is the schema descriptor for status field.
+	rolepermissionDescStatus := rolepermissionFields[2].Descriptor()
+	// rolepermission.DefaultStatus holds the default value on creation for the status field.
+	rolepermission.DefaultStatus = rolepermissionDescStatus.Default.(int32)
+	// rolepermissionDescID is the schema descriptor for id field.
+	rolepermissionDescID := rolepermissionMixinFields0[0].Descriptor()
+	// rolepermission.DefaultID holds the default value on creation for the id field.
+	rolepermission.DefaultID = rolepermissionDescID.Default.(func() uuid.UUID)
+	shopcartMixin := schema.ShopCart{}.Mixin()
+	shopcartMixinFields0 := shopcartMixin[0].Fields()
+	_ = shopcartMixinFields0
+	shopcartMixinFields1 := shopcartMixin[1].Fields()
+	_ = shopcartMixinFields1
+	shopcartFields := schema.ShopCart{}.Fields()
+	_ = shopcartFields
+	// shopcartDescCreatedAt is the schema descriptor for created_at field.
+	shopcartDescCreatedAt := shopcartMixinFields1[0].Descriptor()
+	// shopcart.DefaultCreatedAt holds the default value on creation for the created_at field.
+	shopcart.DefaultCreatedAt = shopcartDescCreatedAt.Default.(func() time.Time)
+	// shopcartDescUpdatedAt is the schema descriptor for updated_at field.
+	shopcartDescUpdatedAt := shopcartMixinFields1[1].Descriptor()
+	// shopcart.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	shopcart.DefaultUpdatedAt = shopcartDescUpdatedAt.Default.(func() time.Time)
+	// shopcart.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	shopcart.UpdateDefaultUpdatedAt = shopcartDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// shopcartDescUserID is the schema descriptor for user_id field.
+	shopcartDescUserID := shopcartFields[0].Descriptor()
+	// shopcart.DefaultUserID holds the default value on creation for the user_id field.
+	shopcart.DefaultUserID = shopcartDescUserID.Default.(string)
+	// shopcartDescGoodsID is the schema descriptor for goods_id field.
+	shopcartDescGoodsID := shopcartFields[1].Descriptor()
+	// shopcart.DefaultGoodsID holds the default value on creation for the goods_id field.
+	shopcart.DefaultGoodsID = shopcartDescGoodsID.Default.(string)
+	// shopcartDescGoodsSn is the schema descriptor for goods_sn field.
+	shopcartDescGoodsSn := shopcartFields[2].Descriptor()
+	// shopcart.DefaultGoodsSn holds the default value on creation for the goods_sn field.
+	shopcart.DefaultGoodsSn = shopcartDescGoodsSn.Default.(string)
+	// shopcartDescGoodsName is the schema descriptor for goods_name field.
+	shopcartDescGoodsName := shopcartFields[3].Descriptor()
+	// shopcart.DefaultGoodsName holds the default value on creation for the goods_name field.
+	shopcart.DefaultGoodsName = shopcartDescGoodsName.Default.(string)
+	// shopcartDescSkuID is the schema descriptor for sku_id field.
+	shopcartDescSkuID := shopcartFields[4].Descriptor()
+	// shopcart.DefaultSkuID holds the default value on creation for the sku_id field.
+	shopcart.DefaultSkuID = shopcartDescSkuID.Default.(string)
+	// shopcartDescGoodsPrice is the schema descriptor for goods_price field.
+	shopcartDescGoodsPrice := shopcartFields[5].Descriptor()
+	// shopcart.DefaultGoodsPrice holds the default value on creation for the goods_price field.
+	shopcart.DefaultGoodsPrice = shopcartDescGoodsPrice.Default.(int64)
+	// shopcartDescGoodsNum is the schema descriptor for goods_num field.
+	shopcartDescGoodsNum := shopcartFields[6].Descriptor()
+	// shopcart.DefaultGoodsNum holds the default value on creation for the goods_num field.
+	shopcart.DefaultGoodsNum = shopcartDescGoodsNum.Default.(int32)
+	// shopcartDescIsSelect is the schema descriptor for is_select field.
+	shopcartDescIsSelect := shopcartFields[7].Descriptor()
+	// shopcart.DefaultIsSelect holds the default value on creation for the is_select field.
+	shopcart.DefaultIsSelect = shopcartDescIsSelect.Default.(bool)
+	// shopcartDescStatus is the schema descriptor for status field.
+	shopcartDescStatus := shopcartFields[8].Descriptor()
+	// shopcart.DefaultStatus holds the default value on creation for the status field.
+	shopcart.DefaultStatus = shopcartDescStatus.Default.(int32)
+	// shopcartDescID is the schema descriptor for id field.
+	shopcartDescID := shopcartMixinFields0[0].Descriptor()
+	// shopcart.DefaultID holds the default value on creation for the id field.
+	shopcart.DefaultID = shopcartDescID.Default.(func() uuid.UUID)
 	todoMixin := schema.Todo{}.Mixin()
 	todoMixinFields0 := todoMixin[0].Fields()
 	_ = todoMixinFields0
@@ -52,4 +824,114 @@ func init() {
 	todoDescID := todoMixinFields0[0].Descriptor()
 	// todo.DefaultID holds the default value on creation for the id field.
 	todo.DefaultID = todoDescID.Default.(func() uuid.UUID)
+	userMixin := schema.User{}.Mixin()
+	userMixinFields0 := userMixin[0].Fields()
+	_ = userMixinFields0
+	userMixinFields1 := userMixin[1].Fields()
+	_ = userMixinFields1
+	userFields := schema.User{}.Fields()
+	_ = userFields
+	// userDescCreatedAt is the schema descriptor for created_at field.
+	userDescCreatedAt := userMixinFields1[0].Descriptor()
+	// user.DefaultCreatedAt holds the default value on creation for the created_at field.
+	user.DefaultCreatedAt = userDescCreatedAt.Default.(func() time.Time)
+	// userDescUpdatedAt is the schema descriptor for updated_at field.
+	userDescUpdatedAt := userMixinFields1[1].Descriptor()
+	// user.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
+	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	user.UpdateDefaultUpdatedAt = userDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userDescUsername is the schema descriptor for username field.
+	userDescUsername := userFields[1].Descriptor()
+	// user.DefaultUsername holds the default value on creation for the username field.
+	user.DefaultUsername = userDescUsername.Default.(string)
+	// userDescPasswordHash is the schema descriptor for password_hash field.
+	userDescPasswordHash := userFields[2].Descriptor()
+	// user.DefaultPasswordHash holds the default value on creation for the password_hash field.
+	user.DefaultPasswordHash = userDescPasswordHash.Default.(string)
+	// userDescNickName is the schema descriptor for nick_name field.
+	userDescNickName := userFields[3].Descriptor()
+	// user.DefaultNickName holds the default value on creation for the nick_name field.
+	user.DefaultNickName = userDescNickName.Default.(string)
+	// userDescBirthday is the schema descriptor for birthday field.
+	userDescBirthday := userFields[4].Descriptor()
+	// user.DefaultBirthday holds the default value on creation for the birthday field.
+	user.DefaultBirthday = userDescBirthday.Default.(int64)
+	// userDescGender is the schema descriptor for gender field.
+	userDescGender := userFields[5].Descriptor()
+	// user.DefaultGender holds the default value on creation for the gender field.
+	user.DefaultGender = userDescGender.Default.(string)
+	// userDescRole is the schema descriptor for role field.
+	userDescRole := userFields[6].Descriptor()
+	// user.DefaultRole holds the default value on creation for the role field.
+	user.DefaultRole = userDescRole.Default.(int32)
+	// userDescStatus is the schema descriptor for status field.
+	userDescStatus := userFields[7].Descriptor()
+	// user.DefaultStatus holds the default value on creation for the status field.
+	user.DefaultStatus = userDescStatus.Default.(int32)
+	// userDescID is the schema descriptor for id field.
+	userDescID := userMixinFields0[0].Descriptor()
+	// user.DefaultID holds the default value on creation for the id field.
+	user.DefaultID = userDescID.Default.(func() uuid.UUID)
+	useraddressMixin := schema.UserAddress{}.Mixin()
+	useraddressMixinFields0 := useraddressMixin[0].Fields()
+	_ = useraddressMixinFields0
+	useraddressMixinFields1 := useraddressMixin[1].Fields()
+	_ = useraddressMixinFields1
+	useraddressFields := schema.UserAddress{}.Fields()
+	_ = useraddressFields
+	// useraddressDescCreatedAt is the schema descriptor for created_at field.
+	useraddressDescCreatedAt := useraddressMixinFields1[0].Descriptor()
+	// useraddress.DefaultCreatedAt holds the default value on creation for the created_at field.
+	useraddress.DefaultCreatedAt = useraddressDescCreatedAt.Default.(func() time.Time)
+	// useraddressDescUpdatedAt is the schema descriptor for updated_at field.
+	useraddressDescUpdatedAt := useraddressMixinFields1[1].Descriptor()
+	// useraddress.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	useraddress.DefaultUpdatedAt = useraddressDescUpdatedAt.Default.(func() time.Time)
+	// useraddress.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	useraddress.UpdateDefaultUpdatedAt = useraddressDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// useraddressDescUserID is the schema descriptor for user_id field.
+	useraddressDescUserID := useraddressFields[0].Descriptor()
+	// useraddress.DefaultUserID holds the default value on creation for the user_id field.
+	useraddress.DefaultUserID = useraddressDescUserID.Default.(string)
+	// useraddressDescName is the schema descriptor for name field.
+	useraddressDescName := useraddressFields[1].Descriptor()
+	// useraddress.DefaultName holds the default value on creation for the name field.
+	useraddress.DefaultName = useraddressDescName.Default.(string)
+	// useraddressDescMobile is the schema descriptor for mobile field.
+	useraddressDescMobile := useraddressFields[2].Descriptor()
+	// useraddress.DefaultMobile holds the default value on creation for the mobile field.
+	useraddress.DefaultMobile = useraddressDescMobile.Default.(string)
+	// useraddressDescProvince is the schema descriptor for province field.
+	useraddressDescProvince := useraddressFields[3].Descriptor()
+	// useraddress.DefaultProvince holds the default value on creation for the province field.
+	useraddress.DefaultProvince = useraddressDescProvince.Default.(string)
+	// useraddressDescCity is the schema descriptor for city field.
+	useraddressDescCity := useraddressFields[4].Descriptor()
+	// useraddress.DefaultCity holds the default value on creation for the city field.
+	useraddress.DefaultCity = useraddressDescCity.Default.(string)
+	// useraddressDescDistricts is the schema descriptor for districts field.
+	useraddressDescDistricts := useraddressFields[5].Descriptor()
+	// useraddress.DefaultDistricts holds the default value on creation for the districts field.
+	useraddress.DefaultDistricts = useraddressDescDistricts.Default.(string)
+	// useraddressDescAddress is the schema descriptor for address field.
+	useraddressDescAddress := useraddressFields[6].Descriptor()
+	// useraddress.DefaultAddress holds the default value on creation for the address field.
+	useraddress.DefaultAddress = useraddressDescAddress.Default.(string)
+	// useraddressDescPostCode is the schema descriptor for post_code field.
+	useraddressDescPostCode := useraddressFields[7].Descriptor()
+	// useraddress.DefaultPostCode holds the default value on creation for the post_code field.
+	useraddress.DefaultPostCode = useraddressDescPostCode.Default.(string)
+	// useraddressDescIsDefault is the schema descriptor for is_default field.
+	useraddressDescIsDefault := useraddressFields[8].Descriptor()
+	// useraddress.DefaultIsDefault holds the default value on creation for the is_default field.
+	useraddress.DefaultIsDefault = useraddressDescIsDefault.Default.(int32)
+	// useraddressDescStatus is the schema descriptor for status field.
+	useraddressDescStatus := useraddressFields[9].Descriptor()
+	// useraddress.DefaultStatus holds the default value on creation for the status field.
+	useraddress.DefaultStatus = useraddressDescStatus.Default.(int32)
+	// useraddressDescID is the schema descriptor for id field.
+	useraddressDescID := useraddressMixinFields0[0].Descriptor()
+	// useraddress.DefaultID holds the default value on creation for the id field.
+	useraddress.DefaultID = useraddressDescID.Default.(func() uuid.UUID)
 }

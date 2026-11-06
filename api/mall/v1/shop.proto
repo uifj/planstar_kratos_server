@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package mall.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "mall/v1/common.proto";
+
+option go_package = "github.com/go-kratos/kratos-layout/api/mall/v1;v1";
+option java_multiple_files = true;
+option java_package = "io.kratos.mall.v1";
+option java_outer_classname = "MallShopProto";
+
+// ShopService is the C-end BFF. It exposes 22 RPCs over both HTTP (:8000) and
+// gRPC (:9000). The owner of a request is always derived from the JWT claims,
+// never from a client-supplied user id.
+service ShopService {
+  rpc Register (RegisterReq) returns (RegisterReply) {
+    option (google.api.http) = {
+      post: "/api/users/register"
+      body: "*"
+    };
+  }
+  rpc RefreshToken (RefreshTokenRequest) returns (RegisterReply) {
+    option (google.api.http) = {
+      post: "/api/users/refresh"
+      body: "*"
+    };
+  }
+  rpc Login (LoginReq) returns (RegisterReply) {
+    option (google.api.http) = {
+      post: "/api/users/login"
+      body: "*"
+    };
+  }
+  rpc Captcha (google.protobuf.Empty) returns (CaptchaReply) {
+    option (google.api.http) = {
+      get: "/api/users/captcha"
+    };
+  }
+  rpc Detail (google.protobuf.Empty) returns (UserDetailResponse) {
+    option (google.api.http) = {
+      get: "/api/users/detail"
+    };
+  }
+  rpc CreateAddress (CreateAddressReq) returns (AddressInfo) {
+    option (google.api.http) = {
+      post: "/api/address/create"
+      body: "*"
+    };
+  }
+  rpc AddressListByUid (google.protobuf.Empty) returns (ListAddressReply) {
+    option (google.api.http) = {
+      get: "/api/address/list/uid"
+    };
+  }
+  rpc UpdateAddress (UpdateAddressReq) returns (CheckResponse) {
+    option (google.api.http) = {
+      put: "/api/address/update"
+      body: "*"
+    };
+  }
+  rpc DefaultAddress (AddressReq) returns (CheckResponse) {
+    option (google.api.http) = {
+      put: "/api/address/default"
+      body: "*"
+    };
+  }
+  rpc DeleteAddress (AddressReq) returns (CheckResponse) {
+    option (google.api.http) = {
+      delete: "/api/address/delete"
+    };
+  }
+  rpc GoodsList (GoodsListRequest) returns (GoodsListReply) {
+    option (google.api.http) = {
+      get: "/api/goods/list"
+    };
+  }
+  rpc GoodsDetail (GoodsDetailRequest) returns (GoodsDetailReply) {
+    option (google.api.http) = {
+      get: "/api/goods/detail"
+    };
+  }
+  rpc CartList (CartListRequest) returns (CartListReply) {
+    option (google.api.http) = {
+      get: "/api/cart/list"
+    };
+  }
+  rpc CartAdd (CartAddRequest) returns (CartItemReply) {
+    option (google.api.http) = {
+      post: "/api/cart/add"
+      body: "*"
+    };
+  }
+  rpc CartUpdate (CartUpdateRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      put: "/api/cart/update"
+      body: "*"
+    };
+  }
+  rpc CartDelete (CartDeleteRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      delete: "/api/cart/delete"
+    };
+  }
+  rpc OrderCreate (OrderCreateRequest) returns (OrderInfoReply) {
+    option (google.api.http) = {
+      post: "/api/order/create"
+      body: "*"
+    };
+  }
+  rpc OrderCancel (OrderCancelRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      post: "/api/order/cancel"
+      body: "*"
+    };
+  }
+  rpc OrderList (OrderListRequest) returns (OrderListReply) {
+    option (google.api.http) = {
+      get: "/api/order/list"
+    };
+  }
+  rpc OrderDetail (OrderDetailRequest) returns (OrderInfoReply) {
+    option (google.api.http) = {
+      get: "/api/order/detail"
+    };
+  }
+  rpc PaymentCreate (PaymentCreateRequest) returns (PaymentInfoReply) {
+    option (google.api.http) = {
+      post: "/api/payment/create"
+      body: "*"
+    };
+  }
+  rpc PaymentMockPay (PaymentMockPayRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      post: "/api/payment/mock-pay"
+      body: "*"
+    };
+  }
+}

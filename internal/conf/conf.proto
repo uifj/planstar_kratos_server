@@ -9,6 +9,44 @@ message Bootstrap {
   Server server = 1;
   Data data = 2;
   Middleware middleware = 3;
+  Mall mall = 4;
+}
+
+// Mall configures the async/event-driven mall infrastructure. Every address
+// is injected through config.yaml so no credential is ever compiled in.
+message Mall {
+  message MQ {
+    string addr = 1;
+    string order_exchange = 2;
+    string inventory_exchange = 3;
+    string payment_exchange = 4;
+    string dlx_exchange = 5;
+    string order_created_queue = 6;
+    string inventory_result_queue = 7;
+    string payment_success_queue = 8;
+    string order_paid_goods_queue = 9;
+    int32 max_retry = 10;
+  }
+  message Search {
+    repeated string addresses = 1;
+    string goods_index = 2;
+  }
+  message Auth {
+    google.protobuf.Duration jwt_expire = 1;
+    string issuer = 2;
+    int32 pbkdf2_iterations = 3;
+  }
+  message Business {
+    google.protobuf.Duration captcha_ttl = 1;
+    google.protobuf.Duration outbox_scan_interval = 2;
+    google.protobuf.Duration order_pay_timeout = 3;
+    google.protobuf.Duration timeout_loop_interval = 4;
+    int32 outbox_batch_size = 5;
+  }
+  MQ mq = 1;
+  Search search = 2;
+  Auth auth = 3;
+  Business business = 4;
 }
 
 // Middleware configures the cross-cutting transport middleware chain.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/go-kratos/kratos-layout/internal/biz"
@@ -101,6 +102,7 @@ func NewMiddlewares(
 	mdOpts := metadataOptions(c)
 	tracerName := orDefault(c.GetTracerName(), defaultServiceName)
 	tracingOpts := []oteltracing.Option{oteltracing.WithTracerName(tracerName)}
+	public := publicSet(c)
 
 	serverMW := make([]middleware.Middleware, 0, 8)
 	if c.GetMetadata() {
@@ -126,7 +128,7 @@ func NewMiddlewares(
 		serverMW = append(serverMW, ratelimit.Server(ratelimit.WithLimiter(limiterAdapter{limiter})))
 	}
 	if c.GetJwt() {
-		serverMW = append(serverMW, authMiddleware(c, keys))
+		serverMW = append(serverMW, authMiddleware(public, keys), injectClaims(), adminOnly(public))
 	}
 	if c.GetValidate() {
 		serverMW = append(serverMW, validate.Validator(validateRequests))
@@ -148,7 +150,7 @@ func NewMiddlewares(
 		streamMW = append(streamMW, recovery.Recovery(recovery.WithLogger(logger)))
 	}
 	if c.GetJwt() {
-		streamMW = append(streamMW, authMiddleware(c, keys))
+		streamMW = append(streamMW, authMiddleware(public, keys), injectClaims(), adminOnly(public))
 	}
 	if c.GetValidate() {
 		streamMW = append(streamMW, validate.Validator(validateRequests))
@@ -184,12 +186,18 @@ func NewMiddlewares(
 	// Use(pattern, ...) applies middleware only to selected canonical
 	// operations. selector.Server(...) does the inverse: it applies JWT to
 	// everything except the configured public allowlist.
-	routes := make([]RouteMiddleware, 0, 1)
+	routes := make([]RouteMiddleware, 0, 3)
 	if c.GetLogging() {
-		routes = append(routes, RouteMiddleware{
-			Pattern:     "/todo.v1.TodoService/*",
-			Middlewares: []middleware.Middleware{audit(logger)},
-		})
+		for _, pattern := range []string{
+			"/todo.v1.TodoService/*",
+			"/mall.v1.ShopService/*",
+			"/mall.v1.AdminService/*",
+		} {
+			routes = append(routes, RouteMiddleware{
+				Pattern:     pattern,
+				Middlewares: []middleware.Middleware{audit(logger)},
+			})
+		}
 	}
 
 	return &Middlewares{
@@ -238,21 +246,78 @@ func metricOptions(meterName string, server bool) ([]otelmetrics.Option, error) 
 	}, nil
 }
 
-// authMiddleware applies JWT only to operations that are not on the public
-// allowlist. selector inspects canonical RPC operations, not HTTP paths.
-func authMiddleware(c *conf.Middleware, keys biz.AuthKeyProvider) middleware.Middleware {
-	jwtMW := kratosjwt.Server(
-		jwtKeyFunc(keys),
-		kratosjwt.WithSigningMethod(jwtv5.SigningMethodHS256),
-		kratosjwt.WithClaims(func() jwtv5.Claims { return &jwtv5.RegisteredClaims{} }),
-	)
+// mallClaims is the JWT-shaped claim struct. It lives in server (not biz) so
+// the domain layer stays free of transport dependencies. data.TokenManager
+// signs tokens using exactly these JSON keys, and injectClaims translates this
+// struct into biz.Claims before the service handler runs.
+type mallClaims struct {
+	ID          string `json:"id"`
+	NickName    string `json:"nick_name"`
+	AuthorityID int32  `json:"authority_id"`
+	jwtv5.RegisteredClaims
+}
+
+// publicSet turns the configured allowlist into a lookup set. Entries are
+// canonical RPC operations such as "/mall.v1.ShopService/Login", not paths.
+func publicSet(c *conf.Middleware) map[string]struct{} {
 	public := make(map[string]struct{}, len(c.GetPublicOperations()))
 	for _, op := range c.GetPublicOperations() {
 		public[op] = struct{}{}
 	}
+	return public
+}
+
+// authMiddleware applies JWT only to operations that are not on the public
+// allowlist. selector inspects canonical RPC operations, not HTTP paths.
+func authMiddleware(public map[string]struct{}, keys biz.AuthKeyProvider) middleware.Middleware {
+	jwtMW := kratosjwt.Server(
+		jwtKeyFunc(keys),
+		kratosjwt.WithSigningMethod(jwtv5.SigningMethodHS256),
+		kratosjwt.WithClaims(func() jwtv5.Claims { return &mallClaims{} }),
+	)
 	return selector.Server(jwtMW).Match(func(_ context.Context, operation string) bool {
 		_, isPublic := public[operation]
 		return !isPublic
+	}).Build()
+}
+
+// injectClaims copies the validated JWT identity into a biz-owned context
+// value. Service handlers then read biz.ClaimsFromContext instead of importing
+// the jwt contrib package, which keeps the DTO -> DO boundary intact.
+func injectClaims() middleware.Middleware {
+	return func(next middleware.Handler) middleware.Handler {
+		return func(ctx context.Context, req any) (any, error) {
+			raw, ok := kratosjwt.FromContext(ctx)
+			if ok {
+				if c, ok := raw.(*mallClaims); ok {
+					ctx = biz.WithClaims(ctx, &biz.Claims{
+						ID:          c.ID,
+						NickName:    c.NickName,
+						AuthorityID: c.AuthorityID,
+					})
+				}
+			}
+			return next(ctx, req)
+		}
+	}
+}
+
+// adminOnly guards every non-public AdminService operation. The four admin
+// auth RPCs are public (they appear in the allowlist) and are excluded by the
+// same matcher used by authMiddleware.
+func adminOnly(public map[string]struct{}) middleware.Middleware {
+	guard := func(next middleware.Handler) middleware.Handler {
+		return func(ctx context.Context, req any) (any, error) {
+			c, ok := biz.ClaimsFromContext(ctx)
+			if !ok || c.AuthorityID != biz.AuthorityAdmin {
+				return nil, biz.ErrPermissionDenied
+			}
+			return next(ctx, req)
+		}
+	}
+	return selector.Server(guard).Match(func(_ context.Context, operation string) bool {
+		_, isPublic := public[operation]
+		return !isPublic && strings.HasPrefix(operation, "/mall.v1.AdminService/")
 	}).Build()
 }
 

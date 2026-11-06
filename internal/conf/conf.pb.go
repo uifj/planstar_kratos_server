@@ -27,6 +27,7 @@ type Bootstrap struct {
 	Server        *Server                `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"`
 	Data          *Data                  `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 	Middleware    *Middleware            `protobuf:"bytes,3,opt,name=middleware,proto3" json:"middleware,omitempty"`
+	Mall          *Mall                  `protobuf:"bytes,4,opt,name=mall,proto3" json:"mall,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -82,6 +83,83 @@ func (x *Bootstrap) GetMiddleware() *Middleware {
 	return nil
 }
 
+func (x *Bootstrap) GetMall() *Mall {
+	if x != nil {
+		return x.Mall
+	}
+	return nil
+}
+
+// Mall configures the async/event-driven mall infrastructure. Every address
+// is injected through config.yaml so no credential is ever compiled in.
+type Mall struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Mq            *Mall_MQ               `protobuf:"bytes,1,opt,name=mq,proto3" json:"mq,omitempty"`
+	Search        *Mall_Search           `protobuf:"bytes,2,opt,name=search,proto3" json:"search,omitempty"`
+	Auth          *Mall_Auth             `protobuf:"bytes,3,opt,name=auth,proto3" json:"auth,omitempty"`
+	Business      *Mall_Business         `protobuf:"bytes,4,opt,name=business,proto3" json:"business,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Mall) Reset() {
+	*x = Mall{}
+	mi := &file_conf_conf_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Mall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Mall) ProtoMessage() {}
+
+func (x *Mall) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_conf_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Mall.ProtoReflect.Descriptor instead.
+func (*Mall) Descriptor() ([]byte, []int) {
+	return file_conf_conf_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Mall) GetMq() *Mall_MQ {
+	if x != nil {
+		return x.Mq
+	}
+	return nil
+}
+
+func (x *Mall) GetSearch() *Mall_Search {
+	if x != nil {
+		return x.Search
+	}
+	return nil
+}
+
+func (x *Mall) GetAuth() *Mall_Auth {
+	if x != nil {
+		return x.Auth
+	}
+	return nil
+}
+
+func (x *Mall) GetBusiness() *Mall_Business {
+	if x != nil {
+		return x.Business
+	}
+	return nil
+}
+
 // Middleware configures the cross-cutting transport middleware chain.
 // Every switch is opt-in: an empty message installs no middleware.
 type Middleware struct {
@@ -120,7 +198,7 @@ type Middleware struct {
 
 func (x *Middleware) Reset() {
 	*x = Middleware{}
-	mi := &file_conf_conf_proto_msgTypes[1]
+	mi := &file_conf_conf_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -132,7 +210,7 @@ func (x *Middleware) String() string {
 func (*Middleware) ProtoMessage() {}
 
 func (x *Middleware) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[1]
+	mi := &file_conf_conf_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -145,7 +223,7 @@ func (x *Middleware) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Middleware.ProtoReflect.Descriptor instead.
 func (*Middleware) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{1}
+	return file_conf_conf_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Middleware) GetLogging() bool {
@@ -277,7 +355,7 @@ type Server struct {
 
 func (x *Server) Reset() {
 	*x = Server{}
-	mi := &file_conf_conf_proto_msgTypes[2]
+	mi := &file_conf_conf_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -289,7 +367,7 @@ func (x *Server) String() string {
 func (*Server) ProtoMessage() {}
 
 func (x *Server) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[2]
+	mi := &file_conf_conf_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -302,7 +380,7 @@ func (x *Server) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Server.ProtoReflect.Descriptor instead.
 func (*Server) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{2}
+	return file_conf_conf_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Server) GetHttp() *Server_HTTP {
@@ -329,7 +407,7 @@ type Data struct {
 
 func (x *Data) Reset() {
 	*x = Data{}
-	mi := &file_conf_conf_proto_msgTypes[3]
+	mi := &file_conf_conf_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -341,7 +419,7 @@ func (x *Data) String() string {
 func (*Data) ProtoMessage() {}
 
 func (x *Data) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[3]
+	mi := &file_conf_conf_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -354,7 +432,7 @@ func (x *Data) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Data.ProtoReflect.Descriptor instead.
 func (*Data) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{3}
+	return file_conf_conf_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Data) GetDatabase() *Data_Database {
@@ -371,6 +449,310 @@ func (x *Data) GetRedis() *Data_Redis {
 	return nil
 }
 
+type Mall_MQ struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Addr                 string                 `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`
+	OrderExchange        string                 `protobuf:"bytes,2,opt,name=order_exchange,json=orderExchange,proto3" json:"order_exchange,omitempty"`
+	InventoryExchange    string                 `protobuf:"bytes,3,opt,name=inventory_exchange,json=inventoryExchange,proto3" json:"inventory_exchange,omitempty"`
+	PaymentExchange      string                 `protobuf:"bytes,4,opt,name=payment_exchange,json=paymentExchange,proto3" json:"payment_exchange,omitempty"`
+	DlxExchange          string                 `protobuf:"bytes,5,opt,name=dlx_exchange,json=dlxExchange,proto3" json:"dlx_exchange,omitempty"`
+	OrderCreatedQueue    string                 `protobuf:"bytes,6,opt,name=order_created_queue,json=orderCreatedQueue,proto3" json:"order_created_queue,omitempty"`
+	InventoryResultQueue string                 `protobuf:"bytes,7,opt,name=inventory_result_queue,json=inventoryResultQueue,proto3" json:"inventory_result_queue,omitempty"`
+	PaymentSuccessQueue  string                 `protobuf:"bytes,8,opt,name=payment_success_queue,json=paymentSuccessQueue,proto3" json:"payment_success_queue,omitempty"`
+	OrderPaidGoodsQueue  string                 `protobuf:"bytes,9,opt,name=order_paid_goods_queue,json=orderPaidGoodsQueue,proto3" json:"order_paid_goods_queue,omitempty"`
+	MaxRetry             int32                  `protobuf:"varint,10,opt,name=max_retry,json=maxRetry,proto3" json:"max_retry,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *Mall_MQ) Reset() {
+	*x = Mall_MQ{}
+	mi := &file_conf_conf_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Mall_MQ) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Mall_MQ) ProtoMessage() {}
+
+func (x *Mall_MQ) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_conf_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Mall_MQ.ProtoReflect.Descriptor instead.
+func (*Mall_MQ) Descriptor() ([]byte, []int) {
+	return file_conf_conf_proto_rawDescGZIP(), []int{1, 0}
+}
+
+func (x *Mall_MQ) GetAddr() string {
+	if x != nil {
+		return x.Addr
+	}
+	return ""
+}
+
+func (x *Mall_MQ) GetOrderExchange() string {
+	if x != nil {
+		return x.OrderExchange
+	}
+	return ""
+}
+
+func (x *Mall_MQ) GetInventoryExchange() string {
+	if x != nil {
+		return x.InventoryExchange
+	}
+	return ""
+}
+
+func (x *Mall_MQ) GetPaymentExchange() string {
+	if x != nil {
+		return x.PaymentExchange
+	}
+	return ""
+}
+
+func (x *Mall_MQ) GetDlxExchange() string {
+	if x != nil {
+		return x.DlxExchange
+	}
+	return ""
+}
+
+func (x *Mall_MQ) GetOrderCreatedQueue() string {
+	if x != nil {
+		return x.OrderCreatedQueue
+	}
+	return ""
+}
+
+func (x *Mall_MQ) GetInventoryResultQueue() string {
+	if x != nil {
+		return x.InventoryResultQueue
+	}
+	return ""
+}
+
+func (x *Mall_MQ) GetPaymentSuccessQueue() string {
+	if x != nil {
+		return x.PaymentSuccessQueue
+	}
+	return ""
+}
+
+func (x *Mall_MQ) GetOrderPaidGoodsQueue() string {
+	if x != nil {
+		return x.OrderPaidGoodsQueue
+	}
+	return ""
+}
+
+func (x *Mall_MQ) GetMaxRetry() int32 {
+	if x != nil {
+		return x.MaxRetry
+	}
+	return 0
+}
+
+type Mall_Search struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Addresses     []string               `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
+	GoodsIndex    string                 `protobuf:"bytes,2,opt,name=goods_index,json=goodsIndex,proto3" json:"goods_index,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Mall_Search) Reset() {
+	*x = Mall_Search{}
+	mi := &file_conf_conf_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Mall_Search) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Mall_Search) ProtoMessage() {}
+
+func (x *Mall_Search) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_conf_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Mall_Search.ProtoReflect.Descriptor instead.
+func (*Mall_Search) Descriptor() ([]byte, []int) {
+	return file_conf_conf_proto_rawDescGZIP(), []int{1, 1}
+}
+
+func (x *Mall_Search) GetAddresses() []string {
+	if x != nil {
+		return x.Addresses
+	}
+	return nil
+}
+
+func (x *Mall_Search) GetGoodsIndex() string {
+	if x != nil {
+		return x.GoodsIndex
+	}
+	return ""
+}
+
+type Mall_Auth struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	JwtExpire        *durationpb.Duration   `protobuf:"bytes,1,opt,name=jwt_expire,json=jwtExpire,proto3" json:"jwt_expire,omitempty"`
+	Issuer           string                 `protobuf:"bytes,2,opt,name=issuer,proto3" json:"issuer,omitempty"`
+	Pbkdf2Iterations int32                  `protobuf:"varint,3,opt,name=pbkdf2_iterations,json=pbkdf2Iterations,proto3" json:"pbkdf2_iterations,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *Mall_Auth) Reset() {
+	*x = Mall_Auth{}
+	mi := &file_conf_conf_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Mall_Auth) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Mall_Auth) ProtoMessage() {}
+
+func (x *Mall_Auth) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_conf_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Mall_Auth.ProtoReflect.Descriptor instead.
+func (*Mall_Auth) Descriptor() ([]byte, []int) {
+	return file_conf_conf_proto_rawDescGZIP(), []int{1, 2}
+}
+
+func (x *Mall_Auth) GetJwtExpire() *durationpb.Duration {
+	if x != nil {
+		return x.JwtExpire
+	}
+	return nil
+}
+
+func (x *Mall_Auth) GetIssuer() string {
+	if x != nil {
+		return x.Issuer
+	}
+	return ""
+}
+
+func (x *Mall_Auth) GetPbkdf2Iterations() int32 {
+	if x != nil {
+		return x.Pbkdf2Iterations
+	}
+	return 0
+}
+
+type Mall_Business struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	CaptchaTtl          *durationpb.Duration   `protobuf:"bytes,1,opt,name=captcha_ttl,json=captchaTtl,proto3" json:"captcha_ttl,omitempty"`
+	OutboxScanInterval  *durationpb.Duration   `protobuf:"bytes,2,opt,name=outbox_scan_interval,json=outboxScanInterval,proto3" json:"outbox_scan_interval,omitempty"`
+	OrderPayTimeout     *durationpb.Duration   `protobuf:"bytes,3,opt,name=order_pay_timeout,json=orderPayTimeout,proto3" json:"order_pay_timeout,omitempty"`
+	TimeoutLoopInterval *durationpb.Duration   `protobuf:"bytes,4,opt,name=timeout_loop_interval,json=timeoutLoopInterval,proto3" json:"timeout_loop_interval,omitempty"`
+	OutboxBatchSize     int32                  `protobuf:"varint,5,opt,name=outbox_batch_size,json=outboxBatchSize,proto3" json:"outbox_batch_size,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *Mall_Business) Reset() {
+	*x = Mall_Business{}
+	mi := &file_conf_conf_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Mall_Business) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Mall_Business) ProtoMessage() {}
+
+func (x *Mall_Business) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_conf_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Mall_Business.ProtoReflect.Descriptor instead.
+func (*Mall_Business) Descriptor() ([]byte, []int) {
+	return file_conf_conf_proto_rawDescGZIP(), []int{1, 3}
+}
+
+func (x *Mall_Business) GetCaptchaTtl() *durationpb.Duration {
+	if x != nil {
+		return x.CaptchaTtl
+	}
+	return nil
+}
+
+func (x *Mall_Business) GetOutboxScanInterval() *durationpb.Duration {
+	if x != nil {
+		return x.OutboxScanInterval
+	}
+	return nil
+}
+
+func (x *Mall_Business) GetOrderPayTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.OrderPayTimeout
+	}
+	return nil
+}
+
+func (x *Mall_Business) GetTimeoutLoopInterval() *durationpb.Duration {
+	if x != nil {
+		return x.TimeoutLoopInterval
+	}
+	return nil
+}
+
+func (x *Mall_Business) GetOutboxBatchSize() int32 {
+	if x != nil {
+		return x.OutboxBatchSize
+	}
+	return 0
+}
+
 type Server_HTTP struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Network       string                 `protobuf:"bytes,1,opt,name=network,proto3" json:"network,omitempty"`
@@ -382,7 +764,7 @@ type Server_HTTP struct {
 
 func (x *Server_HTTP) Reset() {
 	*x = Server_HTTP{}
-	mi := &file_conf_conf_proto_msgTypes[4]
+	mi := &file_conf_conf_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -394,7 +776,7 @@ func (x *Server_HTTP) String() string {
 func (*Server_HTTP) ProtoMessage() {}
 
 func (x *Server_HTTP) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[4]
+	mi := &file_conf_conf_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -407,7 +789,7 @@ func (x *Server_HTTP) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Server_HTTP.ProtoReflect.Descriptor instead.
 func (*Server_HTTP) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{2, 0}
+	return file_conf_conf_proto_rawDescGZIP(), []int{3, 0}
 }
 
 func (x *Server_HTTP) GetNetwork() string {
@@ -442,7 +824,7 @@ type Server_GRPC struct {
 
 func (x *Server_GRPC) Reset() {
 	*x = Server_GRPC{}
-	mi := &file_conf_conf_proto_msgTypes[5]
+	mi := &file_conf_conf_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -454,7 +836,7 @@ func (x *Server_GRPC) String() string {
 func (*Server_GRPC) ProtoMessage() {}
 
 func (x *Server_GRPC) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[5]
+	mi := &file_conf_conf_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -467,7 +849,7 @@ func (x *Server_GRPC) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Server_GRPC.ProtoReflect.Descriptor instead.
 func (*Server_GRPC) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{2, 1}
+	return file_conf_conf_proto_rawDescGZIP(), []int{3, 1}
 }
 
 func (x *Server_GRPC) GetNetwork() string {
@@ -508,7 +890,7 @@ type Data_Database struct {
 
 func (x *Data_Database) Reset() {
 	*x = Data_Database{}
-	mi := &file_conf_conf_proto_msgTypes[6]
+	mi := &file_conf_conf_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -520,7 +902,7 @@ func (x *Data_Database) String() string {
 func (*Data_Database) ProtoMessage() {}
 
 func (x *Data_Database) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[6]
+	mi := &file_conf_conf_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -533,7 +915,7 @@ func (x *Data_Database) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Data_Database.ProtoReflect.Descriptor instead.
 func (*Data_Database) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{3, 0}
+	return file_conf_conf_proto_rawDescGZIP(), []int{4, 0}
 }
 
 func (x *Data_Database) GetDriver() string {
@@ -576,7 +958,7 @@ type Data_Redis struct {
 
 func (x *Data_Redis) Reset() {
 	*x = Data_Redis{}
-	mi := &file_conf_conf_proto_msgTypes[7]
+	mi := &file_conf_conf_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -588,7 +970,7 @@ func (x *Data_Redis) String() string {
 func (*Data_Redis) ProtoMessage() {}
 
 func (x *Data_Redis) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[7]
+	mi := &file_conf_conf_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -601,7 +983,7 @@ func (x *Data_Redis) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Data_Redis.ProtoReflect.Descriptor instead.
 func (*Data_Redis) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{3, 1}
+	return file_conf_conf_proto_rawDescGZIP(), []int{4, 1}
 }
 
 func (x *Data_Redis) GetNetwork() string {
@@ -637,13 +1019,47 @@ var File_conf_conf_proto protoreflect.FileDescriptor
 const file_conf_conf_proto_rawDesc = "" +
 	"\n" +
 	"\x0fconf/conf.proto\x12\n" +
-	"kratos.api\x1a\x1egoogle/protobuf/duration.proto\"\x95\x01\n" +
+	"kratos.api\x1a\x1egoogle/protobuf/duration.proto\"\xbb\x01\n" +
 	"\tBootstrap\x12*\n" +
 	"\x06server\x18\x01 \x01(\v2\x12.kratos.api.ServerR\x06server\x12$\n" +
 	"\x04data\x18\x02 \x01(\v2\x10.kratos.api.DataR\x04data\x126\n" +
 	"\n" +
 	"middleware\x18\x03 \x01(\v2\x16.kratos.api.MiddlewareR\n" +
-	"middleware\"\xc3\x04\n" +
+	"middleware\x12$\n" +
+	"\x04mall\x18\x04 \x01(\v2\x10.kratos.api.MallR\x04mall\"\x92\t\n" +
+	"\x04Mall\x12#\n" +
+	"\x02mq\x18\x01 \x01(\v2\x13.kratos.api.Mall.MQR\x02mq\x12/\n" +
+	"\x06search\x18\x02 \x01(\v2\x17.kratos.api.Mall.SearchR\x06search\x12)\n" +
+	"\x04auth\x18\x03 \x01(\v2\x15.kratos.api.Mall.AuthR\x04auth\x125\n" +
+	"\bbusiness\x18\x04 \x01(\v2\x19.kratos.api.Mall.BusinessR\bbusiness\x1a\xa8\x03\n" +
+	"\x02MQ\x12\x12\n" +
+	"\x04addr\x18\x01 \x01(\tR\x04addr\x12%\n" +
+	"\x0eorder_exchange\x18\x02 \x01(\tR\rorderExchange\x12-\n" +
+	"\x12inventory_exchange\x18\x03 \x01(\tR\x11inventoryExchange\x12)\n" +
+	"\x10payment_exchange\x18\x04 \x01(\tR\x0fpaymentExchange\x12!\n" +
+	"\fdlx_exchange\x18\x05 \x01(\tR\vdlxExchange\x12.\n" +
+	"\x13order_created_queue\x18\x06 \x01(\tR\x11orderCreatedQueue\x124\n" +
+	"\x16inventory_result_queue\x18\a \x01(\tR\x14inventoryResultQueue\x122\n" +
+	"\x15payment_success_queue\x18\b \x01(\tR\x13paymentSuccessQueue\x123\n" +
+	"\x16order_paid_goods_queue\x18\t \x01(\tR\x13orderPaidGoodsQueue\x12\x1b\n" +
+	"\tmax_retry\x18\n" +
+	" \x01(\x05R\bmaxRetry\x1aG\n" +
+	"\x06Search\x12\x1c\n" +
+	"\taddresses\x18\x01 \x03(\tR\taddresses\x12\x1f\n" +
+	"\vgoods_index\x18\x02 \x01(\tR\n" +
+	"goodsIndex\x1a\x85\x01\n" +
+	"\x04Auth\x128\n" +
+	"\n" +
+	"jwt_expire\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\tjwtExpire\x12\x16\n" +
+	"\x06issuer\x18\x02 \x01(\tR\x06issuer\x12+\n" +
+	"\x11pbkdf2_iterations\x18\x03 \x01(\x05R\x10pbkdf2Iterations\x1a\xd5\x02\n" +
+	"\bBusiness\x12:\n" +
+	"\vcaptcha_ttl\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\n" +
+	"captchaTtl\x12K\n" +
+	"\x14outbox_scan_interval\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x12outboxScanInterval\x12E\n" +
+	"\x11order_pay_timeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\x0forderPayTimeout\x12M\n" +
+	"\x15timeout_loop_interval\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\x13timeoutLoopInterval\x12*\n" +
+	"\x11outbox_batch_size\x18\x05 \x01(\x05R\x0foutboxBatchSize\"\xc3\x04\n" +
 	"\n" +
 	"Middleware\x12\x18\n" +
 	"\alogging\x18\x01 \x01(\bR\alogging\x12\x1a\n" +
@@ -705,35 +1121,50 @@ func file_conf_conf_proto_rawDescGZIP() []byte {
 	return file_conf_conf_proto_rawDescData
 }
 
-var file_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_conf_conf_proto_goTypes = []any{
 	(*Bootstrap)(nil),           // 0: kratos.api.Bootstrap
-	(*Middleware)(nil),          // 1: kratos.api.Middleware
-	(*Server)(nil),              // 2: kratos.api.Server
-	(*Data)(nil),                // 3: kratos.api.Data
-	(*Server_HTTP)(nil),         // 4: kratos.api.Server.HTTP
-	(*Server_GRPC)(nil),         // 5: kratos.api.Server.GRPC
-	(*Data_Database)(nil),       // 6: kratos.api.Data.Database
-	(*Data_Redis)(nil),          // 7: kratos.api.Data.Redis
-	(*durationpb.Duration)(nil), // 8: google.protobuf.Duration
+	(*Mall)(nil),                // 1: kratos.api.Mall
+	(*Middleware)(nil),          // 2: kratos.api.Middleware
+	(*Server)(nil),              // 3: kratos.api.Server
+	(*Data)(nil),                // 4: kratos.api.Data
+	(*Mall_MQ)(nil),             // 5: kratos.api.Mall.MQ
+	(*Mall_Search)(nil),         // 6: kratos.api.Mall.Search
+	(*Mall_Auth)(nil),           // 7: kratos.api.Mall.Auth
+	(*Mall_Business)(nil),       // 8: kratos.api.Mall.Business
+	(*Server_HTTP)(nil),         // 9: kratos.api.Server.HTTP
+	(*Server_GRPC)(nil),         // 10: kratos.api.Server.GRPC
+	(*Data_Database)(nil),       // 11: kratos.api.Data.Database
+	(*Data_Redis)(nil),          // 12: kratos.api.Data.Redis
+	(*durationpb.Duration)(nil), // 13: google.protobuf.Duration
 }
 var file_conf_conf_proto_depIdxs = []int32{
-	2,  // 0: kratos.api.Bootstrap.server:type_name -> kratos.api.Server
-	3,  // 1: kratos.api.Bootstrap.data:type_name -> kratos.api.Data
-	1,  // 2: kratos.api.Bootstrap.middleware:type_name -> kratos.api.Middleware
-	4,  // 3: kratos.api.Server.http:type_name -> kratos.api.Server.HTTP
-	5,  // 4: kratos.api.Server.grpc:type_name -> kratos.api.Server.GRPC
-	6,  // 5: kratos.api.Data.database:type_name -> kratos.api.Data.Database
-	7,  // 6: kratos.api.Data.redis:type_name -> kratos.api.Data.Redis
-	8,  // 7: kratos.api.Server.HTTP.timeout:type_name -> google.protobuf.Duration
-	8,  // 8: kratos.api.Server.GRPC.timeout:type_name -> google.protobuf.Duration
-	8,  // 9: kratos.api.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
-	8,  // 10: kratos.api.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	3,  // 0: kratos.api.Bootstrap.server:type_name -> kratos.api.Server
+	4,  // 1: kratos.api.Bootstrap.data:type_name -> kratos.api.Data
+	2,  // 2: kratos.api.Bootstrap.middleware:type_name -> kratos.api.Middleware
+	1,  // 3: kratos.api.Bootstrap.mall:type_name -> kratos.api.Mall
+	5,  // 4: kratos.api.Mall.mq:type_name -> kratos.api.Mall.MQ
+	6,  // 5: kratos.api.Mall.search:type_name -> kratos.api.Mall.Search
+	7,  // 6: kratos.api.Mall.auth:type_name -> kratos.api.Mall.Auth
+	8,  // 7: kratos.api.Mall.business:type_name -> kratos.api.Mall.Business
+	9,  // 8: kratos.api.Server.http:type_name -> kratos.api.Server.HTTP
+	10, // 9: kratos.api.Server.grpc:type_name -> kratos.api.Server.GRPC
+	11, // 10: kratos.api.Data.database:type_name -> kratos.api.Data.Database
+	12, // 11: kratos.api.Data.redis:type_name -> kratos.api.Data.Redis
+	13, // 12: kratos.api.Mall.Auth.jwt_expire:type_name -> google.protobuf.Duration
+	13, // 13: kratos.api.Mall.Business.captcha_ttl:type_name -> google.protobuf.Duration
+	13, // 14: kratos.api.Mall.Business.outbox_scan_interval:type_name -> google.protobuf.Duration
+	13, // 15: kratos.api.Mall.Business.order_pay_timeout:type_name -> google.protobuf.Duration
+	13, // 16: kratos.api.Mall.Business.timeout_loop_interval:type_name -> google.protobuf.Duration
+	13, // 17: kratos.api.Server.HTTP.timeout:type_name -> google.protobuf.Duration
+	13, // 18: kratos.api.Server.GRPC.timeout:type_name -> google.protobuf.Duration
+	13, // 19: kratos.api.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
+	13, // 20: kratos.api.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
+	21, // [21:21] is the sub-list for method output_type
+	21, // [21:21] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_conf_conf_proto_init() }
@@ -747,7 +1178,7 @@ func file_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_conf_conf_proto_rawDesc), len(file_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

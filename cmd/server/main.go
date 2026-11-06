@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log/slog"
 	"os"
+	"time"
 
+	"github.com/go-kratos/kratos-layout/internal/biz"
 	"github.com/go-kratos/kratos-layout/internal/conf"
+	"github.com/go-kratos/kratos-layout/internal/mq"
 
 	"github.com/go-kratos/kratos/contrib/otel/v3/tracing"
 	"github.com/go-kratos/kratos/v3"
@@ -35,17 +39,32 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger *slog.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
+func newApp(
+	logger *slog.Logger,
+	gs *grpc.Server,
+	hs *http.Server,
+	mqServer *mq.Server,
+	goods *biz.GoodsUsecase,
+) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
 		kratos.Version(Version),
 		kratos.Metadata(map[string]string{}),
 		kratos.Logger(logger),
-		kratos.Server(
-			gs,
-			hs,
-		),
+		// kratos.Server replaces the full list: HTTP, gRPC and the MQ adapter
+		// must be passed in one call.
+		kratos.Server(gs, hs, mqServer),
+		// Build the ES goods index before traffic arrives. A missing ES node
+		// degrades to the SQL fallback in GoodsUsecase.List instead of
+		// preventing the whole application from booting.
+		kratos.BeforeStart(func(ctx context.Context) error {
+			if err := goods.EnsureIndex(ctx); err != nil {
+				logger.Warn("elasticsearch bootstrap failed; SQL fallback active", "err", err)
+			}
+			return nil
+		}),
+		kratos.StopTimeout(15*time.Second),
 	)
 }
 
@@ -80,7 +99,7 @@ func main() {
 		panic(err)
 	}
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Middleware, logger)
+	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Middleware, bc.Mall, logger)
 	if err != nil {
 		panic(err)
 	}

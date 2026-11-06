@@ -97,6 +97,27 @@ design rather than add the import.
 - Construct HTTP/gRPC servers, apply middleware, register services. No
   translation, no business logic.
 
+### Async / event-driven extension
+
+The mall adds one extra directory, `internal/mq/`, for the RabbitMQ
+adapter. The async path carries **domain events (DO), never DTOs**, so the
+DTO → DO → PO arrows above are unchanged and never crossed backwards.
+
+- `internal/mq/` owns the AMQP connection, exchange/queue topology, the
+  transactional-outbox relay, the consumers (retry + DLX) and a
+  `transport.Server` implementation so the loops start and stop with
+  `kratos.App`.
+- `biz` declares pure Go outbound ports (`EventPublisher`, `StockCache`,
+  `CaptchaStore`, `GoodsSearch`, `TokenManager`) and inbound handler ports.
+  It never imports amqp, redis, elastic or ent.
+- `data` implements those ports with the long-lived clients it already owns
+  (MySQL via Ent, Redis, Elasticsearch) and keeps all POs here.
+- `service` implements the inbound event handlers: it receives an already
+  decoded `*biz.DomainEvent` and calls usecases. Like every other service
+  file, it never imports amqp, redis or elastic.
+- `cmd` remains the only Wire assembly point; the MQ server is passed to
+  `kratos.Server(...)` alongside the HTTP and gRPC servers in one call.
+
 ### Add-a-resource checklist
 
 1. **DTO**: define `Create<Resource>` / `Get<Resource>` /

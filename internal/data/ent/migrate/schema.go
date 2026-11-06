@@ -8,6 +8,551 @@ import (
 )
 
 var (
+	// BrandsColumns holds the columns for the "brands" table.
+	BrandsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Default: ""},
+		{Name: "logo", Type: field.TypeString, Default: ""},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+	}
+	// BrandsTable holds the schema information for the "brands" table.
+	BrandsTable = &schema.Table{
+		Name:       "brands",
+		Columns:    BrandsColumns,
+		PrimaryKey: []*schema.Column{BrandsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "brand_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{BrandsColumns[2]},
+			},
+			{
+				Name:    "brand_status",
+				Unique:  false,
+				Columns: []*schema.Column{BrandsColumns[5]},
+			},
+		},
+	}
+	// CategoriesColumns holds the columns for the "categories" table.
+	CategoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Default: ""},
+		{Name: "parent_category", Type: field.TypeString, Default: ""},
+		{Name: "level", Type: field.TypeInt32, Default: 1},
+		{Name: "sort", Type: field.TypeInt32, Default: 0},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+	}
+	// CategoriesTable holds the schema information for the "categories" table.
+	CategoriesTable = &schema.Table{
+		Name:       "categories",
+		Columns:    CategoriesColumns,
+		PrimaryKey: []*schema.Column{CategoriesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "category_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{CategoriesColumns[2]},
+			},
+			{
+				Name:    "category_parent_category",
+				Unique:  false,
+				Columns: []*schema.Column{CategoriesColumns[4]},
+			},
+		},
+	}
+	// ConsumedEventsColumns holds the columns for the "consumed_events" table.
+	ConsumedEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "event_id", Type: field.TypeString, Default: ""},
+		{Name: "consumer", Type: field.TypeString, Default: ""},
+	}
+	// ConsumedEventsTable holds the schema information for the "consumed_events" table.
+	ConsumedEventsTable = &schema.Table{
+		Name:       "consumed_events",
+		Columns:    ConsumedEventsColumns,
+		PrimaryKey: []*schema.Column{ConsumedEventsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "consumedevent_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{ConsumedEventsColumns[2]},
+			},
+			{
+				Name:    "consumedevent_event_id_consumer",
+				Unique:  true,
+				Columns: []*schema.Column{ConsumedEventsColumns[3], ConsumedEventsColumns[4]},
+			},
+		},
+	}
+	// GoodsColumns holds the columns for the "goods" table.
+	GoodsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "category_id", Type: field.TypeString, Default: ""},
+		{Name: "brand_id", Type: field.TypeString, Default: ""},
+		{Name: "type_id", Type: field.TypeString, Default: ""},
+		{Name: "name", Type: field.TypeString, Default: ""},
+		{Name: "name_alias", Type: field.TypeString, Default: ""},
+		{Name: "goods_sn", Type: field.TypeString, Unique: true},
+		{Name: "goods_brief", Type: field.TypeString, Size: 2147483647, Default: ""},
+		{Name: "goods_front_image", Type: field.TypeString, Default: ""},
+		{Name: "market_price", Type: field.TypeInt64, Default: 0},
+		{Name: "on_sale", Type: field.TypeBool, Default: false},
+		{Name: "ship_free", Type: field.TypeBool, Default: false},
+		{Name: "is_new", Type: field.TypeBool, Default: false},
+		{Name: "is_hot", Type: field.TypeBool, Default: false},
+		{Name: "sold_num", Type: field.TypeInt64, Default: 0},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+	}
+	// GoodsTable holds the schema information for the "goods" table.
+	GoodsTable = &schema.Table{
+		Name:       "goods",
+		Columns:    GoodsColumns,
+		PrimaryKey: []*schema.Column{GoodsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "goods_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{GoodsColumns[2]},
+			},
+			{
+				Name:    "goods_category_id",
+				Unique:  false,
+				Columns: []*schema.Column{GoodsColumns[3]},
+			},
+			{
+				Name:    "goods_brand_id",
+				Unique:  false,
+				Columns: []*schema.Column{GoodsColumns[4]},
+			},
+			{
+				Name:    "goods_status",
+				Unique:  false,
+				Columns: []*schema.Column{GoodsColumns[17]},
+			},
+		},
+	}
+	// GoodsImagesColumns holds the columns for the "goods_images" table.
+	GoodsImagesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "goods_id", Type: field.TypeString, Default: ""},
+		{Name: "url", Type: field.TypeString, Default: ""},
+		{Name: "position", Type: field.TypeInt32, Default: 0},
+		{Name: "is_master", Type: field.TypeBool, Default: false},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+	}
+	// GoodsImagesTable holds the schema information for the "goods_images" table.
+	GoodsImagesTable = &schema.Table{
+		Name:       "goods_images",
+		Columns:    GoodsImagesColumns,
+		PrimaryKey: []*schema.Column{GoodsImagesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "goodsimage_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{GoodsImagesColumns[2]},
+			},
+			{
+				Name:    "goodsimage_goods_id",
+				Unique:  false,
+				Columns: []*schema.Column{GoodsImagesColumns[3]},
+			},
+		},
+	}
+	// GoodsSkusColumns holds the columns for the "goods_skus" table.
+	GoodsSkusColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "goods_id", Type: field.TypeString, Default: ""},
+		{Name: "sku_name", Type: field.TypeString, Default: ""},
+		{Name: "sku_code", Type: field.TypeString, Unique: true},
+		{Name: "bar_code", Type: field.TypeString, Default: ""},
+		{Name: "price", Type: field.TypeInt64, Default: 0},
+		{Name: "promotion_price", Type: field.TypeInt64, Default: 0},
+		{Name: "inventory", Type: field.TypeInt64, Default: 0},
+		{Name: "on_sale", Type: field.TypeBool, Default: false},
+		{Name: "pic", Type: field.TypeString, Default: ""},
+		{Name: "specs", Type: field.TypeJSON, Nullable: true},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+	}
+	// GoodsSkusTable holds the schema information for the "goods_skus" table.
+	GoodsSkusTable = &schema.Table{
+		Name:       "goods_skus",
+		Columns:    GoodsSkusColumns,
+		PrimaryKey: []*schema.Column{GoodsSkusColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "goodssku_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{GoodsSkusColumns[2]},
+			},
+			{
+				Name:    "goodssku_goods_id",
+				Unique:  false,
+				Columns: []*schema.Column{GoodsSkusColumns[3]},
+			},
+		},
+	}
+	// InventoriesColumns holds the columns for the "inventories" table.
+	InventoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "sku_id", Type: field.TypeString, Unique: true},
+		{Name: "total", Type: field.TypeInt64, Default: 0},
+		{Name: "locked", Type: field.TypeInt64, Default: 0},
+		{Name: "sold", Type: field.TypeInt64, Default: 0},
+		{Name: "version", Type: field.TypeInt64, Default: 0},
+	}
+	// InventoriesTable holds the schema information for the "inventories" table.
+	InventoriesTable = &schema.Table{
+		Name:       "inventories",
+		Columns:    InventoriesColumns,
+		PrimaryKey: []*schema.Column{InventoriesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "inventory_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{InventoriesColumns[2]},
+			},
+		},
+	}
+	// InventoryFlowsColumns holds the columns for the "inventory_flows" table.
+	InventoryFlowsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "sku_id", Type: field.TypeString, Default: ""},
+		{Name: "order_sn", Type: field.TypeString, Default: ""},
+		{Name: "num", Type: field.TypeInt32, Default: 0},
+		{Name: "flow_type", Type: field.TypeInt32, Default: 0},
+	}
+	// InventoryFlowsTable holds the schema information for the "inventory_flows" table.
+	InventoryFlowsTable = &schema.Table{
+		Name:       "inventory_flows",
+		Columns:    InventoryFlowsColumns,
+		PrimaryKey: []*schema.Column{InventoryFlowsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "inventoryflow_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryFlowsColumns[2]},
+			},
+			{
+				Name:    "inventoryflow_sku_id",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryFlowsColumns[3]},
+			},
+			{
+				Name:    "inventoryflow_order_sn",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryFlowsColumns[4]},
+			},
+		},
+	}
+	// InventoryLocksColumns holds the columns for the "inventory_locks" table.
+	InventoryLocksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "order_sn", Type: field.TypeString, Default: ""},
+		{Name: "sku_id", Type: field.TypeString, Default: ""},
+		{Name: "num", Type: field.TypeInt32, Default: 0},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+	}
+	// InventoryLocksTable holds the schema information for the "inventory_locks" table.
+	InventoryLocksTable = &schema.Table{
+		Name:       "inventory_locks",
+		Columns:    InventoryLocksColumns,
+		PrimaryKey: []*schema.Column{InventoryLocksColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "inventorylock_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryLocksColumns[2]},
+			},
+			{
+				Name:    "inventorylock_order_sn_sku_id",
+				Unique:  true,
+				Columns: []*schema.Column{InventoryLocksColumns[3], InventoryLocksColumns[4]},
+			},
+		},
+	}
+	// OrdersColumns holds the columns for the "orders" table.
+	OrdersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "user_id", Type: field.TypeString, Default: ""},
+		{Name: "order_sn", Type: field.TypeString, Unique: true},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+		{Name: "post", Type: field.TypeString, Default: ""},
+		{Name: "total", Type: field.TypeInt64, Default: 0},
+		{Name: "address", Type: field.TypeString, Default: ""},
+		{Name: "name", Type: field.TypeString, Default: ""},
+		{Name: "mobile", Type: field.TypeString, Default: ""},
+		{Name: "add_time", Type: field.TypeInt64, Default: 0},
+		{Name: "pay_time", Type: field.TypeInt64, Default: 0},
+	}
+	// OrdersTable holds the schema information for the "orders" table.
+	OrdersTable = &schema.Table{
+		Name:       "orders",
+		Columns:    OrdersColumns,
+		PrimaryKey: []*schema.Column{OrdersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "order_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{OrdersColumns[2]},
+			},
+			{
+				Name:    "order_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrdersColumns[3]},
+			},
+			{
+				Name:    "order_status_add_time",
+				Unique:  false,
+				Columns: []*schema.Column{OrdersColumns[5], OrdersColumns[11]},
+			},
+		},
+	}
+	// OrderAddressesColumns holds the columns for the "order_addresses" table.
+	OrderAddressesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "order_id", Type: field.TypeString, Default: ""},
+		{Name: "name", Type: field.TypeString, Default: ""},
+		{Name: "mobile", Type: field.TypeString, Default: ""},
+		{Name: "province", Type: field.TypeString, Default: ""},
+		{Name: "city", Type: field.TypeString, Default: ""},
+		{Name: "districts", Type: field.TypeString, Default: ""},
+		{Name: "address", Type: field.TypeString, Default: ""},
+		{Name: "post_code", Type: field.TypeString, Default: ""},
+	}
+	// OrderAddressesTable holds the schema information for the "order_addresses" table.
+	OrderAddressesTable = &schema.Table{
+		Name:       "order_addresses",
+		Columns:    OrderAddressesColumns,
+		PrimaryKey: []*schema.Column{OrderAddressesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "orderaddress_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{OrderAddressesColumns[2]},
+			},
+			{
+				Name:    "orderaddress_order_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrderAddressesColumns[3]},
+			},
+		},
+	}
+	// OrderEventOutboxesColumns holds the columns for the "order_event_outboxes" table.
+	OrderEventOutboxesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "event_id", Type: field.TypeString, Unique: true},
+		{Name: "event_type", Type: field.TypeString, Default: ""},
+		{Name: "order_sn", Type: field.TypeString, Default: ""},
+		{Name: "payload", Type: field.TypeString, Size: 2147483647, Default: ""},
+		{Name: "status", Type: field.TypeInt32, Default: 0},
+		{Name: "retry_count", Type: field.TypeInt32, Default: 0},
+	}
+	// OrderEventOutboxesTable holds the schema information for the "order_event_outboxes" table.
+	OrderEventOutboxesTable = &schema.Table{
+		Name:       "order_event_outboxes",
+		Columns:    OrderEventOutboxesColumns,
+		PrimaryKey: []*schema.Column{OrderEventOutboxesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ordereventoutbox_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{OrderEventOutboxesColumns[2]},
+			},
+			{
+				Name:    "ordereventoutbox_status_retry_count",
+				Unique:  false,
+				Columns: []*schema.Column{OrderEventOutboxesColumns[7], OrderEventOutboxesColumns[8]},
+			},
+		},
+	}
+	// OrderGoodsColumns holds the columns for the "order_goods" table.
+	OrderGoodsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "order_id", Type: field.TypeString, Default: ""},
+		{Name: "sku_id", Type: field.TypeString, Default: ""},
+		{Name: "sku_name", Type: field.TypeString, Default: ""},
+		{Name: "sku_price", Type: field.TypeInt64, Default: 0},
+		{Name: "num", Type: field.TypeInt32, Default: 0},
+		{Name: "total_price", Type: field.TypeInt64, Default: 0},
+	}
+	// OrderGoodsTable holds the schema information for the "order_goods" table.
+	OrderGoodsTable = &schema.Table{
+		Name:       "order_goods",
+		Columns:    OrderGoodsColumns,
+		PrimaryKey: []*schema.Column{OrderGoodsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ordergoods_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{OrderGoodsColumns[2]},
+			},
+			{
+				Name:    "ordergoods_order_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrderGoodsColumns[3]},
+			},
+			{
+				Name:    "ordergoods_sku_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrderGoodsColumns[4]},
+			},
+		},
+	}
+	// PaymentsColumns holds the columns for the "payments" table.
+	PaymentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "payment_no", Type: field.TypeString, Unique: true},
+		{Name: "order_sn", Type: field.TypeString, Default: ""},
+		{Name: "user_id", Type: field.TypeString, Default: ""},
+		{Name: "amount", Type: field.TypeInt64, Default: 0},
+		{Name: "channel", Type: field.TypeString, Default: ""},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+	}
+	// PaymentsTable holds the schema information for the "payments" table.
+	PaymentsTable = &schema.Table{
+		Name:       "payments",
+		Columns:    PaymentsColumns,
+		PrimaryKey: []*schema.Column{PaymentsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "payment_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{PaymentsColumns[2]},
+			},
+			{
+				Name:    "payment_order_sn",
+				Unique:  false,
+				Columns: []*schema.Column{PaymentsColumns[4]},
+			},
+			{
+				Name:    "payment_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{PaymentsColumns[5]},
+			},
+		},
+	}
+	// PermissionsColumns holds the columns for the "permissions" table.
+	PermissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "code", Type: field.TypeString, Unique: true},
+		{Name: "name", Type: field.TypeString, Default: ""},
+		{Name: "group_name", Type: field.TypeString, Default: ""},
+		{Name: "sort", Type: field.TypeInt32, Default: 0},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+	}
+	// PermissionsTable holds the schema information for the "permissions" table.
+	PermissionsTable = &schema.Table{
+		Name:       "permissions",
+		Columns:    PermissionsColumns,
+		PrimaryKey: []*schema.Column{PermissionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "permission_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{PermissionsColumns[2]},
+			},
+			{
+				Name:    "permission_group_name",
+				Unique:  false,
+				Columns: []*schema.Column{PermissionsColumns[5]},
+			},
+		},
+	}
+	// RolePermissionsColumns holds the columns for the "role_permissions" table.
+	RolePermissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "role", Type: field.TypeInt32, Default: 1},
+		{Name: "permission_code", Type: field.TypeString, Default: ""},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+	}
+	// RolePermissionsTable holds the schema information for the "role_permissions" table.
+	RolePermissionsTable = &schema.Table{
+		Name:       "role_permissions",
+		Columns:    RolePermissionsColumns,
+		PrimaryKey: []*schema.Column{RolePermissionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "rolepermission_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{RolePermissionsColumns[2]},
+			},
+			{
+				Name:    "rolepermission_role_permission_code",
+				Unique:  true,
+				Columns: []*schema.Column{RolePermissionsColumns[3], RolePermissionsColumns[4]},
+			},
+		},
+	}
+	// ShopCartsColumns holds the columns for the "shop_carts" table.
+	ShopCartsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "user_id", Type: field.TypeString, Default: ""},
+		{Name: "goods_id", Type: field.TypeString, Default: ""},
+		{Name: "goods_sn", Type: field.TypeString, Default: ""},
+		{Name: "goods_name", Type: field.TypeString, Default: ""},
+		{Name: "sku_id", Type: field.TypeString, Default: ""},
+		{Name: "goods_price", Type: field.TypeInt64, Default: 0},
+		{Name: "goods_num", Type: field.TypeInt32, Default: 0},
+		{Name: "is_select", Type: field.TypeBool, Default: true},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+	}
+	// ShopCartsTable holds the schema information for the "shop_carts" table.
+	ShopCartsTable = &schema.Table{
+		Name:       "shop_carts",
+		Columns:    ShopCartsColumns,
+		PrimaryKey: []*schema.Column{ShopCartsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "shopcart_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{ShopCartsColumns[2]},
+			},
+			{
+				Name:    "shopcart_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{ShopCartsColumns[3]},
+			},
+			{
+				Name:    "shopcart_user_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ShopCartsColumns[3], ShopCartsColumns[11]},
+			},
+		},
+	}
 	// TodosColumns holds the columns for the "todos" table.
 	TodosColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -36,9 +581,104 @@ var (
 			},
 		},
 	}
+	// UsersColumns holds the columns for the "users" table.
+	UsersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "mobile", Type: field.TypeString, Unique: true},
+		{Name: "username", Type: field.TypeString, Default: ""},
+		{Name: "password_hash", Type: field.TypeString, Default: ""},
+		{Name: "nick_name", Type: field.TypeString, Default: ""},
+		{Name: "birthday", Type: field.TypeInt64, Default: 0},
+		{Name: "gender", Type: field.TypeString, Default: ""},
+		{Name: "role", Type: field.TypeInt32, Default: 1},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+	}
+	// UsersTable holds the schema information for the "users" table.
+	UsersTable = &schema.Table{
+		Name:       "users",
+		Columns:    UsersColumns,
+		PrimaryKey: []*schema.Column{UsersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "user_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{UsersColumns[2]},
+			},
+			{
+				Name:    "user_role",
+				Unique:  false,
+				Columns: []*schema.Column{UsersColumns[9]},
+			},
+			{
+				Name:    "user_status",
+				Unique:  false,
+				Columns: []*schema.Column{UsersColumns[10]},
+			},
+		},
+	}
+	// UserAddressesColumns holds the columns for the "user_addresses" table.
+	UserAddressesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "user_id", Type: field.TypeString, Default: ""},
+		{Name: "name", Type: field.TypeString, Default: ""},
+		{Name: "mobile", Type: field.TypeString, Default: ""},
+		{Name: "province", Type: field.TypeString, Default: ""},
+		{Name: "city", Type: field.TypeString, Default: ""},
+		{Name: "districts", Type: field.TypeString, Default: ""},
+		{Name: "address", Type: field.TypeString, Default: ""},
+		{Name: "post_code", Type: field.TypeString, Default: ""},
+		{Name: "is_default", Type: field.TypeInt32, Default: 0},
+		{Name: "status", Type: field.TypeInt32, Default: 1},
+	}
+	// UserAddressesTable holds the schema information for the "user_addresses" table.
+	UserAddressesTable = &schema.Table{
+		Name:       "user_addresses",
+		Columns:    UserAddressesColumns,
+		PrimaryKey: []*schema.Column{UserAddressesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "useraddress_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{UserAddressesColumns[2]},
+			},
+			{
+				Name:    "useraddress_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserAddressesColumns[3]},
+			},
+			{
+				Name:    "useraddress_user_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{UserAddressesColumns[3], UserAddressesColumns[12]},
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		BrandsTable,
+		CategoriesTable,
+		ConsumedEventsTable,
+		GoodsTable,
+		GoodsImagesTable,
+		GoodsSkusTable,
+		InventoriesTable,
+		InventoryFlowsTable,
+		InventoryLocksTable,
+		OrdersTable,
+		OrderAddressesTable,
+		OrderEventOutboxesTable,
+		OrderGoodsTable,
+		PaymentsTable,
+		PermissionsTable,
+		RolePermissionsTable,
+		ShopCartsTable,
 		TodosTable,
+		UsersTable,
+		UserAddressesTable,
 	}
 )
 

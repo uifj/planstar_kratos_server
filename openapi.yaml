@@ -3,13 +3,993 @@
 
 openapi: 3.0.3
 info:
-    title: TodoService API
-    description: |-
-        TodoService provides a simple CRUD example for managing todo items.
-         It demonstrates unary, server-streaming, and bidirectional-streaming RPCs
-         together with AIP-style list filtering, ordering, and pagination.
+    title: ""
     version: 0.0.1
 paths:
+    /admin/api/address/create:
+        post:
+            tags:
+                - AdminService
+            operationId: AdminService_CreateAddress
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.CreateAddressReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.AddressInfo'
+    /admin/api/address/default:
+        put:
+            tags:
+                - AdminService
+            operationId: AdminService_DefaultAddress
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.AddressReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/address/delete:
+        delete:
+            tags:
+                - AdminService
+            operationId: AdminService_DeleteAddress
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+                - name: uid
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/address/list/uid:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_AddressListByUid
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.ListAddressReply'
+    /admin/api/address/update:
+        put:
+            tags:
+                - AdminService
+            operationId: AdminService_UpdateAddress
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.UpdateAddressReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/dashboard/stats:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_DashboardStats
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.DashboardStatsReply'
+    /admin/api/goods/brands:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_BrandList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.BrandListReply'
+    /admin/api/goods/categories:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_CategoryList
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CategoryListReply'
+    /admin/api/goods/category/create:
+        post:
+            tags:
+                - AdminService
+            operationId: AdminService_CreateCategory
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.CategorySaveRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CategoryItem'
+    /admin/api/goods/category/delete:
+        delete:
+            tags:
+                - AdminService
+            operationId: AdminService_DeleteCategory
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/goods/category/update:
+        put:
+            tags:
+                - AdminService
+            operationId: AdminService_UpdateCategory
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.CategorySaveRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/goods/create:
+        post:
+            tags:
+                - AdminService
+            operationId: AdminService_CreateGoods
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.CreateGoodsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/goods/delete:
+        delete:
+            tags:
+                - AdminService
+            operationId: AdminService_DeleteGoods
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/goods/detail:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_GoodsDetail
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.GoodsDetailReply'
+    /admin/api/goods/list:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_GoodsList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: keywords
+                  in: query
+                  schema:
+                    type: string
+                - name: categoryId
+                  in: query
+                  schema:
+                    type: string
+                - name: brandId
+                  in: query
+                  schema:
+                    type: string
+                - name: skuCode
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.GoodsListReply'
+    /admin/api/goods/status:
+        put:
+            tags:
+                - AdminService
+            operationId: AdminService_UpdateGoodsStatus
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.UpdateGoodsStatusRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/goods/update:
+        put:
+            tags:
+                - AdminService
+            operationId: AdminService_UpdateGoods
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.UpdateGoodsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/order/detail:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_OrderDetail
+            parameters:
+                - name: orderSn
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.OrderInfoReply'
+    /admin/api/order/list:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_OrderList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: status
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.OrderListReply'
+    /admin/api/order/refund:
+        post:
+            tags:
+                - AdminService
+            operationId: AdminService_RefundOrder
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.RefundOrderRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/order/ship:
+        post:
+            tags:
+                - AdminService
+            operationId: AdminService_ShipOrder
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.ShipOrderRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/system/permissions:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_PermissionList
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.PermissionListReply'
+    /admin/api/system/role-permissions:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_RolePermissionList
+            parameters:
+                - name: role
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.RolePermissionListReply'
+        put:
+            tags:
+                - AdminService
+            operationId: AdminService_RolePermissionUpdate
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.RolePermissionUpdateRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/user/address/delete:
+        delete:
+            tags:
+                - AdminService
+            operationId: AdminService_UserAddressDelete
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+                - name: uid
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /admin/api/user/address/list:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_UserAddressList
+            parameters:
+                - name: uid
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.UserAddressListReply'
+    /admin/api/user/list:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_UserList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.UserListReply'
+    /admin/api/users/captcha:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_Captcha
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CaptchaReply'
+    /admin/api/users/detail:
+        get:
+            tags:
+                - AdminService
+            operationId: AdminService_Detail
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.UserDetailResponse'
+    /admin/api/users/login:
+        post:
+            tags:
+                - AdminService
+            operationId: AdminService_Login
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.LoginReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.RegisterReply'
+    /admin/api/users/refresh:
+        post:
+            tags:
+                - AdminService
+            operationId: AdminService_RefreshToken
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.RefreshTokenRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.RegisterReply'
+    /admin/api/users/register:
+        post:
+            tags:
+                - AdminService
+            operationId: AdminService_Register
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.RegisterReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.RegisterReply'
+    /api/address/create:
+        post:
+            tags:
+                - ShopService
+            operationId: ShopService_CreateAddress
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.CreateAddressReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.AddressInfo'
+    /api/address/default:
+        put:
+            tags:
+                - ShopService
+            operationId: ShopService_DefaultAddress
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.AddressReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /api/address/delete:
+        delete:
+            tags:
+                - ShopService
+            operationId: ShopService_DeleteAddress
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+                - name: uid
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /api/address/list/uid:
+        get:
+            tags:
+                - ShopService
+            operationId: ShopService_AddressListByUid
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.ListAddressReply'
+    /api/address/update:
+        put:
+            tags:
+                - ShopService
+            operationId: ShopService_UpdateAddress
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.UpdateAddressReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /api/cart/add:
+        post:
+            tags:
+                - ShopService
+            operationId: ShopService_CartAdd
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.CartAddRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CartItemReply'
+    /api/cart/delete:
+        delete:
+            tags:
+                - ShopService
+            operationId: ShopService_CartDelete
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /api/cart/list:
+        get:
+            tags:
+                - ShopService
+            operationId: ShopService_CartList
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CartListReply'
+    /api/cart/update:
+        put:
+            tags:
+                - ShopService
+            operationId: ShopService_CartUpdate
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.CartUpdateRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /api/goods/detail:
+        get:
+            tags:
+                - ShopService
+            operationId: ShopService_GoodsDetail
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.GoodsDetailReply'
+    /api/goods/list:
+        get:
+            tags:
+                - ShopService
+            operationId: ShopService_GoodsList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: keywords
+                  in: query
+                  schema:
+                    type: string
+                - name: categoryId
+                  in: query
+                  schema:
+                    type: string
+                - name: brandId
+                  in: query
+                  schema:
+                    type: string
+                - name: skuCode
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.GoodsListReply'
+    /api/order/cancel:
+        post:
+            tags:
+                - ShopService
+            operationId: ShopService_OrderCancel
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.OrderCancelRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /api/order/create:
+        post:
+            tags:
+                - ShopService
+            operationId: ShopService_OrderCreate
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.OrderCreateRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.OrderInfoReply'
+    /api/order/detail:
+        get:
+            tags:
+                - ShopService
+            operationId: ShopService_OrderDetail
+            parameters:
+                - name: orderSn
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.OrderInfoReply'
+    /api/order/list:
+        get:
+            tags:
+                - ShopService
+            operationId: ShopService_OrderList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: status
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.OrderListReply'
+    /api/payment/create:
+        post:
+            tags:
+                - ShopService
+            operationId: ShopService_PaymentCreate
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.PaymentCreateRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.PaymentInfoReply'
+    /api/payment/mock-pay:
+        post:
+            tags:
+                - ShopService
+            operationId: ShopService_PaymentMockPay
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.PaymentMockPayRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+    /api/users/captcha:
+        get:
+            tags:
+                - ShopService
+            operationId: ShopService_Captcha
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.CaptchaReply'
+    /api/users/detail:
+        get:
+            tags:
+                - ShopService
+            operationId: ShopService_Detail
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.UserDetailResponse'
+    /api/users/login:
+        post:
+            tags:
+                - ShopService
+            operationId: ShopService_Login
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.LoginReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.RegisterReply'
+    /api/users/refresh:
+        post:
+            tags:
+                - ShopService
+            operationId: ShopService_RefreshToken
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.RefreshTokenRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.RegisterReply'
+    /api/users/register:
+        post:
+            tags:
+                - ShopService
+            operationId: ShopService_Register
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/mall.v1.RegisterReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/mall.v1.RegisterReply'
     /v1/todos/create:
         post:
             tags:
@@ -227,6 +1207,775 @@ paths:
                     content: {}
 components:
     schemas:
+        mall.v1.AddressInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                mobile:
+                    type: string
+                province:
+                    type: string
+                city:
+                    type: string
+                districts:
+                    type: string
+                address:
+                    type: string
+                postCode:
+                    type: string
+                isDefault:
+                    type: integer
+                    format: int32
+        mall.v1.AddressReq:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                uid:
+                    type: string
+        mall.v1.BrandItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                logo:
+                    type: string
+        mall.v1.BrandListReply:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.BrandItem'
+        mall.v1.CaptchaReply:
+            type: object
+            properties:
+                captchaId:
+                    type: string
+                picPath:
+                    type: string
+                    description: Base64-encoded PNG data URL. The C-end renders it directly.
+        mall.v1.CartAddRequest:
+            required:
+                - goodsId
+                - skuId
+                - goodsNum
+            type: object
+            properties:
+                goodsId:
+                    type: string
+                goodsSn:
+                    type: string
+                goodsName:
+                    type: string
+                skuId:
+                    type: string
+                goodsPrice:
+                    type: string
+                goodsNum:
+                    type: integer
+                    format: int32
+                isSelect:
+                    type: boolean
+        mall.v1.CartItemReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                userId:
+                    type: string
+                goodsId:
+                    type: string
+                goodsSn:
+                    type: string
+                goodsName:
+                    type: string
+                skuId:
+                    type: string
+                goodsPrice:
+                    type: string
+                goodsNum:
+                    type: integer
+                    format: int32
+                isSelect:
+                    type: boolean
+        mall.v1.CartListReply:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.CartItemReply'
+        mall.v1.CartUpdateRequest:
+            required:
+                - id
+                - goodsNum
+            type: object
+            properties:
+                id:
+                    type: string
+                goodsNum:
+                    type: integer
+                    format: int32
+        mall.v1.CategoryItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                parentCategory:
+                    type: string
+                level:
+                    type: integer
+                    format: int32
+        mall.v1.CategoryListReply:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.CategoryItem'
+        mall.v1.CategorySaveRequest:
+            required:
+                - name
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                parentCategory:
+                    type: string
+                level:
+                    type: integer
+                    format: int32
+                sort:
+                    type: integer
+                    format: int32
+        mall.v1.CheckResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        mall.v1.CreateAddressReq:
+            required:
+                - name
+                - mobile
+                - province
+                - city
+                - districts
+                - address
+            type: object
+            properties:
+                uid:
+                    type: string
+                    description: 'Ignored on input: the server derives the owner from the JWT claims.'
+                name:
+                    type: string
+                mobile:
+                    type: string
+                province:
+                    type: string
+                city:
+                    type: string
+                districts:
+                    type: string
+                address:
+                    type: string
+                postCode:
+                    type: string
+                isDefault:
+                    type: integer
+                    format: int32
+        mall.v1.CreateGoodsRequest:
+            required:
+                - name
+                - goodsSn
+            type: object
+            properties:
+                categoryId:
+                    type: string
+                brandId:
+                    type: string
+                typeId:
+                    type: string
+                name:
+                    type: string
+                goodsSn:
+                    type: string
+                marketPrice:
+                    type: string
+                inventory:
+                    type: string
+                goodsBrief:
+                    type: string
+                goodsFrontImage:
+                    type: string
+                shipFree:
+                    type: boolean
+                isNew:
+                    type: boolean
+                isHot:
+                    type: boolean
+                onSale:
+                    type: boolean
+                skuName:
+                    type: string
+                skuCode:
+                    type: string
+                barCode:
+                    type: string
+                skuPrice:
+                    type: string
+                promotionPrice:
+                    type: string
+                skuInventory:
+                    type: string
+                skuImage:
+                    type: string
+        mall.v1.DailySales:
+            type: object
+            properties:
+                date:
+                    type: string
+                orderCount:
+                    type: string
+                amount:
+                    type: string
+        mall.v1.DashboardStatsReply:
+            type: object
+            properties:
+                totalOrders:
+                    type: string
+                totalSales:
+                    type: string
+                todayOrders:
+                    type: string
+                todaySales:
+                    type: string
+                totalUsers:
+                    type: string
+                statusCounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.StatusCount'
+                last30Days:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.DailySales'
+                topGoods:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.TopGoods'
+        mall.v1.GoodsDetailReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                categoryId:
+                    type: string
+                brandId:
+                    type: string
+                typeId:
+                    type: string
+                name:
+                    type: string
+                goodsSn:
+                    type: string
+                goodsBrief:
+                    type: string
+                goodsFrontImage:
+                    type: string
+                goodsImages:
+                    type: array
+                    items:
+                        type: string
+                marketPrice:
+                    type: string
+                onSale:
+                    type: boolean
+                shipFree:
+                    type: boolean
+                isNew:
+                    type: boolean
+                isHot:
+                    type: boolean
+                soldNum:
+                    type: string
+                brandName:
+                    type: string
+                categoryName:
+                    type: string
+                skus:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.GoodsSkuDetail'
+                images:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.GoodsImageDetail'
+            description: GoodsDetailReply is the union of the C-end and admin detail shapes.
+        mall.v1.GoodsImageDetail:
+            type: object
+            properties:
+                id:
+                    type: string
+                url:
+                    type: string
+                position:
+                    type: integer
+                    format: int32
+                isMaster:
+                    type: boolean
+            description: GoodsImageDetail is the admin superset (adds id).
+        mall.v1.GoodsItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                goodsSn:
+                    type: string
+                marketPrice:
+                    type: string
+                onSale:
+                    type: boolean
+                isNew:
+                    type: boolean
+                isHot:
+                    type: boolean
+                categoryId:
+                    type: string
+                brandId:
+                    type: string
+                categoryName:
+                    type: string
+                brandName:
+                    type: string
+                skuCount:
+                    type: integer
+                    format: int32
+                soldNum:
+                    type: string
+            description: |-
+                GoodsItem is the admin superset (adds category/brand names, sku count and
+                 sold count).
+        mall.v1.GoodsListReply:
+            type: object
+            properties:
+                total:
+                    type: integer
+                    format: int32
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.GoodsItem'
+        mall.v1.GoodsSkuDetail:
+            type: object
+            properties:
+                id:
+                    type: string
+                goodsId:
+                    type: string
+                skuName:
+                    type: string
+                skuCode:
+                    type: string
+                barCode:
+                    type: string
+                price:
+                    type: string
+                promotionPrice:
+                    type: string
+                inventory:
+                    type: string
+                onSale:
+                    type: boolean
+                pic:
+                    type: string
+            description: GoodsSkuDetail is the admin superset (adds bar_code).
+        mall.v1.ListAddressReply:
+            type: object
+            properties:
+                results:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.AddressInfo'
+        mall.v1.LoginReq:
+            required:
+                - password
+            type: object
+            properties:
+                mobile:
+                    type: string
+                username:
+                    type: string
+                password:
+                    type: string
+                captcha:
+                    type: string
+                captchaId:
+                    type: string
+            description: |-
+                LoginReq is a superset: the C-end logs in with mobile + captcha, the admin
+                 BFF with username. password is the only field common to both.
+        mall.v1.OrderCancelRequest:
+            required:
+                - orderSn
+            type: object
+            properties:
+                orderSn:
+                    type: string
+        mall.v1.OrderCartItem:
+            required:
+                - skuId
+                - skuNum
+            type: object
+            properties:
+                cartId:
+                    type: string
+                skuId:
+                    type: string
+                skuNum:
+                    type: integer
+                    format: int32
+        mall.v1.OrderCreateRequest:
+            required:
+                - address
+            type: object
+            properties:
+                address:
+                    type: string
+                    description: Address id. The server reloads the snapshot from storage.
+                cartItem:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.OrderCartItem'
+        mall.v1.OrderGoodsReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                skuId:
+                    type: string
+                skuName:
+                    type: string
+                skuPrice:
+                    type: string
+                num:
+                    type: integer
+                    format: int32
+                totalPrice:
+                    type: string
+        mall.v1.OrderInfoReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                userId:
+                    type: string
+                orderSn:
+                    type: string
+                status:
+                    type: integer
+                    format: int32
+                post:
+                    type: string
+                total:
+                    type: string
+                address:
+                    type: string
+                name:
+                    type: string
+                mobile:
+                    type: string
+                addTime:
+                    type: string
+                goods:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.OrderGoodsReply'
+            description: |-
+                OrderInfoReply replaces both the C-end OrderInfoReply and the admin
+                 OrderInfo. OrderGoodsReply replaces OrderGoodsInfo (identical fields).
+        mall.v1.OrderListReply:
+            type: object
+            properties:
+                total:
+                    type: integer
+                    format: int32
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.OrderInfoReply'
+        mall.v1.PaymentCreateRequest:
+            required:
+                - orderSn
+            type: object
+            properties:
+                orderSn:
+                    type: string
+                amount:
+                    type: string
+                channel:
+                    type: string
+        mall.v1.PaymentInfoReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                paymentNo:
+                    type: string
+                orderSn:
+                    type: string
+                amount:
+                    type: string
+                channel:
+                    type: string
+                status:
+                    type: integer
+                    format: int32
+        mall.v1.PaymentMockPayRequest:
+            required:
+                - paymentNo
+            type: object
+            properties:
+                paymentNo:
+                    type: string
+        mall.v1.PermissionItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                code:
+                    type: string
+                name:
+                    type: string
+                groupName:
+                    type: string
+                sort:
+                    type: integer
+                    format: int32
+        mall.v1.PermissionListReply:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.PermissionItem'
+        mall.v1.RefreshTokenRequest:
+            required:
+                - token
+            type: object
+            properties:
+                token:
+                    type: string
+        mall.v1.RefundOrderRequest:
+            required:
+                - orderSn
+            type: object
+            properties:
+                orderSn:
+                    type: string
+        mall.v1.RegisterReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                mobile:
+                    type: string
+                username:
+                    type: string
+                token:
+                    type: string
+                expiredAt:
+                    type: string
+            description: RegisterReply is returned by register, login and refresh-token.
+        mall.v1.RegisterReq:
+            required:
+                - mobile
+                - username
+                - password
+            type: object
+            properties:
+                mobile:
+                    type: string
+                username:
+                    type: string
+                password:
+                    type: string
+                captcha:
+                    type: string
+                captchaId:
+                    type: string
+            description: RegisterReq is shared by the C-end and admin registration RPCs.
+        mall.v1.RolePermissionListReply:
+            type: object
+            properties:
+                codes:
+                    type: array
+                    items:
+                        type: string
+        mall.v1.RolePermissionUpdateRequest:
+            type: object
+            properties:
+                role:
+                    type: integer
+                    format: int32
+                codes:
+                    type: array
+                    items:
+                        type: string
+        mall.v1.ShipOrderRequest:
+            required:
+                - orderSn
+                - post
+            type: object
+            properties:
+                orderSn:
+                    type: string
+                post:
+                    type: string
+        mall.v1.StatusCount:
+            type: object
+            properties:
+                status:
+                    type: integer
+                    format: int32
+                count:
+                    type: string
+        mall.v1.TopGoods:
+            type: object
+            properties:
+                skuId:
+                    type: string
+                skuName:
+                    type: string
+                num:
+                    type: string
+                amount:
+                    type: string
+        mall.v1.UpdateAddressReq:
+            required:
+                - id
+            type: object
+            properties:
+                uid:
+                    type: string
+                name:
+                    type: string
+                mobile:
+                    type: string
+                province:
+                    type: string
+                city:
+                    type: string
+                districts:
+                    type: string
+                address:
+                    type: string
+                postCode:
+                    type: string
+                isDefault:
+                    type: integer
+                    format: int32
+                id:
+                    type: string
+        mall.v1.UpdateGoodsRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                nameAlias:
+                    type: string
+                goodsBrief:
+                    type: string
+                goodsFrontImage:
+                    type: string
+                marketPrice:
+                    type: string
+                shipFree:
+                    type: boolean
+                isNew:
+                    type: boolean
+                isHot:
+                    type: boolean
+        mall.v1.UpdateGoodsStatusRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                onSale:
+                    type: boolean
+        mall.v1.UserAddressListReply:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.AddressInfo'
+        mall.v1.UserDetailResponse:
+            type: object
+            properties:
+                id:
+                    type: string
+                mobile:
+                    type: string
+                nickName:
+                    type: string
+                birthday:
+                    type: string
+                gender:
+                    type: string
+                role:
+                    type: integer
+                    format: int32
+                permissions:
+                    type: array
+                    items:
+                        type: string
+            description: UserDetailResponse is the admin superset (adds permissions).
+        mall.v1.UserInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                mobile:
+                    type: string
+                nickName:
+                    type: string
+                birthday:
+                    type: string
+                gender:
+                    type: string
+                role:
+                    type: integer
+                    format: int32
+        mall.v1.UserListReply:
+            type: object
+            properties:
+                total:
+                    type: integer
+                    format: int32
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/mall.v1.UserInfo'
         todo.v1.SyncTodoRequest:
             type: object
             properties:
@@ -313,4 +2062,18 @@ components:
                          Empty when there are no more results.
             description: TodoSet is a paginated collection of todo items returned by ListTodos.
 tags:
+    - name: AdminService
+      description: |-
+        AdminService is the back-office BFF. Every HTTP path is prefixed with
+         /admin to avoid the 14 method/path collisions with ShopService that the
+         source project had when both BFFs were deployed separately.
+    - name: ShopService
+      description: |-
+        ShopService is the C-end BFF. It exposes 22 RPCs over both HTTP (:8000) and
+         gRPC (:9000). The owner of a request is always derived from the JWT claims,
+         never from a client-supplied user id.
     - name: TodoService
+      description: |-
+        TodoService provides a simple CRUD example for managing todo items.
+         It demonstrates unary, server-streaming, and bidirectional-streaming RPCs
+         together with AIP-style list filtering, ordering, and pagination.

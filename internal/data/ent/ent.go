@@ -12,7 +12,26 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/brand"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/category"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/consumedevent"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/goods"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/goodsimage"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/goodssku"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/inventory"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/inventoryflow"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/inventorylock"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/order"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/orderaddress"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/ordereventoutbox"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/ordergoods"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/payment"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/permission"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/rolepermission"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/shopcart"
 	"github.com/go-kratos/kratos-layout/internal/data/ent/todo"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/user"
+	"github.com/go-kratos/kratos-layout/internal/data/ent/useraddress"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -73,7 +92,26 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			todo.Table: todo.ValidColumn,
+			brand.Table:            brand.ValidColumn,
+			category.Table:         category.ValidColumn,
+			consumedevent.Table:    consumedevent.ValidColumn,
+			goods.Table:            goods.ValidColumn,
+			goodsimage.Table:       goodsimage.ValidColumn,
+			goodssku.Table:         goodssku.ValidColumn,
+			inventory.Table:        inventory.ValidColumn,
+			inventoryflow.Table:    inventoryflow.ValidColumn,
+			inventorylock.Table:    inventorylock.ValidColumn,
+			order.Table:            order.ValidColumn,
+			orderaddress.Table:     orderaddress.ValidColumn,
+			ordereventoutbox.Table: ordereventoutbox.ValidColumn,
+			ordergoods.Table:       ordergoods.ValidColumn,
+			payment.Table:          payment.ValidColumn,
+			permission.Table:       permission.ValidColumn,
+			rolepermission.Table:   rolepermission.ValidColumn,
+			shopcart.Table:         shopcart.ValidColumn,
+			todo.Table:             todo.ValidColumn,
+			user.Table:             user.ValidColumn,
+			useraddress.Table:      useraddress.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

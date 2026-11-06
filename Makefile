@@ -1,6 +1,6 @@
 GOHOSTOS:=$(shell go env GOHOSTOS)
 GOPATH:=$(shell go env GOPATH)
-VERSION=$(shell git describe --tags --always)
+VERSION ?= $(shell git describe --tags --always 2>/dev/null || echo dev)
 
 .PHONY: init
 # init env
@@ -54,3 +54,35 @@ help:
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
 .DEFAULT_GOAL := help
+
+.PHONY: compose-up
+# start the full mall stack (MySQL, Redis, RabbitMQ, Elasticsearch, app)
+compose-up:
+	docker compose up -d --build
+
+.PHONY: compose-down
+# stop the stack and remove its volumes
+compose-down:
+	docker compose down -v
+
+.PHONY: compose-logs
+# follow application logs
+compose-logs:
+	docker compose logs -f app
+
+.PHONY: compose-ps
+# show stack health
+compose-ps:
+	docker compose ps
+
+.PHONY: seed
+# load demo data after the app has auto-migrated the schema, then restart the
+# app so the startup goods re-index (EnsureIndex) picks up the new rows
+seed:
+	docker compose exec -T mysql mysql -uroot -p$${MYSQL_ROOT_PASSWORD:-root} mall < scripts/seed.sql
+	docker compose restart app
+
+.PHONY: smoke
+# run the end-to-end mall smoke test
+smoke:
+	bash scripts/smoke.sh

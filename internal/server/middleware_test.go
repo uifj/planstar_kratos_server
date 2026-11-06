@@ -77,19 +77,20 @@ func newTestMiddlewares(t *testing.T, c *conf.Middleware, limiter biz.RateLimite
 func TestNewMiddlewaresAllEnabled(t *testing.T) {
 	mw := newTestMiddlewares(t, allEnabledConfig(), &fakeLimiter{})
 
-	// metadata, tracing, metrics, logging, recovery, ratelimit, jwt, validate
-	if got, want := len(mw.Server), 8; got != want {
+	// metadata, tracing, metrics, logging, recovery, ratelimit, jwt,
+	// injectClaims, adminOnly, validate
+	if got, want := len(mw.Server), 10; got != want {
 		t.Errorf("Server chain length = %d, want %d", got, want)
 	}
 	// Streaming skips rate limiting and metrics.
-	if got, want := len(mw.Stream), 6; got != want {
+	if got, want := len(mw.Stream), 8; got != want {
 		t.Errorf("Stream chain length = %d, want %d", got, want)
 	}
 	// metadata, tracing, metrics, logging, circuitbreaker, jwt.Client
 	if got, want := len(mw.Client), 6; got != want {
 		t.Errorf("Client chain length = %d, want %d", got, want)
 	}
-	if got, want := len(mw.Routes), 1; got != want {
+	if got, want := len(mw.Routes), 3; got != want {
 		t.Fatalf("Routes length = %d, want %d", got, want)
 	}
 	if got, want := mw.Routes[0].Pattern, "/todo.v1.TodoService/*"; got != want {
@@ -220,7 +221,7 @@ func clientCtx(operation string) context.Context {
 
 func TestAuthMiddlewarePublicAllowlist(t *testing.T) {
 	c := allEnabledConfig()
-	m := authMiddleware(c, fakeKeys{key: []byte("test-key")})
+	m := authMiddleware(publicSet(c), fakeKeys{key: []byte("test-key")})
 	handler := func(_ context.Context, req any) (any, error) { return "ok", nil }
 
 	// Public operation bypasses JWT entirely.

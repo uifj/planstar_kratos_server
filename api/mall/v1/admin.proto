@@ -1,0 +1,192 @@
+syntax = "proto3";
+
+package mall.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "mall/v1/common.proto";
+
+option go_package = "github.com/go-kratos/kratos-layout/api/mall/v1;v1";
+option java_multiple_files = true;
+option java_package = "io.kratos.mall.v1";
+option java_outer_classname = "MallAdminProto";
+
+// AdminService is the back-office BFF. Every HTTP path is prefixed with
+// /admin to avoid the 14 method/path collisions with ShopService that the
+// source project had when both BFFs were deployed separately.
+service AdminService {
+  rpc Register (RegisterReq) returns (RegisterReply) {
+    option (google.api.http) = {
+      post: "/admin/api/users/register"
+      body: "*"
+    };
+  }
+  rpc RefreshToken (RefreshTokenRequest) returns (RegisterReply) {
+    option (google.api.http) = {
+      post: "/admin/api/users/refresh"
+      body: "*"
+    };
+  }
+  rpc Login (LoginReq) returns (RegisterReply) {
+    option (google.api.http) = {
+      post: "/admin/api/users/login"
+      body: "*"
+    };
+  }
+  rpc Captcha (google.protobuf.Empty) returns (CaptchaReply) {
+    option (google.api.http) = {
+      get: "/admin/api/users/captcha"
+    };
+  }
+  rpc Detail (google.protobuf.Empty) returns (UserDetailResponse) {
+    option (google.api.http) = {
+      get: "/admin/api/users/detail"
+    };
+  }
+  rpc CreateAddress (CreateAddressReq) returns (AddressInfo) {
+    option (google.api.http) = {
+      post: "/admin/api/address/create"
+      body: "*"
+    };
+  }
+  rpc AddressListByUid (google.protobuf.Empty) returns (ListAddressReply) {
+    option (google.api.http) = {
+      get: "/admin/api/address/list/uid"
+    };
+  }
+  rpc UpdateAddress (UpdateAddressReq) returns (CheckResponse) {
+    option (google.api.http) = {
+      put: "/admin/api/address/update"
+      body: "*"
+    };
+  }
+  rpc DefaultAddress (AddressReq) returns (CheckResponse) {
+    option (google.api.http) = {
+      put: "/admin/api/address/default"
+      body: "*"
+    };
+  }
+  rpc DeleteAddress (AddressReq) returns (CheckResponse) {
+    option (google.api.http) = {
+      delete: "/admin/api/address/delete"
+    };
+  }
+  rpc GoodsList (GoodsListRequest) returns (GoodsListReply) {
+    option (google.api.http) = {
+      get: "/admin/api/goods/list"
+    };
+  }
+  rpc UpdateGoods (UpdateGoodsRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      put: "/admin/api/goods/update"
+      body: "*"
+    };
+  }
+  rpc DeleteGoods (DeleteGoodsRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      delete: "/admin/api/goods/delete"
+    };
+  }
+  rpc UpdateGoodsStatus (UpdateGoodsStatusRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      put: "/admin/api/goods/status"
+      body: "*"
+    };
+  }
+  rpc OrderList (OrderListRequest) returns (OrderListReply) {
+    option (google.api.http) = {
+      get: "/admin/api/order/list"
+    };
+  }
+  rpc OrderDetail (OrderDetailRequest) returns (OrderInfoReply) {
+    option (google.api.http) = {
+      get: "/admin/api/order/detail"
+    };
+  }
+  rpc ShipOrder (ShipOrderRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      post: "/admin/api/order/ship"
+      body: "*"
+    };
+  }
+  rpc RefundOrder (RefundOrderRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      post: "/admin/api/order/refund"
+      body: "*"
+    };
+  }
+  rpc UserList (UserListRequest) returns (UserListReply) {
+    option (google.api.http) = {
+      get: "/admin/api/user/list"
+    };
+  }
+  rpc UserAddressList (UserAddressListRequest) returns (UserAddressListReply) {
+    option (google.api.http) = {
+      get: "/admin/api/user/address/list"
+    };
+  }
+  rpc UserAddressDelete (UserAddressDeleteRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      delete: "/admin/api/user/address/delete"
+    };
+  }
+  rpc CreateGoods (CreateGoodsRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      post: "/admin/api/goods/create"
+      body: "*"
+    };
+  }
+  rpc GoodsDetail (GoodsDetailRequest) returns (GoodsDetailReply) {
+    option (google.api.http) = {
+      get: "/admin/api/goods/detail"
+    };
+  }
+  rpc CategoryList (google.protobuf.Empty) returns (CategoryListReply) {
+    option (google.api.http) = {
+      get: "/admin/api/goods/categories"
+    };
+  }
+  rpc BrandList (BrandListRequest) returns (BrandListReply) {
+    option (google.api.http) = {
+      get: "/admin/api/goods/brands"
+    };
+  }
+  rpc CreateCategory (CategorySaveRequest) returns (CategoryItem) {
+    option (google.api.http) = {
+      post: "/admin/api/goods/category/create"
+      body: "*"
+    };
+  }
+  rpc UpdateCategory (CategorySaveRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      put: "/admin/api/goods/category/update"
+      body: "*"
+    };
+  }
+  rpc DeleteCategory (CategoryDeleteRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      delete: "/admin/api/goods/category/delete"
+    };
+  }
+  rpc DashboardStats (google.protobuf.Empty) returns (DashboardStatsReply) {
+    option (google.api.http) = {
+      get: "/admin/api/dashboard/stats"
+    };
+  }
+  rpc PermissionList (google.protobuf.Empty) returns (PermissionListReply) {
+    option (google.api.http) = {
+      get: "/admin/api/system/permissions"
+    };
+  }
+  rpc RolePermissionList (RolePermissionListRequest) returns (RolePermissionListReply) {
+    option (google.api.http) = {
+      get: "/admin/api/system/role-permissions"
+    };
+  }
+  rpc RolePermissionUpdate (RolePermissionUpdateRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      put: "/admin/api/system/role-permissions"
+      body: "*"
+    };
+  }
+}
