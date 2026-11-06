@@ -59,13 +59,14 @@ type OrderGoods struct {
 }
 
 type OutboxEvent struct {
-	ID         int64
-	EventID    string
-	EventType  string
-	OrderSn    string
-	Payload    []byte
-	Status     int
-	RetryCount int
+	ID          int64
+	EventID     string
+	EventType   string
+	OrderSn     string
+	Payload     []byte
+	Traceparent string
+	Status      int
+	RetryCount  int
 }
 
 type DashboardStats struct {

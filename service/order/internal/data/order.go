@@ -109,9 +109,9 @@ func (o *orderRepo) Create(ctx context.Context, order *domain.Order, address *do
 
 		if outbox != nil {
 			ores, err := o.data.DB(ctx).ExecContext(ctx,
-				"INSERT INTO order_event_outbox (event_id, event_type, order_sn, payload, status, retry_count, created_at) "+
-					"VALUES (?, ?, ?, ?, 0, 0, NOW())",
-				outbox.EventID, outbox.EventType, outbox.OrderSn, string(outbox.Payload),
+				"INSERT INTO order_event_outbox (event_id, event_type, order_sn, payload, traceparent, status, retry_count, created_at) "+
+					"VALUES (?, ?, ?, ?, ?, 0, 0, NOW())",
+				outbox.EventID, outbox.EventType, outbox.OrderSn, string(outbox.Payload), outbox.Traceparent,
 			)
 			if err != nil {
 				return err
@@ -124,7 +124,7 @@ func (o *orderRepo) Create(ctx context.Context, order *domain.Order, address *do
 
 func (o *orderRepo) ListPendingOutbox(ctx context.Context, limit int) ([]*domain.OutboxEvent, error) {
 	rows, err := o.data.DB(ctx).QueryContext(ctx,
-		"SELECT id, event_id, event_type, order_sn, payload, status, retry_count FROM order_event_outbox WHERE status = 0 ORDER BY id ASC LIMIT ?",
+		"SELECT id, event_id, event_type, order_sn, payload, traceparent, status, retry_count FROM order_event_outbox WHERE status = 0 ORDER BY id ASC LIMIT ?",
 		limit)
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (o *orderRepo) ListPendingOutbox(ctx context.Context, limit int) ([]*domain
 	for rows.Next() {
 		var ev domain.OutboxEvent
 		var payload string
-		if err := rows.Scan(&ev.ID, &ev.EventID, &ev.EventType, &ev.OrderSn, &payload, &ev.Status, &ev.RetryCount); err != nil {
+		if err := rows.Scan(&ev.ID, &ev.EventID, &ev.EventType, &ev.OrderSn, &payload, &ev.Traceparent, &ev.Status, &ev.RetryCount); err != nil {
 			return nil, err
 		}
 		ev.Payload = []byte(payload)
@@ -151,9 +151,9 @@ func (o *orderRepo) MarkOutboxPublished(ctx context.Context, id int64) error {
 
 func (o *orderRepo) CreateOutbox(ctx context.Context, outbox *domain.OutboxEvent) error {
 	res, err := o.data.DB(ctx).ExecContext(ctx,
-		"INSERT INTO order_event_outbox (event_id, event_type, order_sn, payload, status, retry_count, created_at) "+
-			"VALUES (?, ?, ?, ?, 0, 0, NOW())",
-		outbox.EventID, outbox.EventType, outbox.OrderSn, string(outbox.Payload),
+		"INSERT INTO order_event_outbox (event_id, event_type, order_sn, payload, traceparent, status, retry_count, created_at) "+
+			"VALUES (?, ?, ?, ?, ?, 0, 0, NOW())",
+		outbox.EventID, outbox.EventType, outbox.OrderSn, string(outbox.Payload), outbox.Traceparent,
 	)
 	if err != nil {
 		return err

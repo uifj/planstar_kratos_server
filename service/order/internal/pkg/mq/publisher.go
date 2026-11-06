@@ -26,11 +26,14 @@ func (p *Publisher) Publish(ctx context.Context, exchange, routingKey string, bo
 	if err := p.ensure(); err != nil {
 		return err
 	}
+	headers := make(amqp.Table, 4)
+	injectTrace(ctx, headers)
 	pubCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	return p.ch.PublishWithContext(pubCtx, exchange, routingKey, false, false, amqp.Publishing{
 		ContentType:  "application/json",
 		DeliveryMode: amqp.Persistent,
+		Headers:      headers,
 		Body:         body,
 	})
 }

@@ -7,8 +7,11 @@ import (
 	"math/rand"
 	"time"
 
-	kerrors "github.com/go-kratos/kratos/v3/errors"
 	"log/slog"
+
+	kerrors "github.com/go-kratos/kratos/v3/errors"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	cartV1 "order/api/cart/v1"
 	goodsV1 "order/api/goods/v1"
 	userV1 "order/api/user/v1"
@@ -166,10 +169,11 @@ func (oc *OrderUsecase) CreateOrder(ctx context.Context, order *domain.CreateOrd
 
 	eventID := generateEventID()
 	outbox := &domain.OutboxEvent{
-		EventID:   eventID,
-		EventType: "order.created",
-		OrderSn:   orderSn,
-		Payload:   buildOrderEventPayload(eventID, "order.created", orderSn, order.UserId, orderGoods),
+		EventID:     eventID,
+		EventType:   "order.created",
+		OrderSn:     orderSn,
+		Payload:     buildOrderEventPayload(eventID, "order.created", orderSn, order.UserId, orderGoods),
+		Traceparent: traceparentFromCtx(ctx),
 	}
 	if err := oc.repo.Create(ctx, od, orderAddress, orderGoods, outbox); err != nil {
 		return nil, err
@@ -190,6 +194,14 @@ func generateOrderSn() string {
 
 func generateEventID() string {
 	return fmt.Sprintf("evt-%d-%d", time.Now().UnixNano(), rand.Intn(1000000))
+}
+
+// traceparentFromCtx captures the W3C traceparent of the current span so the
+// async outbox relay can resume the trace when it publishes later.
+func traceparentFromCtx(ctx context.Context) string {
+	carrier := propagation.MapCarrier{}
+	otel.GetTextMapPropagator().Inject(ctx, carrier)
+	return carrier.Get("traceparent")
 }
 
 func buildOrderEventPayload(eventID, eventType, orderSn string, userId int64, items []*domain.OrderGoods) []byte {
@@ -241,10 +253,11 @@ func (oc *OrderUsecase) CancelOrder(ctx context.Context, userId int64, orderSn s
 	}
 	eventID := generateEventID()
 	outbox := &domain.OutboxEvent{
-		EventID:   eventID,
-		EventType: "order.cancelled",
-		OrderSn:   orderSn,
-		Payload:   buildOrderEventPayload(eventID, "order.cancelled", orderSn, userId, items),
+		EventID:     eventID,
+		EventType:   "order.cancelled",
+		OrderSn:     orderSn,
+		Payload:     buildOrderEventPayload(eventID, "order.cancelled", orderSn, userId, items),
+		Traceparent: traceparentFromCtx(ctx),
 	}
 	return oc.repo.CreateOutbox(ctx, outbox)
 }
@@ -276,10 +289,11 @@ func (oc *OrderUsecase) MarkPaid(ctx context.Context, orderSn string) error {
 	}
 	eventID := generateEventID()
 	outbox := &domain.OutboxEvent{
-		EventID:   eventID,
-		EventType: "order.paid",
-		OrderSn:   orderSn,
-		Payload:   buildOrderEventPayload(eventID, "order.paid", orderSn, items[0].UserId, items),
+		EventID:     eventID,
+		EventType:   "order.paid",
+		OrderSn:     orderSn,
+		Payload:     buildOrderEventPayload(eventID, "order.paid", orderSn, items[0].UserId, items),
+		Traceparent: traceparentFromCtx(ctx),
 	}
 	return oc.repo.CreateOutbox(ctx, outbox)
 }
@@ -342,7 +356,11 @@ func (oc *OrderUsecase) RelayOutbox(ctx context.Context) error {
 		return err
 	}
 	for _, evt := range events {
-		if err := oc.publisher.Publish(ctx, "order.exchange", evt.EventType, evt.Payload); err != nil {
+		pubCtx := ctx
+		if evt.Traceparent != "" {
+			pubCtx = otel.GetTextMapPropagator().Extract(pubCtx, propagation.MapCarrier{"traceparent": evt.Traceparent})
+		}
+		if err := oc.publisher.Publish(pubCtx, "order.exchange", evt.EventType, evt.Payload); err != nil {
 			oc.log.Error("publish outbox event failed", slog.Int64("id", evt.ID), slog.String("event_type", evt.EventType), slog.Any("err", err))
 			if err := oc.repo.IncrementOutboxRetry(ctx, evt.ID); err != nil {
 				oc.log.Error("increment outbox retry failed", slog.Int64("id", evt.ID), slog.Any("err", err))

@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS order_event_outbox (
     event_type   VARCHAR(32) NOT NULL,
     order_sn     VARCHAR(30) NOT NULL DEFAULT '',
     payload      TEXT        NOT NULL,
+    traceparent  VARCHAR(64) DEFAULT NULL,
     status       SMALLINT    NOT NULL DEFAULT 0,
     retry_count  INT         NOT NULL DEFAULT 0,
     created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

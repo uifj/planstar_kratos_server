@@ -107,7 +107,7 @@ func (s *InventoryService) startConsumer() {
 			[]string{"order.created", "order.cancelled", "order.paid"},
 			func(ctx context.Context, body []byte) error {
 				return s.handleOrderCreated(ctx, body, func(routingKey string, payload []byte) error {
-					return consumer.Publish("inventory.exchange", routingKey, payload)
+					return consumer.Publish(ctx, "inventory.exchange", routingKey, payload)
 				})
 			},
 		)

@@ -69,7 +69,14 @@ func (c *Consumer) Run(ctx context.Context) error {
 			if !ok {
 				return nil
 			}
-			if err := c.handler(ctx, d.Body); err != nil {
+			msgCtx := extractTrace(ctx, d.Headers)
+			msgCtx, span := consumeSpan(msgCtx, c.queue, d.RoutingKey)
+			err := c.handler(msgCtx, d.Body)
+			if err != nil {
+				span.RecordError(err)
+			}
+			span.End()
+			if err != nil {
 				c.retryOrDLQ(d, err)
 				continue
 			}
@@ -135,12 +142,15 @@ func deliveryRetryCount(headers amqp.Table) int {
 	return 0
 }
 
-func (c *Consumer) Publish(exchange, routingKey string, body []byte) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (c *Consumer) Publish(ctx context.Context, exchange, routingKey string, body []byte) error {
+	headers := make(amqp.Table, 4)
+	injectTrace(ctx, headers)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	return c.channel.PublishWithContext(ctx, exchange, routingKey, false, false, amqp.Publishing{
 		ContentType:  "application/json",
 		DeliveryMode: amqp.Persistent,
+		Headers:      headers,
 		Body:         body,
 	})
 }

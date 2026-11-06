@@ -69,7 +69,14 @@ func (c *Consumer) Run(ctx context.Context) error {
 			if !ok {
 				return nil
 			}
-			if err := c.handler(ctx, d.Body); err != nil {
+			msgCtx := extractTrace(ctx, d.Headers)
+			msgCtx, span := consumeSpan(msgCtx, c.queue, d.RoutingKey)
+			err := c.handler(msgCtx, d.Body)
+			if err != nil {
+				span.RecordError(err)
+			}
+			span.End()
+			if err != nil {
 				c.retryOrDLQ(d, err)
 				continue
 			}

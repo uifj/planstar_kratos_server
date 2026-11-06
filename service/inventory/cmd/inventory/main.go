@@ -20,6 +20,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
@@ -127,6 +128,9 @@ func main() {
 	if err := setTracerProvider(bc.Trace.Endpoint); err != nil {
 		panic(err)
 	}
+
+	// 设置全局 W3C TraceContext 传播器，使 RabbitMQ 等非 kratos 传输也能跨服务透传 trace。
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{}))
 
 	// start Prometheus metrics endpoint (also exposes /healthz)
 	go initMetrics("0.0.0.0:9105")
