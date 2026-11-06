@@ -7,15 +7,13 @@
 package main
 
 import (
-	"log/slog"
-
 	"cart/internal/biz"
 	"cart/internal/conf"
 	"cart/internal/data"
 	"cart/internal/server"
 	"cart/internal/service"
-
 	"github.com/go-kratos/kratos/v3"
+	"log/slog"
 )
 
 import (
@@ -24,7 +22,7 @@ import (
 
 // Injectors from wire.go:
 
-func initApp(confServer *conf.Server, confData *conf.Data, logger *slog.Logger) (*kratos.App, func(), error) {
+func initApp(confServer *conf.Server, confData *conf.Data, registry *conf.Registry, logger *slog.Logger) (*kratos.App, func(), error) {
 	dataData, cleanup, err := data.NewData(confData, logger)
 	if err != nil {
 		return nil, nil, err
@@ -33,7 +31,8 @@ func initApp(confServer *conf.Server, confData *conf.Data, logger *slog.Logger) 
 	cartUsecase := biz.NewCartUsecase(cartRepo, logger)
 	cartService := service.NewCartService(cartUsecase)
 	grpcServer := server.NewGRPCServer(confServer, cartService, logger)
-	app := newApp(logger, grpcServer)
+	registrar := data.NewRegistrar(registry)
+	app := newApp(logger, grpcServer, registrar)
 	return app, func() {
 		cleanup()
 	}, nil

@@ -7,15 +7,13 @@
 package main
 
 import (
-	"log/slog"
-
+	"github.com/go-kratos/kratos/v3"
 	"goods/internal/biz"
 	"goods/internal/conf"
 	"goods/internal/data"
 	"goods/internal/server"
 	"goods/internal/service"
-
-	"github.com/go-kratos/kratos/v3"
+	"log/slog"
 )
 
 import (
@@ -24,12 +22,12 @@ import (
 
 // Injectors from wire.go:
 
-func initApp(confServer *conf.Server, confData *conf.Data, confService *conf.Service, mq *conf.Mq, logger *slog.Logger) (*kratos.App, func(), error) {
+// initApp init kratos application.
+func initApp(confServer *conf.Server, confData *conf.Data, registry *conf.Registry, confService *conf.Service, mq *conf.Mq, logger *slog.Logger) (*kratos.App, func(), error) {
 	dataData, cleanup, err := data.NewData(confData, logger)
 	if err != nil {
 		return nil, nil, err
 	}
-	inventoryClient := data.NewInventoryServiceClient(confService)
 	brandRepo := data.NewBrandRepo(dataData)
 	brandUsecase := biz.NewBrandUsecase(brandRepo, logger)
 	categoryRepo := data.NewCategoryRepo(dataData)
@@ -47,9 +45,11 @@ func initApp(confServer *conf.Server, confData *conf.Data, confService *conf.Ser
 	esGoodsRepo := data.NewEsGoodsRepo(dataData, logger)
 	goodsUsecase := biz.NewGoodsUsecase(goodsRepo, goodsSkuRepo, transaction, goodsTypeRepo, categoryRepo, brandRepo, specificationRepo, goodsAttrRepo, inventoryRepo, esGoodsRepo, logger)
 	esGoodsUsecase := biz.NewEsGoodsUsecase(goodsRepo, esGoodsRepo, categoryRepo, logger)
+	inventoryClient := data.NewInventoryServiceClient(confService)
 	goodsService := service.NewGoodsService(brandUsecase, categoryUsecase, goodsTypeUsecase, specificationUsecase, goodsAttrUsecase, goodsUsecase, esGoodsUsecase, inventoryClient, mq, logger)
 	grpcServer := server.NewGRPCServer(confServer, goodsService, logger)
-	app := newApp(logger, grpcServer)
+	registrar := data.NewRegistrar(registry)
+	app := newApp(logger, grpcServer, registrar)
 	return app, func() {
 		cleanup()
 	}, nil

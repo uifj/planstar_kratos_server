@@ -4,8 +4,8 @@ server:
     timeout: 1s
 data:
   database:
-    driver: postgres
-    source: postgres://postgres:root@postgres:5432/shop_user?sslmode=disable&TimeZone=Asia/Shanghai
+    driver: mysql
+    source: root:root@tcp(mysql:3306)/shop_user?parseTime=true&charset=utf8mb4&loc=Local
   redis:
     addr: redis:6379
     password: root

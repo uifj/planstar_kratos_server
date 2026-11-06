@@ -1,7 +1,5 @@
 cel.dev/expr v0.25.2 h1:K6j46C81hXtZQfuX60cVWQFBJahKSE2gfRbNuvr5bFs=
 cel.dev/expr v0.25.2/go.mod h1:hrXvqGP6G6gyx8UAHSHJ5RGk//1Oj5nXQ2NI02Nrsg4=
-dario.cat/mergo v1.0.2 h1:85+piFYR1tMbRrLcDwR18y4UKJ3aH1Tbzi24VRW1TK8=
-dario.cat/mergo v1.0.2/go.mod h1:E/hbnu0NxMFBjpMIE34DRGLWqDy0g5FuKDhCb31ngxA=
 github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
@@ -38,12 +36,14 @@ github.com/fsnotify/fsnotify v1.10.1 h1:b0/UzAf9yR5rhf3RPm9gf3ehBPpf0oZKIjtpKrx5
 github.com/fsnotify/fsnotify v1.10.1/go.mod h1:TLheqan6HD6GBK6PrDWyDPBaEV8LspOxvPSjC+bVfgo=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/kit v0.9.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
-github.com/go-kratos/aegis v0.2.0 h1:dObzCDWn3XVjUkgxyBp6ZeWtx/do0DPZ7LY3yNSJLUQ=
-github.com/go-kratos/aegis v0.2.0/go.mod h1:v0R2m73WgEEYB3XYu6aE2WcMwsZkJ/Rzuf5eVccm7bI=
-github.com/go-kratos/kratos/contrib/registry/consul/v2 v2.0.0-20260404020628-f149714c1d54 h1:Vg2kiE6Cn1Sbfgjb3GN+dPV470UtMdEDh5jassLVBPI=
-github.com/go-kratos/kratos/contrib/registry/consul/v2 v2.0.0-20260404020628-f149714c1d54/go.mod h1:brta+4J3UR1OBKmwfErEJwlbp5ASVNX+guPzXhQrabE=
-github.com/go-kratos/kratos/v2 v2.9.2 h1:px8GJQBeLpquDKQWQ9zohEWiLA8n4D/pv7aH3asvUvo=
-github.com/go-kratos/kratos/v2 v2.9.2/go.mod h1:Jc7jaeYd4RAPjetun2C+oFAOO7HNMHTT/Z4LxpuEDJM=
+github.com/go-kratos/kratos/contrib/middleware/jwt/v3 v3.0.0-20261026152050-dd0fb7df1e32 h1:ySYprnnuWSxfRvY1jWZGK7wRMocVHfzyG6kNCmfIOos=
+github.com/go-kratos/kratos/contrib/middleware/jwt/v3 v3.0.0-20261026152050-dd0fb7df1e32/go.mod h1:KGGmYRyWdsCbQe3NV1vGxiXbJ1pYbIGer8xJvYOTlwI=
+github.com/go-kratos/kratos/contrib/otel/v3 v3.0.0-20261026152050-dd0fb7df1e32 h1:O8kLUSp2MdmsrQGjB6QUoHEUrk3M2HZnQ/8/aZ+A+WM=
+github.com/go-kratos/kratos/contrib/otel/v3 v3.0.0-20261026152050-dd0fb7df1e32/go.mod h1:hT2QNZ/0DPOvRqVqxoBBL/aMCOHhbbWh92mF87DBiCU=
+github.com/go-kratos/kratos/contrib/registry/consul/v3 v3.0.0-20261026152050-dd0fb7df1e32 h1:oABTyli1MNgyCqB64uaPKIIH8xqhTnBJb3StW+rmdeA=
+github.com/go-kratos/kratos/contrib/registry/consul/v3 v3.0.0-20261026152050-dd0fb7df1e32/go.mod h1:jcEQLj/5hZUt9RzBRFfeeD/Xib2xpdCv1M8ux5RscEY=
+github.com/go-kratos/kratos/v3 v3.0.0 h1:dCXqKoeo2Bo9jgC72YfuwJ3g7bPCkHeVeNGyZQ51bLE=
+github.com/go-kratos/kratos/v3 v3.0.0/go.mod h1:8l+0M5UPlm/5hWLvS+wzxHRVRv6sHMG6Lgb4+rw1KIs=
 github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9GBnD5lWE=
 github.com/go-logfmt/logfmt v0.4.0/go.mod h1:3RMwSq7FuexP4Kalkev3ejPJsZTpXXBr9+V4qmtdjCk=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
@@ -84,6 +84,8 @@ github.com/gorilla/handlers v1.5.2 h1:cLTUSsNkgcwhgRqvCNmdbRWG0A3N4F+M2nWKdScwyE
 github.com/gorilla/handlers v1.5.2/go.mod h1:dX+xVpaxdSw+q0Qek8SSsl3dfMk3jNddUkMzo0GtH0w=
 github.com/gorilla/mux v1.8.1 h1:TuBL49tXwgrFYWhqrNgrUNEY92u81SPhu7sTdzQEiWY=
 github.com/gorilla/mux v1.8.1/go.mod h1:AKf9I4AEqPTmMytcMc0KkNouC66V3BtZ4qD5fmWSiMQ=
+github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
+github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/hashicorp/consul/api v1.34.4 h1:0U4YZ1Yp7K9WK9ex0gTJraFim26l02wCvsmf2ukalVE=
 github.com/hashicorp/consul/api v1.34.4/go.mod h1:vz5gBNeycefpAAVNVbLBFObUu3isju6EK8UVZjXSTWc=
 github.com/hashicorp/consul/sdk v0.18.1 h1:RDTeBvAeOveI2xI86sV+8WkaN7OkP4zz+cG3fOobDCM=

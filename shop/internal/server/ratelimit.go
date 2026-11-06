@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	kerrors "github.com/go-kratos/kratos/v2/errors"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/transport"
+	kerrors "github.com/go-kratos/kratos/v3/errors"
+	"github.com/go-kratos/kratos/v3/middleware"
+	"github.com/go-kratos/kratos/v3/transport"
 	"golang.org/x/time/rate"
 )
 

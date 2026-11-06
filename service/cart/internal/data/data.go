@@ -7,6 +7,9 @@ import (
 	"log/slog"
 
 	_ "github.com/go-sql-driver/mysql"
+	consul "github.com/go-kratos/kratos/contrib/registry/consul/v3"
+	"github.com/go-kratos/kratos/v3/registry"
+	consulAPI "github.com/hashicorp/consul/api"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
 
@@ -17,6 +20,7 @@ import (
 var ProviderSet = wire.NewSet(
 	NewData,
 	NewCartRepo,
+	NewRegistrar,
 )
 
 // Data owns the module's long-lived storage clients (MySQL + Redis).
@@ -91,4 +95,17 @@ func (d *Data) ExecTx(ctx context.Context, fn func(ctx context.Context) error) e
 		return err
 	}
 	return tx.Commit()
+}
+
+// NewRegistrar add consul
+func NewRegistrar(conf *conf.Registry) registry.Registrar {
+	c := consulAPI.DefaultConfig()
+	c.Address = conf.Consul.Address
+	c.Scheme = conf.Consul.Scheme
+	cli, err := consulAPI.NewClient(c)
+	if err != nil {
+		panic(err)
+	}
+	r := consul.New(cli, consul.WithHealthCheck(true))
+	return r
 }

@@ -2,15 +2,16 @@ package server
 
 import (
 	"context"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
-	"github.com/go-kratos/kratos/v2/middleware/logging"
-	kmetrics "github.com/go-kratos/kratos/v2/middleware/metrics"
-	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/middleware/selector"
-	"github.com/go-kratos/kratos/v2/middleware/tracing"
-	"github.com/go-kratos/kratos/v2/middleware/validate"
-	"github.com/go-kratos/kratos/v2/transport/http"
+	"log/slog"
+
+	"github.com/go-kratos/kratos/contrib/middleware/jwt/v3"
+	kmetrics "github.com/go-kratos/kratos/contrib/otel/v3/metrics"
+	tracing "github.com/go-kratos/kratos/contrib/otel/v3/tracing"
+	"github.com/go-kratos/kratos/v3/middleware/logging"
+	"github.com/go-kratos/kratos/v3/middleware/recovery"
+	"github.com/go-kratos/kratos/v3/middleware/selector"
+	"github.com/go-kratos/kratos/v3/middleware/validate"
+	"github.com/go-kratos/kratos/v3/transport/http"
 	jwt2 "github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/handlers"
 	"go.opentelemetry.io/otel"
@@ -20,7 +21,7 @@ import (
 )
 
 // NewHTTPServer new an HTTP s.
-func NewHTTPServer(c *conf.Server, ac *conf.Auth, s *service.ShopService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, ac *conf.Auth, s *service.ShopService, logger *slog.Logger) *http.Server {
 	meter := otel.Meter("kratos")
 	requests, _ := kmetrics.DefaultRequestsCounter(meter, "server_requests_code_total")
 	seconds, _ := kmetrics.DefaultSecondsHistogram(meter, "server_requests_seconds_bucket")

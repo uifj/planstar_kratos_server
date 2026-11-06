@@ -3,9 +3,9 @@ package server
 import (
 	"context"
 
-	kerrors "github.com/go-kratos/kratos/v2/errors"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
+	"github.com/go-kratos/kratos/contrib/middleware/jwt/v3"
+	kerrors "github.com/go-kratos/kratos/v3/errors"
+	"github.com/go-kratos/kratos/v3/middleware"
 	jwt2 "github.com/golang-jwt/jwt/v5"
 )
 

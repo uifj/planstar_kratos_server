@@ -3,10 +3,10 @@ package biz
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/errors"
-	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v3/errors"
 
 	paymentV1 "shop/api/service/payment/v1"
 	v1 "shop/api/shop/v1"
@@ -14,11 +14,11 @@ import (
 
 type PaymentUsecase struct {
 	pc  paymentV1.PaymentClient
-	log *log.Helper
+	log *slog.Logger
 }
 
-func NewPaymentUsecase(pc paymentV1.PaymentClient, logger log.Logger) *PaymentUsecase {
-	return &PaymentUsecase{pc: pc, log: log.NewHelper(log.With(logger, "module", "usecase/payment"))}
+func NewPaymentUsecase(pc paymentV1.PaymentClient, logger *slog.Logger) *PaymentUsecase {
+	return &PaymentUsecase{pc: pc, log: logger.With("module", "usecase/payment")}
 }
 
 func (uc *PaymentUsecase) Create(ctx context.Context, req *v1.PaymentCreateRequest) (*v1.PaymentInfoReply, error) {

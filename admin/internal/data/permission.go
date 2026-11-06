@@ -2,10 +2,10 @@ package data
 
 import (
 	"context"
+	"log/slog"
 
 	"admin/internal/biz"
 
-	"github.com/go-kratos/kratos/v2/log"
 	"gorm.io/gorm"
 )
 
@@ -33,11 +33,11 @@ func (RolePermission) TableName() string {
 
 type permissionRepo struct {
 	data *Data
-	log  *log.Helper
+	log  *slog.Logger
 }
 
-func NewPermissionRepo(data *Data, logger log.Logger) biz.PermissionRepo {
-	return &permissionRepo{data: data, log: log.NewHelper(log.With(logger, "module", "repo/permission"))}
+func NewPermissionRepo(data *Data, logger *slog.Logger) biz.PermissionRepo {
+	return &permissionRepo{data: data, log: logger.With("module", "repo/permission")}
 }
 
 func (r *permissionRepo) List(ctx context.Context) ([]*biz.Permission, error) {

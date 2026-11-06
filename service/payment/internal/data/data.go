@@ -8,6 +8,9 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	consul "github.com/go-kratos/kratos/contrib/registry/consul/v3"
+	"github.com/go-kratos/kratos/v3/registry"
+	consulAPI "github.com/hashicorp/consul/api"
 	"github.com/google/wire"
 
 	"github.com/go-kratos/kratos/v3/middleware/recovery"
@@ -19,7 +22,7 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewPaymentRepo, NewOrderServiceClient)
+var ProviderSet = wire.NewSet(NewData, NewPaymentRepo, NewOrderServiceClient, NewRegistrar)
 
 // Data owns the module's long-lived storage client (MySQL).
 type Data struct {
@@ -74,4 +77,17 @@ func NewOrderServiceClient(sr *conf.Service) orderV1.OrderClient {
 		panic(err)
 	}
 	return orderV1.NewOrderClient(conn)
+}
+
+// NewRegistrar add consul
+func NewRegistrar(conf *conf.Registry) registry.Registrar {
+	c := consulAPI.DefaultConfig()
+	c.Address = conf.Consul.Address
+	c.Scheme = conf.Consul.Scheme
+	cli, err := consulAPI.NewClient(c)
+	if err != nil {
+		panic(err)
+	}
+	r := consul.New(cli, consul.WithHealthCheck(true))
+	return r
 }

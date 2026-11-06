@@ -1,20 +1,19 @@
 name: kratos-shop
 
 services:
-  postgres:
-    image: postgres:18
-    container_name: ks-postgres
+  mysql:
+    image: mysql:8.4
+    container_name: ks-mysql
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: postgres
+      MYSQL_ROOT_PASSWORD: root
+      TZ: Asia/Shanghai
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - pgdata:/var/lib/postgresql
+      - mysqldata:/var/lib/mysql
       - ../sql:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -111,18 +110,18 @@ services:
       - ./prometheus/rules:/etc/prometheus/rules:ro
     depends_on:
       - alertmanager
-      - postgres-exporter
+      - mysqld-exporter
       - redis-exporter
 
-  postgres-exporter:
-    image: prometheuscommunity/postgres-exporter:v0.15.0
-    container_name: ks-postgres-exporter
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.15.1
+    container_name: ks-mysqld-exporter
     environment:
-      DATA_SOURCE_NAME: "postgresql://postgres:root@postgres:5432/postgres?sslmode=disable"
+      DATA_SOURCE_NAME: "root:root@tcp(mysql:3306)/"
     ports:
-      - "9187:9187"
+      - "9104:9104"
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
 
   redis-exporter:
@@ -171,7 +170,10 @@ services:
       - loki
 
   user:
-    build: ../service/user
+    build:
+      context: ../service/user
+      args:
+        GOPROXY: https://goproxy.cn,direct
     container_name: ks-user
     volumes:
       - ./configs/user:/data/conf:ro
@@ -184,7 +186,7 @@ services:
       retries: 3
       start_period: 10s
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -192,7 +194,10 @@ services:
         condition: service_healthy
 
   goods:
-    build: ../service/goods
+    build:
+      context: ../service/goods
+      args:
+        GOPROXY: https://goproxy.cn,direct
     container_name: ks-goods
     volumes:
       - ./configs/goods:/data/conf:ro
@@ -205,7 +210,7 @@ services:
       retries: 3
       start_period: 10s
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -215,7 +220,10 @@ services:
         condition: service_healthy
 
   cart:
-    build: ../service/cart
+    build:
+      context: ../service/cart
+      args:
+        GOPROXY: https://goproxy.cn,direct
     container_name: ks-cart
     volumes:
       - ./configs/cart:/data/conf:ro
@@ -228,7 +236,7 @@ services:
       retries: 3
       start_period: 10s
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -236,7 +244,10 @@ services:
         condition: service_healthy
 
   order:
-    build: ../service/order
+    build:
+      context: ../service/order
+      args:
+        GOPROXY: https://goproxy.cn,direct
     container_name: ks-order
     volumes:
       - ./configs/order:/data/conf:ro
@@ -249,7 +260,7 @@ services:
       retries: 3
       start_period: 10s
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -265,7 +276,10 @@ services:
         condition: service_started
 
   inventory:
-    build: ../service/inventory
+    build:
+      context: ../service/inventory
+      args:
+        GOPROXY: https://goproxy.cn,direct
     container_name: ks-inventory
     volumes:
       - ./configs/inventory:/data/conf:ro
@@ -278,7 +292,7 @@ services:
       retries: 3
       start_period: 10s
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -288,7 +302,10 @@ services:
         condition: service_healthy
 
   payment:
-    build: ../service/payment
+    build:
+      context: ../service/payment
+      args:
+        GOPROXY: https://goproxy.cn,direct
     container_name: ks-payment
     volumes:
       - ./configs/payment:/data/conf:ro
@@ -301,7 +318,7 @@ services:
       retries: 3
       start_period: 10s
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
       consul:
         condition: service_healthy
@@ -309,7 +326,10 @@ services:
         condition: service_healthy
 
   shop:
-    build: ../shop
+    build:
+      context: ../shop
+      args:
+        GOPROXY: https://goproxy.cn,direct
     container_name: ks-shop
     volumes:
       - ./configs/shop:/data/conf:ro
@@ -331,7 +351,10 @@ services:
         condition: service_started
 
   admin:
-    build: ../admin
+    build:
+      context: ../admin
+      args:
+        GOPROXY: https://goproxy.cn,direct
     container_name: ks-admin
     volumes:
       - ./configs/admin:/data/conf:ro
@@ -365,7 +388,7 @@ services:
       - admin
 
 volumes:
-  pgdata:
+  mysqldata:
   redisdata:
   rabbitmqdata:
   esdata:

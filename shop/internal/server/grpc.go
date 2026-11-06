@@ -1,16 +1,17 @@
 package server
 
 import (
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/transport/grpc"
+	"log/slog"
+
+	"github.com/go-kratos/kratos/v3/middleware/recovery"
+	"github.com/go-kratos/kratos/v3/transport/grpc"
 	v1 "shop/api/shop/v1"
 	"shop/internal/conf"
 	"shop/internal/service"
 )
 
 // NewGRPCServer new a gRPC s.
-func NewGRPCServer(c *conf.Server, s *service.ShopService, logger log.Logger) *grpc.Server {
+func NewGRPCServer(c *conf.Server, s *service.ShopService, logger *slog.Logger) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),

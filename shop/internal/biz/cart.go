@@ -2,8 +2,7 @@ package biz
 
 import (
 	"context"
-
-	"github.com/go-kratos/kratos/v2/log"
+	"log/slog"
 
 	cartV1 "shop/api/service/cart/v1"
 	v1 "shop/api/shop/v1"
@@ -11,11 +10,11 @@ import (
 
 type CartUsecase struct {
 	cc  cartV1.CartClient
-	log *log.Helper
+	log *slog.Logger
 }
 
-func NewCartUsecase(cc cartV1.CartClient, logger log.Logger) *CartUsecase {
-	return &CartUsecase{cc: cc, log: log.NewHelper(log.With(logger, "module", "usecase/cart"))}
+func NewCartUsecase(cc cartV1.CartClient, logger *slog.Logger) *CartUsecase {
+	return &CartUsecase{cc: cc, log: logger.With("module", "usecase/cart")}
 }
 
 func (uc *CartUsecase) List(ctx context.Context) (*v1.CartListReply, error) {

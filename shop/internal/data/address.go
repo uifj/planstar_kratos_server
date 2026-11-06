@@ -2,20 +2,21 @@ package data
 
 import (
 	"context"
-	"github.com/go-kratos/kratos/v2/log"
+	"log/slog"
+
 	addressService "shop/api/service/user/v1"
 	"shop/internal/biz"
 )
 
 type addressRepo struct {
 	data *Data
-	log  *log.Helper
+	log  *slog.Logger
 }
 
-func NewAddressRepo(data *Data, logger log.Logger) biz.AddressRepo {
+func NewAddressRepo(data *Data, logger *slog.Logger) biz.AddressRepo {
 	return &addressRepo{
 		data: data,
-		log:  log.NewHelper(log.With(logger, "module", "repo/address")),
+		log:  logger.With("module", "repo/address"),
 	}
 }
 

@@ -3,21 +3,21 @@ package biz
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 
 	v1 "admin/api/admin/v1"
 	goodsV1 "admin/api/service/goods/v1"
 
-	"github.com/go-kratos/kratos/v2/log"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type GoodsUsecase struct {
 	gc  goodsV1.GoodsClient
-	log *log.Helper
+	log *slog.Logger
 }
 
-func NewGoodsUsecase(gc goodsV1.GoodsClient, logger log.Logger) *GoodsUsecase {
-	return &GoodsUsecase{gc: gc, log: log.NewHelper(logger)}
+func NewGoodsUsecase(gc goodsV1.GoodsClient, logger *slog.Logger) *GoodsUsecase {
+	return &GoodsUsecase{gc: gc, log: logger.With("module", "usecase/goods")}
 }
 
 func (uc *GoodsUsecase) List(ctx context.Context, req *v1.GoodsListRequest) (*v1.GoodsListReply, error) {

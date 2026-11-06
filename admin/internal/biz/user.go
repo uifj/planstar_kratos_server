@@ -7,8 +7,8 @@ import (
 	"admin/internal/pkg/middleware/auth"
 	"context"
 	"errors"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
+	"log/slog"
+	"github.com/go-kratos/kratos/contrib/middleware/jwt/v3"
 	jwt2 "github.com/golang-jwt/jwt/v5"
 	"time"
 )
@@ -47,13 +47,12 @@ type UserRepo interface {
 
 type UserUsecase struct {
 	uRepo      UserRepo
-	log        *log.Helper
+	log        *slog.Logger
 	signingKey string
 }
 
-func NewUserUsecase(repo UserRepo, logger log.Logger, conf *conf.Auth) *UserUsecase {
-	helper := log.NewHelper(log.With(logger, "module", "usecase/admin"))
-	return &UserUsecase{uRepo: repo, log: helper, signingKey: conf.JwtKey}
+func NewUserUsecase(repo UserRepo, logger *slog.Logger, conf *conf.Auth) *UserUsecase {
+	return &UserUsecase{uRepo: repo, log: logger.With("module", "usecase/admin"), signingKey: conf.JwtKey}
 }
 
 // GetCaptcha 验证码

@@ -1,21 +1,14 @@
 -- 初始化 kratos-shop 使用的数据库
--- 说明：PostgreSQL 的 CREATE DATABASE 不支持 IF NOT EXISTS，
--- 这里使用 psql 的 \gexec 实现幂等创建。
+-- 说明：MySQL 的 CREATE DATABASE 支持 IF NOT EXISTS，可幂等创建。
 
-SELECT 'CREATE DATABASE shop_user'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'shop_user')\gexec
+CREATE DATABASE IF NOT EXISTS shop_user DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-SELECT 'CREATE DATABASE shop_goods'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'shop_goods')\gexec
+CREATE DATABASE IF NOT EXISTS shop_goods DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-SELECT 'CREATE DATABASE shop_cart'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'shop_cart')\gexec
+CREATE DATABASE IF NOT EXISTS shop_cart DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-SELECT 'CREATE DATABASE shop_order'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'shop_order')\gexec
+CREATE DATABASE IF NOT EXISTS shop_order DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-SELECT 'CREATE DATABASE shop_inventory'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'shop_inventory')\gexec
+CREATE DATABASE IF NOT EXISTS shop_inventory DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-SELECT 'CREATE DATABASE shop_payment'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'shop_payment')\gexec
+CREATE DATABASE IF NOT EXISTS shop_payment DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

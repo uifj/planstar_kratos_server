@@ -1,23 +1,24 @@
 package data
 
 import (
+	"context"
+	"log/slog"
+	"time"
+
+	consul "github.com/go-kratos/kratos/contrib/registry/consul/v3"
+	tracing "github.com/go-kratos/kratos/contrib/otel/v3/tracing"
+	"github.com/go-kratos/kratos/v3/middleware/recovery"
+	"github.com/go-kratos/kratos/v3/registry"
+	"github.com/go-kratos/kratos/v3/transport/grpc"
+	"github.com/google/wire"
+	consulAPI "github.com/hashicorp/consul/api"
+	grpcx "google.golang.org/grpc"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	goodsV1 "admin/api/service/goods/v1"
 	orderV1 "admin/api/service/order/v1"
 	userV1 "admin/api/service/user/v1"
 	"admin/internal/conf"
-	"context"
-	consul "github.com/go-kratos/kratos/contrib/registry/consul/v2"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/middleware/tracing"
-	"github.com/go-kratos/kratos/v2/registry"
-	"github.com/go-kratos/kratos/v2/transport/grpc"
-	"github.com/google/wire"
-	consulAPI "github.com/hashicorp/consul/api"
-	grpcx "google.golang.org/grpc"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"time"
 )
 
 // ProviderSet is data providers.
@@ -25,21 +26,21 @@ var ProviderSet = wire.NewSet(NewData, NewDB, NewUserRepo, NewAddressRepo, NewPe
 
 // Data .
 type Data struct {
-	log *log.Helper
+	log *slog.Logger
 	db  *gorm.DB
 	uc  userV1.UserClient
 	gc  goodsV1.GoodsClient
 }
 
 // NewData .
-func NewData(c *conf.Data, db *gorm.DB, uc userV1.UserClient, gc goodsV1.GoodsClient, logger log.Logger) (*Data, error) {
-	l := log.NewHelper(log.With(logger, "module", "data"))
+func NewData(c *conf.Data, db *gorm.DB, uc userV1.UserClient, gc goodsV1.GoodsClient, logger *slog.Logger) (*Data, error) {
+	l := logger.With("module", "data")
 	return &Data{log: l, db: db, uc: uc, gc: gc}, nil
 }
 
-// NewDB 连接 PostgreSQL（admin 本地权限表）
+// NewDB 连接 MySQL（admin 本地权限表）
 func NewDB(c *conf.Data) *gorm.DB {
-	db, err := gorm.Open(postgres.Open(c.Database.Source), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(c.Database.Source), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
@@ -48,7 +49,7 @@ func NewDB(c *conf.Data) *gorm.DB {
 
 // NewUserServiceClient 链接用户服务 grpc
 func NewUserServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery) userV1.UserClient {
-	conn, err := grpc.DialInsecure(
+	conn, err := grpc.NewClient(
 		context.Background(),
 		grpc.WithEndpoint(sr.User.Endpoint),
 		grpc.WithDiscovery(rr),
@@ -68,7 +69,7 @@ func NewUserServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery
 
 // NewGoodsServiceClient 链接商品服务 grpc
 func NewGoodsServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery) goodsV1.GoodsClient {
-	conn, err := grpc.DialInsecure(
+	conn, err := grpc.NewClient(
 		context.Background(),
 		grpc.WithEndpoint(sr.Goods.Endpoint),
 		grpc.WithDiscovery(rr),
@@ -87,7 +88,7 @@ func NewGoodsServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discover
 
 // NewOrderServiceClient 链接订单服务 grpc
 func NewOrderServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery) orderV1.OrderClient {
-	conn, err := grpc.DialInsecure(
+	conn, err := grpc.NewClient(
 		context.Background(),
 		grpc.WithEndpoint(sr.Order.Endpoint),
 		grpc.WithDiscovery(rr),

@@ -4,8 +4,8 @@ import (
 	v1 "admin/api/admin/v1"
 	"admin/internal/conf"
 	"context"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
+	"log/slog"
+	"github.com/go-kratos/kratos/contrib/middleware/jwt/v3"
 	jwt2 "github.com/golang-jwt/jwt/v5"
 )
 
@@ -33,16 +33,15 @@ type AddressRepo interface {
 type AddressUsecase struct {
 	uRepo      UserRepo
 	aRepo      AddressRepo
-	log        *log.Helper
+	log        *slog.Logger
 	signingKey string
 }
 
-func NewAddressUsecase(repo UserRepo, arepo AddressRepo, logger log.Logger, conf *conf.Auth) *AddressUsecase {
-	helper := log.NewHelper(log.With(logger, "module", "usecase/admin"))
+func NewAddressUsecase(repo UserRepo, arepo AddressRepo, logger *slog.Logger, conf *conf.Auth) *AddressUsecase {
 	return &AddressUsecase{
 		uRepo:      repo,
 		aRepo:      arepo,
-		log:        helper,
+		log:        logger.With("module", "usecase/admin"),
 		signingKey: conf.JwtKey}
 }
 

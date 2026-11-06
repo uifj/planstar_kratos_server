@@ -2,8 +2,7 @@ package biz
 
 import (
 	"context"
-
-	"github.com/go-kratos/kratos/v2/log"
+	"log/slog"
 
 	orderV1 "shop/api/service/order/v1"
 	v1 "shop/api/shop/v1"
@@ -11,11 +10,11 @@ import (
 
 type OrderUsecase struct {
 	oc  orderV1.OrderClient
-	log *log.Helper
+	log *slog.Logger
 }
 
-func NewOrderUsecase(oc orderV1.OrderClient, logger log.Logger) *OrderUsecase {
-	return &OrderUsecase{oc: oc, log: log.NewHelper(log.With(logger, "module", "usecase/order"))}
+func NewOrderUsecase(oc orderV1.OrderClient, logger *slog.Logger) *OrderUsecase {
+	return &OrderUsecase{oc: oc, log: logger.With("module", "usecase/order")}
 }
 
 func (uc *OrderUsecase) Create(ctx context.Context, req *v1.OrderCreateRequest) (*v1.OrderInfoReply, error) {

@@ -8,6 +8,9 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	consul "github.com/go-kratos/kratos/contrib/registry/consul/v3"
+	"github.com/go-kratos/kratos/v3/registry"
+	consulAPI "github.com/hashicorp/consul/api"
 	"github.com/google/wire"
 	"github.com/olivere/elastic/v7"
 
@@ -33,6 +36,7 @@ var ProviderSet = wire.NewSet(
 	NewInventoryRepo,
 	NewEsGoodsRepo,
 	NewInventoryServiceClient,
+	NewRegistrar,
 )
 
 // Data owns the module's long-lived storage clients (MySQL + Elasticsearch).
@@ -124,4 +128,17 @@ func NewInventoryServiceClient(sr *conf.Service) inventoryV1.InventoryClient {
 		panic(err)
 	}
 	return inventoryV1.NewInventoryClient(conn)
+}
+
+// NewRegistrar add consul
+func NewRegistrar(conf *conf.Registry) registry.Registrar {
+	c := consulAPI.DefaultConfig()
+	c.Address = conf.Consul.Address
+	c.Scheme = conf.Consul.Scheme
+	cli, err := consulAPI.NewClient(c)
+	if err != nil {
+		panic(err)
+	}
+	r := consul.New(cli, consul.WithHealthCheck(true))
+	return r
 }

@@ -1,7 +1,8 @@
 package service
 
 import (
-	"github.com/go-kratos/kratos/v2/log"
+	"log/slog"
+
 	"github.com/google/wire"
 	v1 "shop/api/shop/v1"
 	"shop/internal/biz"
@@ -20,11 +21,11 @@ type ShopService struct {
 	cu  *biz.CartUsecase
 	ou  *biz.OrderUsecase
 	pu  *biz.PaymentUsecase
-	log *log.Helper
+	log *slog.Logger
 }
 
 // NewShopService new a shop service.
-func NewShopService(uc *biz.UserUsecase, ua *biz.AddressUsecase, gu *biz.GoodsUsecase, cu *biz.CartUsecase, ou *biz.OrderUsecase, pu *biz.PaymentUsecase, logger log.Logger) *ShopService {
+func NewShopService(uc *biz.UserUsecase, ua *biz.AddressUsecase, gu *biz.GoodsUsecase, cu *biz.CartUsecase, ou *biz.OrderUsecase, pu *biz.PaymentUsecase, logger *slog.Logger) *ShopService {
 	return &ShopService{
 		uc:  uc,
 		ua:  ua,
@@ -32,6 +33,6 @@ func NewShopService(uc *biz.UserUsecase, ua *biz.AddressUsecase, gu *biz.GoodsUs
 		cu:  cu,
 		ou:  ou,
 		pu:  pu,
-		log: log.NewHelper(log.With(logger, "module", "service/shop")),
+		log: logger.With("module", "service/shop"),
 	}
 }

@@ -2,16 +2,16 @@ package main
 
 import (
 	"flag"
+	"log/slog"
 	"os"
 
-	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/config"
-	"github.com/go-kratos/kratos/v2/config/file"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/tracing"
-	"github.com/go-kratos/kratos/v2/registry"
-	"github.com/go-kratos/kratos/v2/transport/grpc"
-	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/go-kratos/kratos/v3"
+	"github.com/go-kratos/kratos/v3/config"
+	"github.com/go-kratos/kratos/v3/config/file"
+	"github.com/go-kratos/kratos/v3/log"
+	"github.com/go-kratos/kratos/v3/registry"
+	"github.com/go-kratos/kratos/v3/transport/grpc"
+	"github.com/go-kratos/kratos/v3/transport/http"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -40,7 +40,7 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, hs *http.Server, gs *grpc.Server, rr registry.Registrar) *kratos.App {
+func newApp(logger *slog.Logger, hs *http.Server, gs *grpc.Server, rr registry.Registrar) *kratos.App {
 	return kratos.New(
 		kratos.ID(id+"shop.api"),
 		kratos.Name(Name),
@@ -57,15 +57,15 @@ func newApp(logger log.Logger, hs *http.Server, gs *grpc.Server, rr registry.Reg
 
 func main() {
 	flag.Parse()
-	logger := log.With(log.NewStdLogger(os.Stdout),
-		"ts", log.DefaultTimestamp,
-		"caller", log.DefaultCaller,
-		"service.id", id,
-		"service.name", Name,
-		"service.version", Version,
-		"trace_id", tracing.TraceID(),
-		"span_id", tracing.SpanID(),
+	logger := log.NewLogger(
+		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true, Level: slog.LevelInfo}),
+	).With(
+		slog.String("service.id", id),
+		slog.String("service.name", Name),
+		slog.String("service.version", Version),
 	)
+	log.SetDefault(logger)
+
 	c := config.New(
 		config.WithSource(
 			file.NewSource(flagconf),

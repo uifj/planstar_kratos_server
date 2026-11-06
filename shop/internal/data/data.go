@@ -2,12 +2,14 @@ package data
 
 import (
 	"context"
-	consul "github.com/go-kratos/kratos/contrib/registry/consul/v2"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/middleware/tracing"
-	"github.com/go-kratos/kratos/v2/registry"
-	"github.com/go-kratos/kratos/v2/transport/grpc"
+	"log/slog"
+	"time"
+
+	consul "github.com/go-kratos/kratos/contrib/registry/consul/v3"
+	tracing "github.com/go-kratos/kratos/contrib/otel/v3/tracing"
+	"github.com/go-kratos/kratos/v3/middleware/recovery"
+	"github.com/go-kratos/kratos/v3/registry"
+	"github.com/go-kratos/kratos/v3/transport/grpc"
 	"github.com/google/wire"
 	consulAPI "github.com/hashicorp/consul/api"
 	grpcx "google.golang.org/grpc"
@@ -17,7 +19,6 @@ import (
 	paymentV1 "shop/api/service/payment/v1"
 	userV1 "shop/api/service/user/v1"
 	"shop/internal/conf"
-	"time"
 )
 
 // ProviderSet is data providers.
@@ -25,20 +26,20 @@ var ProviderSet = wire.NewSet(NewData, NewUserRepo, NewAddressRepo, NewUserServi
 
 // Data .
 type Data struct {
-	log *log.Helper
+	log *slog.Logger
 	uc  userV1.UserClient
 	gc  goodsV1.GoodsClient
 }
 
 // NewData .
-func NewData(c *conf.Data, uc userV1.UserClient, gc goodsV1.GoodsClient, logger log.Logger) (*Data, error) {
-	l := log.NewHelper(log.With(logger, "module", "data"))
+func NewData(c *conf.Data, uc userV1.UserClient, gc goodsV1.GoodsClient, logger *slog.Logger) (*Data, error) {
+	l := logger.With("module", "data")
 	return &Data{log: l, uc: uc, gc: gc}, nil
 }
 
 // NewUserServiceClient 链接用户服务 grpc
 func NewUserServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery) userV1.UserClient {
-	conn, err := grpc.DialInsecure(
+	conn, err := grpc.NewClient(
 		context.Background(),
 		grpc.WithEndpoint(sr.User.Endpoint),
 		grpc.WithDiscovery(rr),
@@ -58,7 +59,7 @@ func NewUserServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery
 
 // NewGoodsServiceClient 链接商品服务 grpc
 func NewGoodsServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery) goodsV1.GoodsClient {
-	conn, err := grpc.DialInsecure(
+	conn, err := grpc.NewClient(
 		context.Background(),
 		grpc.WithEndpoint(sr.Goods.Endpoint),
 		grpc.WithDiscovery(rr),
@@ -77,7 +78,7 @@ func NewGoodsServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discover
 
 // NewCartServiceClient 链接购物车服务 grpc
 func NewCartServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery) cartV1.CartClient {
-	conn, err := grpc.DialInsecure(
+	conn, err := grpc.NewClient(
 		context.Background(),
 		grpc.WithEndpoint(sr.Cart.Endpoint),
 		grpc.WithDiscovery(rr),
@@ -96,7 +97,7 @@ func NewCartServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery
 
 // NewOrderServiceClient 链接订单服务 grpc
 func NewOrderServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery) orderV1.OrderClient {
-	conn, err := grpc.DialInsecure(
+	conn, err := grpc.NewClient(
 		context.Background(),
 		grpc.WithEndpoint(sr.Order.Endpoint),
 		grpc.WithDiscovery(rr),
@@ -115,7 +116,7 @@ func NewOrderServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discover
 
 // NewPaymentServiceClient 链接支付服务 grpc
 func NewPaymentServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery) paymentV1.PaymentClient {
-	conn, err := grpc.DialInsecure(
+	conn, err := grpc.NewClient(
 		context.Background(),
 		grpc.WithEndpoint(sr.Payment.Endpoint),
 		grpc.WithDiscovery(rr),

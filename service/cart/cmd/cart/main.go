@@ -11,6 +11,7 @@ import (
 	"github.com/go-kratos/kratos/v3/config"
 	"github.com/go-kratos/kratos/v3/config/file"
 	"github.com/go-kratos/kratos/v3/log"
+	"github.com/go-kratos/kratos/v3/registry"
 	"github.com/go-kratos/kratos/v3/transport/grpc"
 
 	_ "go.uber.org/automaxprocs"
@@ -31,7 +32,7 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger *slog.Logger, gs *grpc.Server) *kratos.App {
+func newApp(logger *slog.Logger, gs *grpc.Server, rr registry.Registrar) *kratos.App {
 	return kratos.New(
 		kratos.ID(id+"cart service"),
 		kratos.Name(Name),
@@ -39,6 +40,7 @@ func newApp(logger *slog.Logger, gs *grpc.Server) *kratos.App {
 		kratos.Metadata(map[string]string{}),
 		kratos.Logger(logger),
 		kratos.Server(gs),
+		kratos.Registrar(rr),
 	)
 }
 
@@ -69,7 +71,12 @@ func main() {
 		panic(err)
 	}
 
-	app, cleanup, err := initApp(bc.Server, bc.Data, logger)
+	var rc conf.Registry
+	if err := c.Scan(&rc); err != nil {
+		panic(err)
+	}
+
+	app, cleanup, err := initApp(bc.Server, bc.Data, &rc, logger)
 	if err != nil {
 		panic(err)
 	}

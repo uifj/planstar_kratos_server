@@ -2,20 +2,19 @@ package biz
 
 import (
 	"context"
+	"log/slog"
 
 	goodsV1 "shop/api/service/goods/v1"
 	v1 "shop/api/shop/v1"
-
-	"github.com/go-kratos/kratos/v2/log"
 )
 
 type GoodsUsecase struct {
 	gc  goodsV1.GoodsClient
-	log *log.Helper
+	log *slog.Logger
 }
 
-func NewGoodsUsecase(gc goodsV1.GoodsClient, logger log.Logger) *GoodsUsecase {
-	return &GoodsUsecase{gc: gc, log: log.NewHelper(logger)}
+func NewGoodsUsecase(gc goodsV1.GoodsClient, logger *slog.Logger) *GoodsUsecase {
+	return &GoodsUsecase{gc: gc, log: logger.With("module", "usecase/goods")}
 }
 
 func (uc *GoodsUsecase) List(ctx context.Context, req *v1.GoodsListRequest) (*v1.GoodsListReply, error) {

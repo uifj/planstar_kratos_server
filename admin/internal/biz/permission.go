@@ -2,10 +2,9 @@ package biz
 
 import (
 	"context"
+	"log/slog"
 
 	v1 "admin/api/admin/v1"
-
-	"github.com/go-kratos/kratos/v2/log"
 )
 
 type Permission struct {
@@ -24,11 +23,11 @@ type PermissionRepo interface {
 
 type PermissionUsecase struct {
 	repo PermissionRepo
-	log  *log.Helper
+	log  *slog.Logger
 }
 
-func NewPermissionUsecase(repo PermissionRepo, logger log.Logger) *PermissionUsecase {
-	return &PermissionUsecase{repo: repo, log: log.NewHelper(log.With(logger, "module", "usecase/permission"))}
+func NewPermissionUsecase(repo PermissionRepo, logger *slog.Logger) *PermissionUsecase {
+	return &PermissionUsecase{repo: repo, log: logger.With("module", "usecase/permission")}
 }
 
 func (uc *PermissionUsecase) List(ctx context.Context) (*v1.PermissionListReply, error) {
