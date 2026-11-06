@@ -57,6 +57,14 @@ jobs:
     needs: build-push
     runs-on: ubuntu-latest
     if: ${{ vars.SERVER_HOST != '' || secrets.SERVER_HOST != '' }}
+    permissions:
+      contents: read
+      packages: read
+      deployments: write
+    # 记录到 GitHub Deployments 面板（Environment）
+    environment:
+      name: production
+      url: http://${{ secrets.SERVER_HOST }}:8098
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
