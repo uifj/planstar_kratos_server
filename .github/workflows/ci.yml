@@ -1,0 +1,45 @@
+# CI：push / PR 时构建、静态检查与单测
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "planstar/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "planstar/**"
+      - ".github/workflows/ci.yml"
+
+defaults:
+  run:
+    working-directory: planstar
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+          cache-dependency-path: planstar/go.sum
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...

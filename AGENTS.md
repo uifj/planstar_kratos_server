@@ -64,11 +64,15 @@ go test ./...
 
 ## CI/CD
 
-- `.github/workflows/planstar-deploy.yml` — on push to main: build + vet + test,
-  then GHCR (`main`/`latest`) → SSH deploy → GitHub Deployments. Pull requests run
-  the test job only (no image push, no deploy).
-- `.github/workflows/planstar-release.yml` — tag `v*.*.*` → semver image
-  (`0.1.0`/`0.1`/`v0.1.0`/`latest`) in GitHub Packages + GitHub Release + deploy.
+Workflows mirror the kratos-shop pipeline set:
+
+- `CI` (`.github/workflows/ci.yml`) — build + vet + test in `planstar/` on push/PR.
+- `Release` (`.github/workflows/release.yml`) — tag `v*.*.*` → semver image in
+  GitHub Packages + GitHub Release + SSH deploy (GitHub Deployments).
+- `GitHub Pages` (`.github/workflows/pages.yml`) — publish `site/` to Pages.
+- `Dependency Graph` (`.github/workflows/dependency-graph.yml`) — snapshot
+  `go mod graph` on manifest changes.
+- `Dependabot Updates` (`.github/dependabot.yml`) — weekly dependency PRs.
 
 GitHub secrets used by deploy: `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`,
 `SERVER_PORT`, `APP_DIR`, optional `GHCR_TOKEN`.

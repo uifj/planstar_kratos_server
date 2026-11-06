@@ -1,70 +1,39 @@
-# Planstar 持续交付：push 到 main -> 测试 -> 构建镜像 -> 推送 GHCR -> SSH 部署
-# PR 仅执行测试（不构建镜像、不部署）。
+# Release：push tag v*.*.* -> 构建推送镜像(Packages) -> 创建 GitHub Release -> 部署(Deployments)
 #
-# 需在仓库 Settings -> Secrets and variables 配置（部署用）：
-#   SERVER_HOST / SERVER_USER / SERVER_SSH_KEY / SERVER_PORT / APP_DIR
-#   GHCR_TOKEN（私有镜像拉取，可选）
-name: planstar-deploy
+# 触发：
+#   git tag v0.1.0 && git push origin v0.1.0
+#
+# 部署所需 Secrets（缺失则自动跳过部署）：
+#   SERVER_HOST / SERVER_USER / SERVER_SSH_KEY / SERVER_PORT / APP_DIR / GHCR_TOKEN
+name: Release
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "planstar/**"
-      - ".github/workflows/planstar-deploy.yml"
-  pull_request:
-    branches: [main]
-    paths:
-      - "planstar/**"
-      - ".github/workflows/planstar-deploy.yml"
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "发布版本号（如 v0.1.0）"
+        required: true
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/planstar-api
-
-defaults:
-  run:
-    working-directory: planstar
+  RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
 jobs:
-  test:
-    name: Test (build / vet / unit)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.26"
-          cache: true
-          cache-dependency-path: planstar/go.sum
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Build
-        run: go build ./...
-
-      - name: Vet
-        run: go vet ./...
-
-      - name: Test
-        run: go test ./...
-
-  build-push:
-    name: Build & push image
-    needs: test
-    if: github.event_name != 'pull_request'
+  release:
+    name: Build, push image and create release
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
+      contents: write    # 创建 GitHub Release
+      packages: write    # 推送镜像到 GHCR
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -79,22 +48,40 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=tag
+            type=raw,value=latest,enable=${{ !contains(env.RELEASE_TAG, '-') }}
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: ./planstar
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_TAG }}
+          generate_release_notes: true
+          prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
+
   deploy:
-    name: Deploy to server
-    needs: build-push
+    name: Deploy release to server
+    needs: release
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && (vars.SERVER_HOST != '' || secrets.SERVER_HOST != '')
+    if: ${{ vars.SERVER_HOST != '' || secrets.SERVER_HOST != '' }}
     permissions:
       contents: read
       packages: read
@@ -114,14 +101,13 @@ jobs:
           script: |
             set -e
             cd "${{ secrets.APP_DIR }}"
-            # 以远端 main 为准重建工作区，兼容此前 release 部署导致的 detached HEAD
-            git fetch origin main
-            git checkout -B main origin/main
+            git fetch --tags --force
+            git checkout "${{ env.RELEASE_TAG }}"
             if [ -n "${{ secrets.GHCR_TOKEN }}" ]; then
               echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             fi
             export PLANSTAR_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-            export PLANSTAR_TAG=main
+            export PLANSTAR_TAG=${{ env.RELEASE_TAG }}
             docker compose -f planstar/docker-compose.yml pull
             docker compose -f planstar/docker-compose.yml up -d --remove-orphans
             docker compose -f planstar/docker-compose.yml ps

@@ -1,0 +1,38 @@
+# Dependency Graph：依赖清单变更时生成并上传 Go 模块依赖图快照
+name: Dependency Graph
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "planstar/go.mod"
+      - "planstar/go.sum"
+      - ".github/workflows/dependency-graph.yml"
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: planstar
+
+jobs:
+  snapshot:
+    name: Generate snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Generate dependency graph
+        run: go mod graph > "$GITHUB_WORKSPACE/dependency-graph.txt"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-graph
+          path: dependency-graph.txt
+          retention-days: 14

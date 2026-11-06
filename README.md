@@ -64,8 +64,11 @@ Prometheus / Alertmanager / Grafana / Loki / Promtail / Traefik。
 
 | 工作流 | 触发 | 产物 |
 |---|---|---|
-| [`planstar-deploy.yml`](.github/workflows/planstar-deploy.yml) | push / PR 到 main（`planstar/**`） | PR：仅 build/vet/test；push：测试 → 镜像 `main`/`latest` → GHCR → SSH 部署 → **Deployments** |
-| [`planstar-release.yml`](.github/workflows/planstar-release.yml) | push tag `v*.*.*` | 镜像 `0.1.0`/`0.1`/`v0.1.0`/`latest`（**Packages**）+ **Release** + 部署 |
+| [`CI`](.github/workflows/ci.yml) | push / PR 到 main（`planstar/**`） | `go build` + `go vet` + `go test` |
+| [`Release`](.github/workflows/release.yml) | push tag `v*.*.*` | 镜像 `0.1.0`/`0.1`/`v0.1.0`/`latest`（**Packages**）+ **Release** + 部署（**Deployments**） |
+| [`GitHub Pages`](.github/workflows/pages.yml) | push 到 main（`site/**`） | 发布 `site/` 到 Pages |
+| [`Dependency Graph`](.github/workflows/dependency-graph.yml) | push 到 main（`go.mod`/`go.sum`） | 生成并上传依赖图快照 |
+| `Dependabot Updates` | 每周（[dependabot.yml](.github/dependabot.yml)） | 自动升级 Go / Actions / Docker 依赖 PR |
 
 发布新版本：
 
