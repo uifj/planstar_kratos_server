@@ -5,7 +5,7 @@ go 1.26
 require (
 	github.com/go-kratos/kratos/contrib/registry/consul/v3 v3.0.0-20261026152050-dd0fb7df1e32
 	github.com/go-kratos/kratos/v3 v3.0.0
-	github.com/go-sql-driver/mysql v1.10.0
+	github.com/go-sql-driver/mysql v1.10.1
 	github.com/hashicorp/consul/api v1.34.2
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/prometheus/client_golang v1.24.1
