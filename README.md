@@ -67,7 +67,7 @@ Prometheus / Alertmanager / Grafana / Loki / Promtail / Traefik。
 | [`CI`](.github/workflows/ci.yml) | push / PR 到 main（`planstar/**`） | `go build` + `go vet` + `go test` |
 | [`Release`](.github/workflows/release.yml) | push tag `v*.*.*` | 镜像 `0.1.0`/`0.1`/`v0.1.0`/`latest`（**Packages**）+ **Release** + 部署（**Deployments**） |
 | [`GitHub Pages`](.github/workflows/pages.yml) | push 到 main（`site/**`） | 发布 `site/` 到 Pages |
-| [`Dependency Graph`](.github/workflows/dependency-graph.yml) | push 到 main（`go.mod`/`go.sum`） | 生成并上传依赖图快照 |
+| `Dependency Graph` | 仓库已启用（GitHub 内置） | 依赖关系可视化 |
 | `Dependabot Updates` | 每周（[dependabot.yml](.github/dependabot.yml)） | 自动升级 Go / Actions / Docker 依赖 PR |
 
 发布新版本：
@@ -77,12 +77,13 @@ git tag v0.1.1
 git push origin v0.1.1
 ```
 
-### 仓库一次性配置
+### 仓库设置（已完成）
 
-1. **Settings → Actions → General → Workflow permissions** 选择 **Read and write**
-   （否则无法推送 GHCR / 创建 Release）。
-2. **Settings → Environments** 新建 `production`（可加保护规则或人工审批）。
-3. **Settings → Secrets and variables → Actions** 配置：
+1. **Settings → Actions → General → Workflow permissions**：**Read and write**（推送 GHCR / 创建 Release）。
+2. **Settings → Pages → Source**：**GitHub Actions**（发布 `site/`）。
+3. **Settings → Code security → Dependency graph**：**Enable**。
+4. **Settings → Environments**：`production`（Release 部署记录，可加保护规则）。
+5. **Settings → Secrets and variables → Actions**（部署用）：
    - `SERVER_HOST`、`SERVER_USER`、`SERVER_SSH_KEY`、`SERVER_PORT`、`APP_DIR`
    - `GHCR_TOKEN`（可选，拉取私有镜像用）
 

@@ -70,8 +70,7 @@ Workflows mirror the kratos-shop pipeline set:
 - `Release` (`.github/workflows/release.yml`) — tag `v*.*.*` → semver image in
   GitHub Packages + GitHub Release + SSH deploy (GitHub Deployments).
 - `GitHub Pages` (`.github/workflows/pages.yml`) — publish `site/` to Pages.
-- `Dependency Graph` (`.github/workflows/dependency-graph.yml`) — snapshot
-  `go mod graph` on manifest changes.
+- `Dependency Graph` — GitHub-managed (enabled in repository settings).
 - `Dependabot Updates` (`.github/dependabot.yml`) — weekly dependency PRs.
 
 GitHub secrets used by deploy: `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`,
