@@ -1,4 +1,4 @@
-ARG GOPROXY=https://goproxy.cn,direct
+ARG GOPROXY=https://goproxy.cn,https://proxy.golang.org,direct
 ARG VERSION=unknown
 
 FROM golang:1.26.5 AS builder

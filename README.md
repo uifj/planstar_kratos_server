@@ -1,148 +1,105 @@
-# Kratos Project Template
+# Planstar 后端服务
 
-A project template for creating new Kratos services with HTTP and gRPC
-transports, protobuf-first APIs, Wire dependency injection, OpenAPI generation,
-and a small CRUD example.
+企划星（Planstar）Flutter 客户端的后端 API 服务：单一 Kratos v3 服务、单一二进制，
+数据落在 9 个 `planstar_*` MySQL 库。客户端契约以
+[docs/api/API_CONTRACT.md](docs/api/API_CONTRACT.md) 为准。
 
-Use this repository as a starting point for a new service. The included sample
-resource is only reference code for API shape, layering, code generation, and
-testing. Replace it with your own domain model when creating a real project.
+> 仓库根目录保留的是历史 kratos-layout 模板（已归档、无 Go 包），真实服务代码全部在
+> [`planstar/`](planstar) 独立模块中。CI 只构建 `planstar/`。
 
-## Create a New Project
+## 技术栈
 
-1. Copy or generate a repository from this template.
-2. Update the Go module path:
+- **Kratos v3**（HTTP 传输，`http.ServeMux` + 原生 `net/http` handler）
+- **MySQL 8.x**：9 个库（user/catalog/ticket/order/payment/marketing/community/content/meta）
+- **Redis**：会话缓存、验证码、发码限流、登录失败计数
+- **RabbitMQ**：领域事件发布/消费（重试 + DLX + W3C trace 透传）
+- **Elasticsearch**：演出读模型与热榜查询（失败回退 MySQL）
+- **Consul** 服务注册、**Jaeger** 链路追踪、**Prometheus** 指标
+- 依赖在 [`planstar/cmd/planstar/main.go`](planstar/cmd/planstar/main.go) 手工组装，无 Wire
 
-```bash
-go mod edit -module github.com/your-org/your-service
-```
-
-3. Replace existing import paths that reference this template module.
-4. Rename the command, service metadata, and sample API package to match your
-   service.
-5. Replace the sample CRUD resource with your own resource.
-6. Regenerate code and verify the project:
-
-```bash
-make all
-go test ./...
-```
-
-## What Is Included
-
-- Kratos HTTP and gRPC server setup.
-- Protobuf API definitions and generated Go code.
-- OpenAPI generation.
-- Wire-based dependency injection.
-- Layered `service`, `biz`, and `data` packages.
-- Ent-backed repository (MySQL at runtime, SQLite in tests).
-- All documented Kratos middleware, composed in `internal/server` (see
-  [MIDDLEWARE.md](MIDDLEWARE.md)).
-- Unit tests for the service, data, and server layers.
-- Server-streaming and bidirectional-streaming examples.
-
-## Project Layout
+## 目录结构
 
 ```text
-api/                  Protobuf APIs and generated bindings
-cmd/                  Application entrypoints
-configs/              Local configuration
-internal/server/      HTTP and gRPC server construction
-internal/service/     Transport-facing service methods
-internal/biz/         Usecases, entities, errors, repository interfaces
-internal/data/        Repository implementations
-third_party/          Protobuf dependencies
-openapi.yaml          Generated OpenAPI document
+planstar/                    独立 Go 模块（module planstar）
+  cmd/planstar/              入口 + 依赖装配
+  internal/conf/             配置结构与环境变量覆盖
+  internal/biz/              用例、领域对象（DO）、仓储端口、领域事件
+  internal/data/             仓储实现（MySQL / Redis / ES）、*Data 客户端持有者
+  internal/service/          HTTP handler（DTO ↔ DO）
+  internal/server/           业务端口 + 管理端口（/metrics /healthz /readyz）
+  internal/mq/               RabbitMQ 发布器 / 消费者（DLX + trace）
+  internal/observability/    Prometheus 指标 + Jaeger tracing + trace 日志
+  internal/pkg/              captcha / secret / session / httpx
+  configs/                   config.yaml / config.docker.yaml / config.prod.yaml
+  deploy/                    Prometheus / Alertmanager / Loki / Promtail / Traefik / Grafana
+  sql/                       认证支撑表
+  docker-compose.yml         单机全容器编排
+docs/api/                    客户端 API 契约
+docs/sql/                    9 个库建表 + 演示数据
 ```
 
-## API Template Practices
-
-The sample CRUD API demonstrates common conventions for Kratos projects:
-
-- Resource-oriented methods: create, get, list, update, delete.
-- HTTP annotations with `google.api.http`.
-- Required fields with `google.api.field_behavior`.
-- List requests with `page_size`, `page_token`, `filter`, and `order_by`.
-- Pagination with `go.einride.tech/aip/pagination`.
-- Partial updates with `google.protobuf.FieldMask` and `fieldmask.Update`.
-- Streaming RPC definitions for one-way and bidirectional streams.
-
-The Ent-backed data layer demonstrates the flow across layers. Real repositories
-can apply parsed filters and ordering in SQL, Ent, or another storage layer.
-
-## Middleware
-
-Every middleware documented in the Kratos v3 component docs is wired into this
-template through `internal/server/middleware.go`, following the clean-architecture
-layering contract in `AGENTS.md`:
-
-- **Core**: `metadata`, `logging`, `recovery`, `validate`, `ratelimit`,
-  `selector`, `circuitbreaker`, plus `middleware.Chain`.
-- **Contrib**: JWT (`contrib/middleware/jwt/v3`), OpenTelemetry tracing and
-  metrics (`contrib/otel/v3`).
-
-`internal/biz` declares the policy ports, `internal/data` implements them,
-`internal/server` composes the chains, and `cmd/server` wires everything with
-Wire. All middleware is toggled from the `middleware:` section of
-`configs/config.yaml`; JWT is off by default until `JWT_SIGNING_KEY` is set.
-
-See [MIDDLEWARE.md](MIDDLEWARE.md) for the full inventory, chain ordering,
-configuration reference, and the client-side chain usage note.
-
-## Development Commands
-
-Install generators:
+## 本地开发
 
 ```bash
-make init
-```
-
-Regenerate API bindings and OpenAPI:
-
-```bash
-make api
-```
-
-Regenerate config protobufs:
-
-```bash
-make config
-```
-
-Run all generation steps, Wire, and module cleanup:
-
-```bash
-make all
-```
-
-Build:
-
-```bash
-make build
-```
-
-Test:
-
-```bash
+cd planstar
+go build ./...
 go test ./...
+go run ./cmd/planstar -conf ./configs/config.yaml
 ```
 
-## Run Locally
+端口：业务 `8098`；运维 `9108`（`/metrics`、`/healthz`、`/readyz`）。
+
+## 容器化运行
 
 ```bash
-go run ./cmd/server -conf ./configs
+cd planstar
+cp .env.example .env          # 按需修改口令
+docker compose up -d --build
 ```
 
-Default local ports are configured in `configs/config.yaml`:
+全栈包含 MySQL / Redis / RabbitMQ / Elasticsearch / Consul / Jaeger /
+Prometheus / Alertmanager / Grafana / Loki / Promtail / Traefik。
 
-- HTTP: `0.0.0.0:8000`
-- gRPC: `0.0.0.0:9000`
+## CI/CD（GitHub Actions）
 
-## Docker
+| 工作流 | 触发 | 产物 |
+|---|---|---|
+| [`go.yml`](.github/workflows/go.yml)（Planstar CI） | push / PR 到 main（`planstar/**`） | `go build` + `go vet` + `go test` |
+| [`planstar-deploy.yml`](.github/workflows/planstar-deploy.yml) | push 到 main（`planstar/**`） | 镜像 `main`/`latest` → GHCR → SSH 部署 → **Deployments** |
+| [`planstar-release.yml`](.github/workflows/planstar-release.yml) | push tag `v*.*.*` | 镜像 `0.1.0`/`0.1`/`v0.1.0`/`latest`（**Packages**）+ **Release** + 部署 |
+
+发布新版本：
 
 ```bash
-docker build -t <your-image-name> .
-docker run --rm -p 8000:8000 -p 9000:9000 \
-  -v </path/to/your/configs>:/data/conf \
-  <your-image-name>
+git tag v0.1.1
+git push origin v0.1.1
 ```
+
+### 仓库一次性配置
+
+1. **Settings → Actions → General → Workflow permissions** 选择 **Read and write**
+   （否则无法推送 GHCR / 创建 Release）。
+2. **Settings → Environments** 新建 `production`（可加保护规则或人工审批）。
+3. **Settings → Secrets and variables → Actions** 配置：
+   - `SERVER_HOST`、`SERVER_USER`、`SERVER_SSH_KEY`、`SERVER_PORT`、`APP_DIR`
+   - `GHCR_TOKEN`（可选，拉取私有镜像用）
+
+未配置 `SERVER_HOST` 时，部署 job 自动跳过（Packages / Releases 仍正常生成）。
+
+## 部署到单台服务器
+
+由 CI 自动完成；也可在服务器上手动执行：
+
+```bash
+cd /opt/planstar
+PLANSTAR_IMAGE=ghcr.io/uifj/planstar-api PLANSTAR_TAG=v0.1.0 \
+  docker compose -f planstar/docker-compose.yml pull
+PLANSTAR_IMAGE=ghcr.io/uifj/planstar-api PLANSTAR_TAG=v0.1.0 \
+  docker compose -f planstar/docker-compose.yml up -d --remove-orphans
+```
+
+## 说明
+
+- 本服务为手写 HTTP handler，不使用 protobuf / Wire 代码生成。
+- 金额：数据库存元（`DECIMAL`），API 输出分（×100）。
+- 鉴权：`Cookie: psSession=…`；登录失败 `5xx + text/plain`；发码恒 `200 + {success,needCaptcha,errorMsg}`。
