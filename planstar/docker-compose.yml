@@ -1,0 +1,226 @@
+# =====================================================================
+# Planstar 生产编排（单机单服务器 · 全容器）
+# 用法:
+#   cp .env.example .env        # 修改口令/镜像目标
+#   docker compose up -d --build
+# 一键推送部署: ./deploy.sh  （见脚本头部说明）
+# =====================================================================
+
+name: planstar
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+x-app-env: &app-env
+  PLANSTAR_MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+  PLANSTAR_REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
+  PLANSTAR_MQ_ADDR: amqp://${RABBITMQ_USER:-root}:${RABBITMQ_PASS:-root}@rabbitmq:5672/
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # 首次初始化：建库建表 -> 演示数据 -> 认证支撑（按文件名字典序）
+      - ../docs/sql/00_all.sql:/docker-entrypoint-initdb.d/00_all.sql:ro
+      - ../docs/sql/14_mock_seed.sql:/docker-entrypoint-initdb.d/14_mock_seed.sql:ro
+      - ./sql/15_auth_support.sql:/docker-entrypoint-initdb.d/15_auth_support.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+    logging: *default-logging
+    networks: [planstar]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-root}"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-root}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    logging: *default-logging
+    networks: [planstar]
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-root}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-root}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - mq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    logging: *default-logging
+    networks: [planstar]
+
+  elasticsearch:
+    image: elasticsearch:7.17.22
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "false"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9200/_cluster/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    logging: *default-logging
+    networks: [planstar]
+
+  consul:
+    image: hashicorp/consul:1.19.1
+    restart: unless-stopped
+    command: ["agent", "-server", "-bootstrap-expect=1", "-ui", "-client=0.0.0.0", "-bind=0.0.0.0"]
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    volumes:
+      - consul_data:/consul/data
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    logging: *default-logging
+    networks: [planstar]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "14268:14268"
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    logging: *default-logging
+    networks: [planstar]
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    networks: [planstar]
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks: [planstar]
+
+  planstar-api:
+    image: ${PLANSTAR_IMAGE:-ghcr.io/uifj/planstar-api}:${PLANSTAR_TAG:-latest}
+    build:
+      context: .
+      args:
+        VERSION: ${VERSION:-dev}
+    restart: unless-stopped
+    init: true
+    environment:
+      <<: *app-env
+      TZ: Asia/Shanghai
+    ports:
+      - "8098:8098"
+      - "9108:9108"
+    volumes:
+      - ./configs/config.prod.yaml:/data/conf/config.yaml:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9108/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    logging: *default-logging
+    networks: [planstar]
+
+volumes:
+  mysql_data:
+  redis_data:
+  mq_data:
+  es_data:
+  consul_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  planstar:
+    driver: bridge

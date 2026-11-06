@@ -1,0 +1,54 @@
+# ------------------------------------------------------------------
+# planstar 生产配置（docker-compose 内部网络）
+# 敏感项留空，由部署侧通过环境变量注入（见 conf.go 的 override）：
+#   PLANSTAR_MYSQL_PASSWORD / PLANSTAR_REDIS_PASSWORD / PLANSTAR_MQ_ADDR
+# 地址统一使用 compose 服务名，禁止写入真实口令。
+# ------------------------------------------------------------------
+
+server:
+  http:
+    addr: 0.0.0.0:8098
+  # 运维端口：/metrics（Prometheus）、/healthz、/readyz
+  admin:
+    addr: 0.0.0.0:9108
+
+data:
+  mysql:
+    addr: mysql:3306
+    user: root
+    password: ""
+    charset: utf8mb4
+  redis:
+    addr: redis:6379
+    password: ""
+    db: 0
+  elastic:
+    addr: http://elasticsearch:9200
+    index_prefix: planstar
+    sync_interval_seconds: 300
+    request_timeout_seconds: 3
+
+# 会话有效期（天）
+auth:
+  session_expire_days: 30
+
+# Jaeger 链路追踪（endpoint 留空则关闭 tracing）
+trace:
+  endpoint: http://jaeger:14268/api/traces
+  env: prod
+  # 生产采样率：默认 10%，避免海量 span 压垮存储
+  sample_ratio: 0.1
+
+# RabbitMQ 异步事件（用户名密码由 PLANSTAR_MQ_ADDR 注入）
+mq:
+  addr: amqp://rabbitmq:5672/
+  exchange: planstar.exchange
+  queue: planstar.api.events
+
+# Consul 服务注册（address 留空则不注册）
+registry:
+  consul:
+    address: consul:8500
+    scheme: http
+    # 注册到 Consul 的可达地址：compose 网络内用服务名
+    service_host: planstar-api

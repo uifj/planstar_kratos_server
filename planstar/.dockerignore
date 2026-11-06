@@ -1,0 +1,8 @@
+bin/
+*.log
+.git/
+.env
+.env.*
+docker-compose*.yml
+deploy/
+configs/

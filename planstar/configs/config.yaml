@@ -1,0 +1,46 @@
+server:
+  http:
+    addr: 0.0.0.0:8098
+  # 运维端口：/metrics（Prometheus）、/healthz、/readyz
+  admin:
+    addr: 0.0.0.0:9108
+
+data:
+  mysql:
+    addr: 127.0.0.1:3306
+    user: root
+    password: root
+    charset: utf8mb4
+  redis:
+    addr: 127.0.0.1:6379
+    password: root
+    db: 0
+  elastic:
+    addr: http://127.0.0.1:9200
+    index_prefix: planstar
+    sync_interval_seconds: 300
+    request_timeout_seconds: 3
+
+# 会话有效期（天）
+auth:
+  session_expire_days: 30
+
+# Jaeger 链路追踪（留空则关闭 tracing）
+trace:
+  endpoint: http://127.0.0.1:14268/api/traces
+  env: dev
+  sample_ratio: 1.0
+
+# RabbitMQ 异步事件
+mq:
+  addr: amqp://root:root@127.0.0.1:5672/
+  exchange: planstar.exchange
+  queue: planstar.api.events
+
+# Consul 服务注册（address 留空则不注册）
+registry:
+  consul:
+    address: 127.0.0.1:8500
+    scheme: http
+    # Consul 在容器内时，用它可解析到宿主机的地址（健康检查与调用方都走这里）
+    service_host: host.docker.internal

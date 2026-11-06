@@ -1,0 +1,12 @@
+# Planstar 单机 Prometheus 抓取配置
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    env: prod
+
+scrape_configs:
+  - job_name: planstar-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["planstar-api:9108"]
