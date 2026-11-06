@@ -1,0 +1,32 @@
+name: shop.api
+server:
+  http:
+    addr: 0.0.0.0:8097
+    timeout: 1s
+  grpc:
+    addr: 0.0.0.0:9001
+    timeout: 1s
+data:
+  database:
+    driver: postgres
+    source: postgres://postgres:root@127.0.0.1:5432/shop_user?sslmode=disable&TimeZone=Asia/Shanghai
+  redis:
+    addr: 127.0.0.1:6379
+    password: root
+    read_timeout: 0.2s
+    write_timeout: 0.2s
+trace:
+  endpoint: http://127.0.0.1:14268/api/traces
+auth:
+  jwt_key: hqFr%3ddt32DGlSTOI5cO6@TH#fFwYnP$S
+service:
+  user:
+    endpoint: discovery:///shop.user.service
+  goods:
+    endpoint: discovery:///shop.goods.service
+  cart:
+    endpoint: discovery:///shop.cart.service
+  order:
+    endpoint: discovery:///shop.order.service
+  payment:
+    endpoint: discovery:///shop.payment.service

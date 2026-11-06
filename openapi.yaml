@@ -9,13 +9,13 @@ paths:
     /admin/api/address/create:
         post:
             tags:
-                - AdminService
-            operationId: AdminService_CreateAddress
+                - Admin
+            operationId: Admin_CreateAddress
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.CreateAddressReq'
+                            $ref: '#/components/schemas/admin.admin.v1.CreateAddressReq'
                 required: true
             responses:
                 "200":
@@ -23,17 +23,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.AddressInfo'
+                                $ref: '#/components/schemas/admin.admin.v1.AddressInfo'
     /admin/api/address/default:
         put:
             tags:
-                - AdminService
-            operationId: AdminService_DefaultAddress
+                - Admin
+            operationId: Admin_DefaultAddress
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.AddressReq'
+                            $ref: '#/components/schemas/admin.admin.v1.AddressReq'
                 required: true
             responses:
                 "200":
@@ -41,12 +41,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/address/delete:
         delete:
             tags:
-                - AdminService
-            operationId: AdminService_DeleteAddress
+                - Admin
+            operationId: Admin_DeleteAddress
             parameters:
                 - name: id
                   in: query
@@ -62,29 +62,29 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/address/list/uid:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_AddressListByUid
+                - Admin
+            operationId: Admin_AddressListByUid
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.ListAddressReply'
+                                $ref: '#/components/schemas/admin.admin.v1.ListAddressReply'
     /admin/api/address/update:
         put:
             tags:
-                - AdminService
-            operationId: AdminService_UpdateAddress
+                - Admin
+            operationId: Admin_UpdateAddress
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.UpdateAddressReq'
+                            $ref: '#/components/schemas/admin.admin.v1.UpdateAddressReq'
                 required: true
             responses:
                 "200":
@@ -92,24 +92,25 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/dashboard/stats:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_DashboardStats
+                - Admin
+            description: 运营看板
+            operationId: Admin_DashboardStats
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.DashboardStatsReply'
+                                $ref: '#/components/schemas/admin.admin.v1.DashboardStatsReply'
     /admin/api/goods/brands:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_BrandList
+                - Admin
+            operationId: Admin_BrandList
             parameters:
                 - name: page
                   in: query
@@ -127,29 +128,29 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.BrandListReply'
+                                $ref: '#/components/schemas/admin.admin.v1.BrandListReply'
     /admin/api/goods/categories:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_CategoryList
+                - Admin
+            operationId: Admin_CategoryList
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CategoryListReply'
+                                $ref: '#/components/schemas/admin.admin.v1.CategoryListReply'
     /admin/api/goods/category/create:
         post:
             tags:
-                - AdminService
-            operationId: AdminService_CreateCategory
+                - Admin
+            operationId: Admin_CreateCategory
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.CategorySaveRequest'
+                            $ref: '#/components/schemas/admin.admin.v1.CategorySaveRequest'
                 required: true
             responses:
                 "200":
@@ -157,12 +158,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CategoryItem'
+                                $ref: '#/components/schemas/admin.admin.v1.CategoryItem'
     /admin/api/goods/category/delete:
         delete:
             tags:
-                - AdminService
-            operationId: AdminService_DeleteCategory
+                - Admin
+            operationId: Admin_DeleteCategory
             parameters:
                 - name: id
                   in: query
@@ -174,17 +175,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/goods/category/update:
         put:
             tags:
-                - AdminService
-            operationId: AdminService_UpdateCategory
+                - Admin
+            operationId: Admin_UpdateCategory
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.CategorySaveRequest'
+                            $ref: '#/components/schemas/admin.admin.v1.CategorySaveRequest'
                 required: true
             responses:
                 "200":
@@ -192,17 +193,18 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/goods/create:
         post:
             tags:
-                - AdminService
-            operationId: AdminService_CreateGoods
+                - Admin
+            description: 商品新增
+            operationId: Admin_CreateGoods
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.CreateGoodsRequest'
+                            $ref: '#/components/schemas/admin.admin.v1.CreateGoodsRequest'
                 required: true
             responses:
                 "200":
@@ -210,12 +212,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/goods/delete:
         delete:
             tags:
-                - AdminService
-            operationId: AdminService_DeleteGoods
+                - Admin
+            operationId: Admin_DeleteGoods
             parameters:
                 - name: id
                   in: query
@@ -227,12 +229,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/goods/detail:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_GoodsDetail
+                - Admin
+            operationId: Admin_GoodsDetail
             parameters:
                 - name: id
                   in: query
@@ -244,12 +246,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.GoodsDetailReply'
+                                $ref: '#/components/schemas/admin.admin.v1.GoodsDetailReply'
     /admin/api/goods/list:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_GoodsList
+                - Admin
+            operationId: Admin_GoodsList
             parameters:
                 - name: page
                   in: query
@@ -283,17 +285,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.GoodsListReply'
+                                $ref: '#/components/schemas/admin.admin.v1.GoodsListReply'
     /admin/api/goods/status:
         put:
             tags:
-                - AdminService
-            operationId: AdminService_UpdateGoodsStatus
+                - Admin
+            operationId: Admin_UpdateGoodsStatus
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.UpdateGoodsStatusRequest'
+                            $ref: '#/components/schemas/admin.admin.v1.UpdateGoodsStatusRequest'
                 required: true
             responses:
                 "200":
@@ -301,17 +303,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/goods/update:
         put:
             tags:
-                - AdminService
-            operationId: AdminService_UpdateGoods
+                - Admin
+            operationId: Admin_UpdateGoods
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.UpdateGoodsRequest'
+                            $ref: '#/components/schemas/admin.admin.v1.UpdateGoodsRequest'
                 required: true
             responses:
                 "200":
@@ -319,12 +321,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/order/detail:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_OrderDetail
+                - Admin
+            operationId: Admin_OrderDetail
             parameters:
                 - name: orderSn
                   in: query
@@ -336,12 +338,13 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.OrderInfoReply'
+                                $ref: '#/components/schemas/admin.admin.v1.OrderInfo'
     /admin/api/order/list:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_OrderList
+                - Admin
+            description: 订单管理
+            operationId: Admin_OrderList
             parameters:
                 - name: page
                   in: query
@@ -364,17 +367,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.OrderListReply'
+                                $ref: '#/components/schemas/admin.admin.v1.OrderListReply'
     /admin/api/order/refund:
         post:
             tags:
-                - AdminService
-            operationId: AdminService_RefundOrder
+                - Admin
+            operationId: Admin_RefundOrder
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.RefundOrderRequest'
+                            $ref: '#/components/schemas/admin.admin.v1.RefundOrderRequest'
                 required: true
             responses:
                 "200":
@@ -382,17 +385,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/order/ship:
         post:
             tags:
-                - AdminService
-            operationId: AdminService_ShipOrder
+                - Admin
+            operationId: Admin_ShipOrder
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.ShipOrderRequest'
+                            $ref: '#/components/schemas/admin.admin.v1.ShipOrderRequest'
                 required: true
             responses:
                 "200":
@@ -400,24 +403,25 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/system/permissions:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_PermissionList
+                - Admin
+            description: 系统权限
+            operationId: Admin_PermissionList
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.PermissionListReply'
+                                $ref: '#/components/schemas/admin.admin.v1.PermissionListReply'
     /admin/api/system/role-permissions:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_RolePermissionList
+                - Admin
+            operationId: Admin_RolePermissionList
             parameters:
                 - name: role
                   in: query
@@ -430,16 +434,16 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.RolePermissionListReply'
+                                $ref: '#/components/schemas/admin.admin.v1.RolePermissionListReply'
         put:
             tags:
-                - AdminService
-            operationId: AdminService_RolePermissionUpdate
+                - Admin
+            operationId: Admin_RolePermissionUpdate
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.RolePermissionUpdateRequest'
+                            $ref: '#/components/schemas/admin.admin.v1.RolePermissionUpdateRequest'
                 required: true
             responses:
                 "200":
@@ -447,12 +451,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/user/address/delete:
         delete:
             tags:
-                - AdminService
-            operationId: AdminService_UserAddressDelete
+                - Admin
+            operationId: Admin_UserAddressDelete
             parameters:
                 - name: id
                   in: query
@@ -468,12 +472,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.CheckResponse'
     /admin/api/user/address/list:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_UserAddressList
+                - Admin
+            operationId: Admin_UserAddressList
             parameters:
                 - name: uid
                   in: query
@@ -485,12 +489,13 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.UserAddressListReply'
+                                $ref: '#/components/schemas/admin.admin.v1.UserAddressListReply'
     /admin/api/user/list:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_UserList
+                - Admin
+            description: 用户管理
+            operationId: Admin_UserList
             parameters:
                 - name: page
                   in: query
@@ -508,41 +513,41 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.UserListReply'
+                                $ref: '#/components/schemas/admin.admin.v1.UserListReply'
     /admin/api/users/captcha:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_Captcha
+                - Admin
+            operationId: Admin_Captcha
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CaptchaReply'
+                                $ref: '#/components/schemas/admin.admin.v1.CaptchaReply'
     /admin/api/users/detail:
         get:
             tags:
-                - AdminService
-            operationId: AdminService_Detail
+                - Admin
+            operationId: Admin_Detail
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.UserDetailResponse'
+                                $ref: '#/components/schemas/admin.admin.v1.UserDetailResponse'
     /admin/api/users/login:
         post:
             tags:
-                - AdminService
-            operationId: AdminService_Login
+                - Admin
+            operationId: Admin_Login
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.LoginReq'
+                            $ref: '#/components/schemas/admin.admin.v1.LoginReq'
                 required: true
             responses:
                 "200":
@@ -550,17 +555,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.RegisterReply'
+                                $ref: '#/components/schemas/admin.admin.v1.RegisterReply'
     /admin/api/users/refresh:
         post:
             tags:
-                - AdminService
-            operationId: AdminService_RefreshToken
+                - Admin
+            operationId: Admin_RefreshToken
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.RefreshTokenRequest'
+                            $ref: '#/components/schemas/admin.admin.v1.RefreshTokenRequest'
                 required: true
             responses:
                 "200":
@@ -568,17 +573,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.RegisterReply'
+                                $ref: '#/components/schemas/admin.admin.v1.RegisterReply'
     /admin/api/users/register:
         post:
             tags:
-                - AdminService
-            operationId: AdminService_Register
+                - Admin
+            operationId: Admin_Register
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.RegisterReq'
+                            $ref: '#/components/schemas/admin.admin.v1.RegisterReq'
                 required: true
             responses:
                 "200":
@@ -586,17 +591,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.RegisterReply'
+                                $ref: '#/components/schemas/admin.admin.v1.RegisterReply'
     /api/address/create:
         post:
             tags:
-                - ShopService
-            operationId: ShopService_CreateAddress
+                - Shop
+            operationId: Shop_CreateAddress
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.CreateAddressReq'
+                            $ref: '#/components/schemas/shop.shop.v1.CreateAddressReq'
                 required: true
             responses:
                 "200":
@@ -604,17 +609,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.AddressInfo'
+                                $ref: '#/components/schemas/shop.shop.v1.AddressInfo'
     /api/address/default:
         put:
             tags:
-                - ShopService
-            operationId: ShopService_DefaultAddress
+                - Shop
+            operationId: Shop_DefaultAddress
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.AddressReq'
+                            $ref: '#/components/schemas/shop.shop.v1.AddressReq'
                 required: true
             responses:
                 "200":
@@ -622,12 +627,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/shop.shop.v1.CheckResponse'
     /api/address/delete:
         delete:
             tags:
-                - ShopService
-            operationId: ShopService_DeleteAddress
+                - Shop
+            operationId: Shop_DeleteAddress
             parameters:
                 - name: id
                   in: query
@@ -643,29 +648,29 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/shop.shop.v1.CheckResponse'
     /api/address/list/uid:
         get:
             tags:
-                - ShopService
-            operationId: ShopService_AddressListByUid
+                - Shop
+            operationId: Shop_AddressListByUid
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.ListAddressReply'
+                                $ref: '#/components/schemas/shop.shop.v1.ListAddressReply'
     /api/address/update:
         put:
             tags:
-                - ShopService
-            operationId: ShopService_UpdateAddress
+                - Shop
+            operationId: Shop_UpdateAddress
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.UpdateAddressReq'
+                            $ref: '#/components/schemas/shop.shop.v1.UpdateAddressReq'
                 required: true
             responses:
                 "200":
@@ -673,17 +678,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/shop.shop.v1.CheckResponse'
     /api/cart/add:
         post:
             tags:
-                - ShopService
-            operationId: ShopService_CartAdd
+                - Shop
+            operationId: Shop_CartAdd
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.CartAddRequest'
+                            $ref: '#/components/schemas/shop.shop.v1.CartAddRequest'
                 required: true
             responses:
                 "200":
@@ -691,12 +696,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CartItemReply'
+                                $ref: '#/components/schemas/shop.shop.v1.CartItemReply'
     /api/cart/delete:
         delete:
             tags:
-                - ShopService
-            operationId: ShopService_CartDelete
+                - Shop
+            operationId: Shop_CartDelete
             parameters:
                 - name: id
                   in: query
@@ -708,29 +713,30 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/shop.shop.v1.CheckResponse'
     /api/cart/list:
         get:
             tags:
-                - ShopService
-            operationId: ShopService_CartList
+                - Shop
+            description: 购物车
+            operationId: Shop_CartList
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CartListReply'
+                                $ref: '#/components/schemas/shop.shop.v1.CartListReply'
     /api/cart/update:
         put:
             tags:
-                - ShopService
-            operationId: ShopService_CartUpdate
+                - Shop
+            operationId: Shop_CartUpdate
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.CartUpdateRequest'
+                            $ref: '#/components/schemas/shop.shop.v1.CartUpdateRequest'
                 required: true
             responses:
                 "200":
@@ -738,12 +744,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/shop.shop.v1.CheckResponse'
     /api/goods/detail:
         get:
             tags:
-                - ShopService
-            operationId: ShopService_GoodsDetail
+                - Shop
+            operationId: Shop_GoodsDetail
             parameters:
                 - name: id
                   in: query
@@ -755,12 +761,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.GoodsDetailReply'
+                                $ref: '#/components/schemas/shop.shop.v1.GoodsDetailReply'
     /api/goods/list:
         get:
             tags:
-                - ShopService
-            operationId: ShopService_GoodsList
+                - Shop
+            operationId: Shop_GoodsList
             parameters:
                 - name: page
                   in: query
@@ -784,27 +790,23 @@ paths:
                   in: query
                   schema:
                     type: string
-                - name: skuCode
-                  in: query
-                  schema:
-                    type: string
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.GoodsListReply'
+                                $ref: '#/components/schemas/shop.shop.v1.GoodsListReply'
     /api/order/cancel:
         post:
             tags:
-                - ShopService
-            operationId: ShopService_OrderCancel
+                - Shop
+            operationId: Shop_OrderCancel
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.OrderCancelRequest'
+                            $ref: '#/components/schemas/shop.shop.v1.OrderCancelRequest'
                 required: true
             responses:
                 "200":
@@ -812,17 +814,18 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/shop.shop.v1.CheckResponse'
     /api/order/create:
         post:
             tags:
-                - ShopService
-            operationId: ShopService_OrderCreate
+                - Shop
+            description: 订单
+            operationId: Shop_OrderCreate
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.OrderCreateRequest'
+                            $ref: '#/components/schemas/shop.shop.v1.OrderCreateRequest'
                 required: true
             responses:
                 "200":
@@ -830,12 +833,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.OrderInfoReply'
+                                $ref: '#/components/schemas/shop.shop.v1.OrderInfoReply'
     /api/order/detail:
         get:
             tags:
-                - ShopService
-            operationId: ShopService_OrderDetail
+                - Shop
+            operationId: Shop_OrderDetail
             parameters:
                 - name: orderSn
                   in: query
@@ -847,12 +850,12 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.OrderInfoReply'
+                                $ref: '#/components/schemas/shop.shop.v1.OrderInfoReply'
     /api/order/list:
         get:
             tags:
-                - ShopService
-            operationId: ShopService_OrderList
+                - Shop
+            operationId: Shop_OrderList
             parameters:
                 - name: page
                   in: query
@@ -864,28 +867,24 @@ paths:
                   schema:
                     type: integer
                     format: int32
-                - name: status
-                  in: query
-                  schema:
-                    type: integer
-                    format: int32
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.OrderListReply'
+                                $ref: '#/components/schemas/shop.shop.v1.OrderListReply'
     /api/payment/create:
         post:
             tags:
-                - ShopService
-            operationId: ShopService_PaymentCreate
+                - Shop
+            description: 支付（本地模拟，不接真实支付渠道）
+            operationId: Shop_PaymentCreate
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.PaymentCreateRequest'
+                            $ref: '#/components/schemas/shop.shop.v1.PaymentCreateRequest'
                 required: true
             responses:
                 "200":
@@ -893,17 +892,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.PaymentInfoReply'
+                                $ref: '#/components/schemas/shop.shop.v1.PaymentInfoReply'
     /api/payment/mock-pay:
         post:
             tags:
-                - ShopService
-            operationId: ShopService_PaymentMockPay
+                - Shop
+            operationId: Shop_PaymentMockPay
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.PaymentMockPayRequest'
+                            $ref: '#/components/schemas/shop.shop.v1.PaymentMockPayRequest'
                 required: true
             responses:
                 "200":
@@ -911,41 +910,41 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CheckResponse'
+                                $ref: '#/components/schemas/shop.shop.v1.CheckResponse'
     /api/users/captcha:
         get:
             tags:
-                - ShopService
-            operationId: ShopService_Captcha
+                - Shop
+            operationId: Shop_Captcha
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.CaptchaReply'
+                                $ref: '#/components/schemas/shop.shop.v1.CaptchaReply'
     /api/users/detail:
         get:
             tags:
-                - ShopService
-            operationId: ShopService_Detail
+                - Shop
+            operationId: Shop_Detail
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.UserDetailResponse'
+                                $ref: '#/components/schemas/shop.shop.v1.UserDetailResponse'
     /api/users/login:
         post:
             tags:
-                - ShopService
-            operationId: ShopService_Login
+                - Shop
+            operationId: Shop_Login
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.LoginReq'
+                            $ref: '#/components/schemas/shop.shop.v1.LoginReq'
                 required: true
             responses:
                 "200":
@@ -953,17 +952,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.RegisterReply'
+                                $ref: '#/components/schemas/shop.shop.v1.RegisterReply'
     /api/users/refresh:
         post:
             tags:
-                - ShopService
-            operationId: ShopService_RefreshToken
+                - Shop
+            operationId: Shop_RefreshToken
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.RefreshTokenRequest'
+                            $ref: '#/components/schemas/shop.shop.v1.RefreshTokenRequest'
                 required: true
             responses:
                 "200":
@@ -971,17 +970,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.RegisterReply'
+                                $ref: '#/components/schemas/shop.shop.v1.RegisterReply'
     /api/users/register:
         post:
             tags:
-                - ShopService
-            operationId: ShopService_Register
+                - Shop
+            operationId: Shop_Register
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/mall.v1.RegisterReq'
+                            $ref: '#/components/schemas/shop.shop.v1.RegisterReq'
                 required: true
             responses:
                 "200":
@@ -989,225 +988,10 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/mall.v1.RegisterReply'
-    /v1/todos/create:
-        post:
-            tags:
-                - TodoService
-            description: |-
-                CreateTodo creates a new todo item and returns the persisted record
-                 with the server-assigned id, created_at, and updated_at populated.
-                 Returns INVALID_ARGUMENT if the request payload fails validation.
-            operationId: TodoService_CreateTodo
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/todo.v1.Todo'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/todo.v1.Todo'
-    /v1/todos/list:
-        get:
-            tags:
-                - TodoService
-            description: |-
-                ListTodos returns a page of todo items, optionally filtered and ordered.
-                 Use the next_page_token from TodoSet to retrieve subsequent pages.
-                 Returns INVALID_ARGUMENT if filter, order_by, or page_token are malformed.
-            operationId: TodoService_ListTodos
-            parameters:
-                - name: pageSize
-                  in: query
-                  description: |-
-                    Optional. Maximum number of todo items to return in a single page.
-                     The server may apply a default and a maximum when unset or out of range.
-                  schema:
-                    type: integer
-                    format: int32
-                - name: pageToken
-                  in: query
-                  description: |-
-                    Optional. Token from a previous response's next_page_token used to fetch
-                     the next page. Leave empty to request the first page.
-                  schema:
-                    type: string
-                - name: filter
-                  in: query
-                  description: |-
-                    Optional. The standard list filter.
-                     Supported fields:
-                        * `title` (i.e. `title:"bug"`)
-                        * `content` (i.e. `content:"docs"`)
-                        * `completed` (i.e. `completed` or `NOT completed`)
-                        * `created_at` range (i.e. `created_at>="2026-01-01T00:00:00Z"`)
-                  schema:
-                    type: string
-                - name: orderBy
-                  in: query
-                  description: |-
-                    Optional. A comma-separated list of fields to order by.
-                     Supported fields:
-                        * `id`
-                        * `title`
-                        * `created_at`
-                        * `updated_at`
-                     Append ` desc` to a field for descending order, e.g. `created_at desc`.
-                     Defaults to ascending order when no direction is supplied.
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/todo.v1.TodoSet'
-    /v1/todos/sync:
-        post:
-            tags:
-                - TodoService
-            description: |-
-                SyncTodos opens a bidirectional stream for two-way synchronization.
-                 The client sends SyncTodoRequest messages describing local changes, and
-                 the server pushes back TodoEvent messages reflecting the resulting state.
-                 The stream stays open until either side closes it.
-            operationId: TodoService_SyncTodos
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/todo.v1.SyncTodoRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/todo.v1.TodoEvent'
-    /v1/todos/update:
-        put:
-            tags:
-                - TodoService
-            description: |-
-                UpdateTodo applies a partial update to an existing todo item using a
-                 FieldMask. Only the fields listed in update_mask are overwritten; all
-                 other fields are left unchanged.
-                 Returns NOT_FOUND if the target todo does not exist, or
-                 INVALID_ARGUMENT if update_mask references unknown fields.
-            operationId: TodoService_UpdateTodo
-            parameters:
-                - name: updateMask
-                  in: query
-                  description: |-
-                    Set of field paths in todo to overwrite. Fields not listed are left
-                     unchanged. Use a single path of `*` to replace every mutable field.
-                  schema:
-                    type: string
-                    format: field-mask
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/todo.v1.Todo'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/todo.v1.Todo'
-    /v1/todos/watch:
-        get:
-            tags:
-                - TodoService
-            description: |-
-                WatchTodos opens a server-side stream that emits a TodoEvent for every
-                 create, update, or delete that matches the supplied filter and ordering.
-                 The stream remains open until the client cancels or the server terminates it.
-            operationId: TodoService_WatchTodos
-            parameters:
-                - name: pageSize
-                  in: query
-                  description: |-
-                    Optional. Maximum number of todo items returned in the initial snapshot
-                     before live events begin streaming.
-                  schema:
-                    type: integer
-                    format: int32
-                - name: pageToken
-                  in: query
-                  description: Optional. Page token used to resume from a prior snapshot.
-                  schema:
-                    type: string
-                - name: filter
-                  in: query
-                  description: Optional. List filter expression. Same syntax as ListTodosRequest.filter.
-                  schema:
-                    type: string
-                - name: orderBy
-                  in: query
-                  description: Optional. Order specification. Same syntax as ListTodosRequest.order_by.
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/todo.v1.TodoEvent'
-    /v1/todos/{id}:
-        get:
-            tags:
-                - TodoService
-            description: |-
-                GetTodo returns a single todo item by its id.
-                 Returns NOT_FOUND if no todo exists with the supplied id.
-            operationId: TodoService_GetTodo
-            parameters:
-                - name: id
-                  in: path
-                  description: Unique identifier of the todo item to retrieve.
-                  required: true
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/todo.v1.Todo'
-        delete:
-            tags:
-                - TodoService
-            description: |-
-                DeleteTodo soft-deletes a todo item by its id. The record is retained by
-                 the server but no longer appears in GetTodo or ListTodos results.
-                 Returns NOT_FOUND if no todo exists with the supplied id.
-            operationId: TodoService_DeleteTodo
-            parameters:
-                - name: id
-                  in: path
-                  description: Unique identifier of the todo item to delete.
-                  required: true
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content: {}
+                                $ref: '#/components/schemas/shop.shop.v1.RegisterReply'
 components:
     schemas:
-        mall.v1.AddressInfo:
+        admin.admin.v1.AddressInfo:
             type: object
             properties:
                 id:
@@ -1216,11 +1000,11 @@ components:
                     type: string
                 mobile:
                     type: string
-                province:
+                Province:
                     type: string
-                city:
+                City:
                     type: string
-                districts:
+                Districts:
                     type: string
                 address:
                     type: string
@@ -1229,16 +1013,14 @@ components:
                 isDefault:
                     type: integer
                     format: int32
-        mall.v1.AddressReq:
-            required:
-                - id
+        admin.admin.v1.AddressReq:
             type: object
             properties:
                 id:
                     type: string
                 uid:
                     type: string
-        mall.v1.BrandItem:
+        admin.admin.v1.BrandItem:
             type: object
             properties:
                 id:
@@ -1247,84 +1029,21 @@ components:
                     type: string
                 logo:
                     type: string
-        mall.v1.BrandListReply:
+        admin.admin.v1.BrandListReply:
             type: object
             properties:
                 list:
                     type: array
                     items:
-                        $ref: '#/components/schemas/mall.v1.BrandItem'
-        mall.v1.CaptchaReply:
+                        $ref: '#/components/schemas/admin.admin.v1.BrandItem'
+        admin.admin.v1.CaptchaReply:
             type: object
             properties:
                 captchaId:
                     type: string
                 picPath:
                     type: string
-                    description: Base64-encoded PNG data URL. The C-end renders it directly.
-        mall.v1.CartAddRequest:
-            required:
-                - goodsId
-                - skuId
-                - goodsNum
-            type: object
-            properties:
-                goodsId:
-                    type: string
-                goodsSn:
-                    type: string
-                goodsName:
-                    type: string
-                skuId:
-                    type: string
-                goodsPrice:
-                    type: string
-                goodsNum:
-                    type: integer
-                    format: int32
-                isSelect:
-                    type: boolean
-        mall.v1.CartItemReply:
-            type: object
-            properties:
-                id:
-                    type: string
-                userId:
-                    type: string
-                goodsId:
-                    type: string
-                goodsSn:
-                    type: string
-                goodsName:
-                    type: string
-                skuId:
-                    type: string
-                goodsPrice:
-                    type: string
-                goodsNum:
-                    type: integer
-                    format: int32
-                isSelect:
-                    type: boolean
-        mall.v1.CartListReply:
-            type: object
-            properties:
-                list:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/mall.v1.CartItemReply'
-        mall.v1.CartUpdateRequest:
-            required:
-                - id
-                - goodsNum
-            type: object
-            properties:
-                id:
-                    type: string
-                goodsNum:
-                    type: integer
-                    format: int32
-        mall.v1.CategoryItem:
+        admin.admin.v1.CategoryItem:
             type: object
             properties:
                 id:
@@ -1336,16 +1055,14 @@ components:
                 level:
                     type: integer
                     format: int32
-        mall.v1.CategoryListReply:
+        admin.admin.v1.CategoryListReply:
             type: object
             properties:
                 list:
                     type: array
                     items:
-                        $ref: '#/components/schemas/mall.v1.CategoryItem'
-        mall.v1.CategorySaveRequest:
-            required:
-                - name
+                        $ref: '#/components/schemas/admin.admin.v1.CategoryItem'
+        admin.admin.v1.CategorySaveRequest:
             type: object
             properties:
                 id:
@@ -1360,33 +1077,25 @@ components:
                 sort:
                     type: integer
                     format: int32
-        mall.v1.CheckResponse:
+        admin.admin.v1.CheckResponse:
             type: object
             properties:
                 success:
                     type: boolean
-        mall.v1.CreateAddressReq:
-            required:
-                - name
-                - mobile
-                - province
-                - city
-                - districts
-                - address
+        admin.admin.v1.CreateAddressReq:
             type: object
             properties:
                 uid:
                     type: string
-                    description: 'Ignored on input: the server derives the owner from the JWT claims.'
                 name:
                     type: string
                 mobile:
                     type: string
-                province:
+                Province:
                     type: string
-                city:
+                City:
                     type: string
-                districts:
+                Districts:
                     type: string
                 address:
                     type: string
@@ -1395,16 +1104,15 @@ components:
                 isDefault:
                     type: integer
                     format: int32
-        mall.v1.CreateGoodsRequest:
-            required:
-                - name
-                - goodsSn
+        admin.admin.v1.CreateGoodsRequest:
             type: object
             properties:
                 categoryId:
-                    type: string
+                    type: integer
+                    format: int32
                 brandId:
-                    type: string
+                    type: integer
+                    format: int32
                 typeId:
                     type: string
                 name:
@@ -1441,7 +1149,8 @@ components:
                     type: string
                 skuImage:
                     type: string
-        mall.v1.DailySales:
+            description: 商品新增
+        admin.admin.v1.DailySales:
             type: object
             properties:
                 date:
@@ -1450,7 +1159,7 @@ components:
                     type: string
                 amount:
                     type: string
-        mall.v1.DashboardStatsReply:
+        admin.admin.v1.DashboardStatsReply:
             type: object
             properties:
                 totalOrders:
@@ -1466,16 +1175,526 @@ components:
                 statusCounts:
                     type: array
                     items:
-                        $ref: '#/components/schemas/mall.v1.StatusCount'
+                        $ref: '#/components/schemas/admin.admin.v1.StatusCount'
                 last30Days:
                     type: array
                     items:
-                        $ref: '#/components/schemas/mall.v1.DailySales'
+                        $ref: '#/components/schemas/admin.admin.v1.DailySales'
                 topGoods:
                     type: array
                     items:
-                        $ref: '#/components/schemas/mall.v1.TopGoods'
-        mall.v1.GoodsDetailReply:
+                        $ref: '#/components/schemas/admin.admin.v1.TopGoods'
+            description: 运营看板
+        admin.admin.v1.GoodsDetailReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                categoryId:
+                    type: string
+                brandId:
+                    type: string
+                typeId:
+                    type: string
+                name:
+                    type: string
+                goodsSn:
+                    type: string
+                marketPrice:
+                    type: string
+                goodsBrief:
+                    type: string
+                goodsFrontImage:
+                    type: string
+                goodsImages:
+                    type: array
+                    items:
+                        type: string
+                onSale:
+                    type: boolean
+                isNew:
+                    type: boolean
+                isHot:
+                    type: boolean
+                soldNum:
+                    type: string
+                brandName:
+                    type: string
+                categoryName:
+                    type: string
+                skus:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/admin.admin.v1.GoodsSkuDetail'
+                images:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/admin.admin.v1.GoodsImageDetail'
+        admin.admin.v1.GoodsImageDetail:
+            type: object
+            properties:
+                id:
+                    type: string
+                url:
+                    type: string
+                position:
+                    type: integer
+                    format: int32
+                isMaster:
+                    type: boolean
+        admin.admin.v1.GoodsItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                goodsSn:
+                    type: string
+                marketPrice:
+                    type: string
+                onSale:
+                    type: boolean
+                isNew:
+                    type: boolean
+                isHot:
+                    type: boolean
+                categoryId:
+                    type: string
+                brandId:
+                    type: string
+                categoryName:
+                    type: string
+                brandName:
+                    type: string
+                skuCount:
+                    type: integer
+                    format: int32
+                soldNum:
+                    type: string
+        admin.admin.v1.GoodsListReply:
+            type: object
+            properties:
+                total:
+                    type: integer
+                    format: int32
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/admin.admin.v1.GoodsItem'
+        admin.admin.v1.GoodsSkuDetail:
+            type: object
+            properties:
+                id:
+                    type: string
+                goodsId:
+                    type: string
+                skuName:
+                    type: string
+                skuCode:
+                    type: string
+                barCode:
+                    type: string
+                price:
+                    type: string
+                promotionPrice:
+                    type: string
+                inventory:
+                    type: string
+                onSale:
+                    type: boolean
+                pic:
+                    type: string
+        admin.admin.v1.ListAddressReply:
+            type: object
+            properties:
+                results:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/admin.admin.v1.AddressInfo'
+        admin.admin.v1.LoginReq:
+            type: object
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
+        admin.admin.v1.OrderGoodsInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                skuId:
+                    type: string
+                skuName:
+                    type: string
+                skuPrice:
+                    type: string
+                num:
+                    type: integer
+                    format: int32
+                totalPrice:
+                    type: string
+        admin.admin.v1.OrderInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                userId:
+                    type: string
+                orderSn:
+                    type: string
+                status:
+                    type: string
+                post:
+                    type: string
+                total:
+                    type: string
+                address:
+                    type: string
+                name:
+                    type: string
+                mobile:
+                    type: string
+                addTime:
+                    type: string
+                goods:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/admin.admin.v1.OrderGoodsInfo'
+        admin.admin.v1.OrderListReply:
+            type: object
+            properties:
+                total:
+                    type: integer
+                    format: int32
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/admin.admin.v1.OrderInfo'
+        admin.admin.v1.PermissionItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                code:
+                    type: string
+                name:
+                    type: string
+                groupName:
+                    type: string
+                sort:
+                    type: integer
+                    format: int32
+            description: 系统权限
+        admin.admin.v1.PermissionListReply:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/admin.admin.v1.PermissionItem'
+        admin.admin.v1.RefreshTokenRequest:
+            type: object
+            properties:
+                token:
+                    type: string
+        admin.admin.v1.RefundOrderRequest:
+            type: object
+            properties:
+                orderSn:
+                    type: string
+        admin.admin.v1.RegisterReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                mobile:
+                    type: string
+                username:
+                    type: string
+                token:
+                    type: string
+                expiredAt:
+                    type: string
+            description: Data returned by registration and login
+        admin.admin.v1.RegisterReq:
+            type: object
+            properties:
+                mobile:
+                    type: string
+                username:
+                    type: string
+                password:
+                    type: string
+        admin.admin.v1.RolePermissionListReply:
+            type: object
+            properties:
+                codes:
+                    type: array
+                    items:
+                        type: string
+        admin.admin.v1.RolePermissionUpdateRequest:
+            type: object
+            properties:
+                role:
+                    type: integer
+                    format: int32
+                codes:
+                    type: array
+                    items:
+                        type: string
+        admin.admin.v1.ShipOrderRequest:
+            type: object
+            properties:
+                orderSn:
+                    type: string
+                post:
+                    type: string
+        admin.admin.v1.StatusCount:
+            type: object
+            properties:
+                status:
+                    type: integer
+                    format: int32
+                count:
+                    type: string
+        admin.admin.v1.TopGoods:
+            type: object
+            properties:
+                skuId:
+                    type: string
+                skuName:
+                    type: string
+                num:
+                    type: string
+                amount:
+                    type: string
+        admin.admin.v1.UpdateAddressReq:
+            type: object
+            properties:
+                uid:
+                    type: string
+                name:
+                    type: string
+                mobile:
+                    type: string
+                Province:
+                    type: string
+                City:
+                    type: string
+                Districts:
+                    type: string
+                address:
+                    type: string
+                postCode:
+                    type: string
+                isDefault:
+                    type: integer
+                    format: int32
+                id:
+                    type: string
+        admin.admin.v1.UpdateGoodsRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                nameAlias:
+                    type: string
+                goodsBrief:
+                    type: string
+                goodsFrontImage:
+                    type: string
+                marketPrice:
+                    type: string
+                shipFree:
+                    type: boolean
+                isNew:
+                    type: boolean
+                isHot:
+                    type: boolean
+        admin.admin.v1.UpdateGoodsStatusRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                onSale:
+                    type: boolean
+        admin.admin.v1.UserAddressListReply:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/admin.admin.v1.AddressInfo'
+        admin.admin.v1.UserDetailResponse:
+            type: object
+            properties:
+                id:
+                    type: string
+                mobile:
+                    type: string
+                nickName:
+                    type: string
+                birthday:
+                    type: string
+                gender:
+                    type: string
+                role:
+                    type: integer
+                    format: int32
+                permissions:
+                    type: array
+                    items:
+                        type: string
+            description: user Detail returned
+        admin.admin.v1.UserInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                mobile:
+                    type: string
+                nickName:
+                    type: string
+                birthday:
+                    type: string
+                gender:
+                    type: string
+                role:
+                    type: integer
+                    format: int32
+        admin.admin.v1.UserListReply:
+            type: object
+            properties:
+                total:
+                    type: integer
+                    format: int32
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/admin.admin.v1.UserInfo'
+        shop.shop.v1.AddressInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                mobile:
+                    type: string
+                Province:
+                    type: string
+                City:
+                    type: string
+                Districts:
+                    type: string
+                address:
+                    type: string
+                postCode:
+                    type: string
+                isDefault:
+                    type: integer
+                    format: int32
+        shop.shop.v1.AddressReq:
+            type: object
+            properties:
+                id:
+                    type: string
+                uid:
+                    type: string
+        shop.shop.v1.CaptchaReply:
+            type: object
+            properties:
+                captchaId:
+                    type: string
+                picPath:
+                    type: string
+        shop.shop.v1.CartAddRequest:
+            type: object
+            properties:
+                goodsId:
+                    type: string
+                goodsSn:
+                    type: string
+                goodsName:
+                    type: string
+                skuId:
+                    type: string
+                goodsPrice:
+                    type: string
+                goodsNum:
+                    type: integer
+                    format: int32
+                isSelect:
+                    type: boolean
+        shop.shop.v1.CartItemReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                userId:
+                    type: string
+                goodsId:
+                    type: string
+                goodsSn:
+                    type: string
+                goodsName:
+                    type: string
+                skuId:
+                    type: string
+                goodsPrice:
+                    type: string
+                goodsNum:
+                    type: integer
+                    format: int32
+                isSelect:
+                    type: boolean
+        shop.shop.v1.CartListReply:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/shop.shop.v1.CartItemReply'
+        shop.shop.v1.CartUpdateRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                goodsNum:
+                    type: integer
+                    format: int32
+        shop.shop.v1.CheckResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        shop.shop.v1.CreateAddressReq:
+            type: object
+            properties:
+                uid:
+                    type: string
+                name:
+                    type: string
+                mobile:
+                    type: string
+                Province:
+                    type: string
+                City:
+                    type: string
+                Districts:
+                    type: string
+                address:
+                    type: string
+                postCode:
+                    type: string
+                isDefault:
+                    type: integer
+                    format: int32
+        shop.shop.v1.GoodsDetailReply:
             type: object
             properties:
                 id:
@@ -1510,24 +1729,17 @@ components:
                     type: boolean
                 soldNum:
                     type: string
-                brandName:
-                    type: string
-                categoryName:
-                    type: string
                 skus:
                     type: array
                     items:
-                        $ref: '#/components/schemas/mall.v1.GoodsSkuDetail'
+                        $ref: '#/components/schemas/shop.shop.v1.GoodsSkuDetail'
                 images:
                     type: array
                     items:
-                        $ref: '#/components/schemas/mall.v1.GoodsImageDetail'
-            description: GoodsDetailReply is the union of the C-end and admin detail shapes.
-        mall.v1.GoodsImageDetail:
+                        $ref: '#/components/schemas/shop.shop.v1.GoodsImageDetail'
+        shop.shop.v1.GoodsImageDetail:
             type: object
             properties:
-                id:
-                    type: string
                 url:
                     type: string
                 position:
@@ -1535,8 +1747,7 @@ components:
                     format: int32
                 isMaster:
                     type: boolean
-            description: GoodsImageDetail is the admin superset (adds id).
-        mall.v1.GoodsItem:
+        shop.shop.v1.GoodsItem:
             type: object
             properties:
                 id:
@@ -1553,23 +1764,7 @@ components:
                     type: boolean
                 isHot:
                     type: boolean
-                categoryId:
-                    type: string
-                brandId:
-                    type: string
-                categoryName:
-                    type: string
-                brandName:
-                    type: string
-                skuCount:
-                    type: integer
-                    format: int32
-                soldNum:
-                    type: string
-            description: |-
-                GoodsItem is the admin superset (adds category/brand names, sku count and
-                 sold count).
-        mall.v1.GoodsListReply:
+        shop.shop.v1.GoodsListReply:
             type: object
             properties:
                 total:
@@ -1578,8 +1773,8 @@ components:
                 list:
                     type: array
                     items:
-                        $ref: '#/components/schemas/mall.v1.GoodsItem'
-        mall.v1.GoodsSkuDetail:
+                        $ref: '#/components/schemas/shop.shop.v1.GoodsItem'
+        shop.shop.v1.GoodsSkuDetail:
             type: object
             properties:
                 id:
@@ -1590,34 +1785,27 @@ components:
                     type: string
                 skuCode:
                     type: string
-                barCode:
-                    type: string
                 price:
                     type: string
                 promotionPrice:
+                    type: string
+                pic:
                     type: string
                 inventory:
                     type: string
                 onSale:
                     type: boolean
-                pic:
-                    type: string
-            description: GoodsSkuDetail is the admin superset (adds bar_code).
-        mall.v1.ListAddressReply:
+        shop.shop.v1.ListAddressReply:
             type: object
             properties:
                 results:
                     type: array
                     items:
-                        $ref: '#/components/schemas/mall.v1.AddressInfo'
-        mall.v1.LoginReq:
-            required:
-                - password
+                        $ref: '#/components/schemas/shop.shop.v1.AddressInfo'
+        shop.shop.v1.LoginReq:
             type: object
             properties:
                 mobile:
-                    type: string
-                username:
                     type: string
                 password:
                     type: string
@@ -1625,20 +1813,12 @@ components:
                     type: string
                 captchaId:
                     type: string
-            description: |-
-                LoginReq is a superset: the C-end logs in with mobile + captcha, the admin
-                 BFF with username. password is the only field common to both.
-        mall.v1.OrderCancelRequest:
-            required:
-                - orderSn
+        shop.shop.v1.OrderCancelRequest:
             type: object
             properties:
                 orderSn:
                     type: string
-        mall.v1.OrderCartItem:
-            required:
-                - skuId
-                - skuNum
+        shop.shop.v1.OrderCartItem:
             type: object
             properties:
                 cartId:
@@ -1648,19 +1828,17 @@ components:
                 skuNum:
                     type: integer
                     format: int32
-        mall.v1.OrderCreateRequest:
-            required:
-                - address
+        shop.shop.v1.OrderCreateRequest:
             type: object
             properties:
                 address:
                     type: string
-                    description: Address id. The server reloads the snapshot from storage.
                 cartItem:
                     type: array
                     items:
-                        $ref: '#/components/schemas/mall.v1.OrderCartItem'
-        mall.v1.OrderGoodsReply:
+                        $ref: '#/components/schemas/shop.shop.v1.OrderCartItem'
+            description: 订单
+        shop.shop.v1.OrderGoodsReply:
             type: object
             properties:
                 id:
@@ -1676,7 +1854,7 @@ components:
                     format: int32
                 totalPrice:
                     type: string
-        mall.v1.OrderInfoReply:
+        shop.shop.v1.OrderInfoReply:
             type: object
             properties:
                 id:
@@ -1686,8 +1864,7 @@ components:
                 orderSn:
                     type: string
                 status:
-                    type: integer
-                    format: int32
+                    type: string
                 post:
                     type: string
                 total:
@@ -1703,11 +1880,8 @@ components:
                 goods:
                     type: array
                     items:
-                        $ref: '#/components/schemas/mall.v1.OrderGoodsReply'
-            description: |-
-                OrderInfoReply replaces both the C-end OrderInfoReply and the admin
-                 OrderInfo. OrderGoodsReply replaces OrderGoodsInfo (identical fields).
-        mall.v1.OrderListReply:
+                        $ref: '#/components/schemas/shop.shop.v1.OrderGoodsReply'
+        shop.shop.v1.OrderListReply:
             type: object
             properties:
                 total:
@@ -1716,10 +1890,8 @@ components:
                 list:
                     type: array
                     items:
-                        $ref: '#/components/schemas/mall.v1.OrderInfoReply'
-        mall.v1.PaymentCreateRequest:
-            required:
-                - orderSn
+                        $ref: '#/components/schemas/shop.shop.v1.OrderInfoReply'
+        shop.shop.v1.PaymentCreateRequest:
             type: object
             properties:
                 orderSn:
@@ -1728,7 +1900,8 @@ components:
                     type: string
                 channel:
                     type: string
-        mall.v1.PaymentInfoReply:
+            description: 支付（本地模拟）
+        shop.shop.v1.PaymentInfoReply:
             type: object
             properties:
                 id:
@@ -1744,49 +1917,17 @@ components:
                 status:
                     type: integer
                     format: int32
-        mall.v1.PaymentMockPayRequest:
-            required:
-                - paymentNo
+        shop.shop.v1.PaymentMockPayRequest:
             type: object
             properties:
                 paymentNo:
                     type: string
-        mall.v1.PermissionItem:
-            type: object
-            properties:
-                id:
-                    type: string
-                code:
-                    type: string
-                name:
-                    type: string
-                groupName:
-                    type: string
-                sort:
-                    type: integer
-                    format: int32
-        mall.v1.PermissionListReply:
-            type: object
-            properties:
-                list:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/mall.v1.PermissionItem'
-        mall.v1.RefreshTokenRequest:
-            required:
-                - token
+        shop.shop.v1.RefreshTokenRequest:
             type: object
             properties:
                 token:
                     type: string
-        mall.v1.RefundOrderRequest:
-            required:
-                - orderSn
-            type: object
-            properties:
-                orderSn:
-                    type: string
-        mall.v1.RegisterReply:
+        shop.shop.v1.RegisterReply:
             type: object
             properties:
                 id:
@@ -1799,12 +1940,8 @@ components:
                     type: string
                 expiredAt:
                     type: string
-            description: RegisterReply is returned by register, login and refresh-token.
-        mall.v1.RegisterReq:
-            required:
-                - mobile
-                - username
-                - password
+            description: Data returned by registration and login
+        shop.shop.v1.RegisterReq:
             type: object
             properties:
                 mobile:
@@ -1813,60 +1950,7 @@ components:
                     type: string
                 password:
                     type: string
-                captcha:
-                    type: string
-                captchaId:
-                    type: string
-            description: RegisterReq is shared by the C-end and admin registration RPCs.
-        mall.v1.RolePermissionListReply:
-            type: object
-            properties:
-                codes:
-                    type: array
-                    items:
-                        type: string
-        mall.v1.RolePermissionUpdateRequest:
-            type: object
-            properties:
-                role:
-                    type: integer
-                    format: int32
-                codes:
-                    type: array
-                    items:
-                        type: string
-        mall.v1.ShipOrderRequest:
-            required:
-                - orderSn
-                - post
-            type: object
-            properties:
-                orderSn:
-                    type: string
-                post:
-                    type: string
-        mall.v1.StatusCount:
-            type: object
-            properties:
-                status:
-                    type: integer
-                    format: int32
-                count:
-                    type: string
-        mall.v1.TopGoods:
-            type: object
-            properties:
-                skuId:
-                    type: string
-                skuName:
-                    type: string
-                num:
-                    type: string
-                amount:
-                    type: string
-        mall.v1.UpdateAddressReq:
-            required:
-                - id
+        shop.shop.v1.UpdateAddressReq:
             type: object
             properties:
                 uid:
@@ -1875,11 +1959,11 @@ components:
                     type: string
                 mobile:
                     type: string
-                province:
+                Province:
                     type: string
-                city:
+                City:
                     type: string
-                districts:
+                Districts:
                     type: string
                 address:
                     type: string
@@ -1890,46 +1974,7 @@ components:
                     format: int32
                 id:
                     type: string
-        mall.v1.UpdateGoodsRequest:
-            required:
-                - id
-            type: object
-            properties:
-                id:
-                    type: string
-                name:
-                    type: string
-                nameAlias:
-                    type: string
-                goodsBrief:
-                    type: string
-                goodsFrontImage:
-                    type: string
-                marketPrice:
-                    type: string
-                shipFree:
-                    type: boolean
-                isNew:
-                    type: boolean
-                isHot:
-                    type: boolean
-        mall.v1.UpdateGoodsStatusRequest:
-            required:
-                - id
-            type: object
-            properties:
-                id:
-                    type: string
-                onSale:
-                    type: boolean
-        mall.v1.UserAddressListReply:
-            type: object
-            properties:
-                list:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/mall.v1.AddressInfo'
-        mall.v1.UserDetailResponse:
+        shop.shop.v1.UserDetailResponse:
             type: object
             properties:
                 id:
@@ -1945,135 +1990,9 @@ components:
                 role:
                     type: integer
                     format: int32
-                permissions:
-                    type: array
-                    items:
-                        type: string
-            description: UserDetailResponse is the admin superset (adds permissions).
-        mall.v1.UserInfo:
-            type: object
-            properties:
-                id:
-                    type: string
-                mobile:
-                    type: string
-                nickName:
-                    type: string
-                birthday:
-                    type: string
-                gender:
-                    type: string
-                role:
-                    type: integer
-                    format: int32
-        mall.v1.UserListReply:
-            type: object
-            properties:
-                total:
-                    type: integer
-                    format: int32
-                list:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/mall.v1.UserInfo'
-        todo.v1.SyncTodoRequest:
-            type: object
-            properties:
-                action:
-                    type: string
-                    description: The operation to perform. One of `create`, `update`, or `delete`.
-                todo:
-                    allOf:
-                        - $ref: '#/components/schemas/todo.v1.Todo'
-                    description: Payload for `create` and `update` actions. Ignored for `delete`.
-                id:
-                    type: string
-                    description: Identifier of the target todo. Required for `delete` and `update`.
-                updateMask:
-                    type: string
-                    description: |-
-                        Field mask used by `update` actions to limit which fields are overwritten.
-                         Ignored for `create` and `delete`.
-                    format: field-mask
-            description: |-
-                SyncTodoRequest is a single client message in the SyncTodos bidirectional
-                 stream. The action field selects which operation to perform on the server.
-        todo.v1.Todo:
-            type: object
-            properties:
-                id:
-                    type: string
-                    description: Application-generated UUIDv7 identifier. Read-only on create.
-                title:
-                    type: string
-                    description: Short human-readable title.
-                content:
-                    type: string
-                    description: Detailed description or notes for the todo item.
-                completed:
-                    type: boolean
-                    description: Whether the todo item has been completed.
-                createdAt:
-                    type: string
-                    description: Time at which the todo item was created. Server-assigned, read-only.
-                    format: date-time
-                updatedAt:
-                    type: string
-                    description: Time at which the todo item was last modified. Server-assigned, read-only.
-                    format: date-time
-                status:
-                    type: integer
-                    description: |-
-                        Lifecycle state. Server-assigned, read-only: call DeleteTodo to move an
-                         item to TODO_STATUS_DELETED.
-                    format: enum
-            description: Todo is the canonical representation of a todo item.
-        todo.v1.TodoEvent:
-            type: object
-            properties:
-                action:
-                    type: string
-                    description: The change that occurred. One of `created`, `updated`, or `deleted`.
-                todo:
-                    allOf:
-                        - $ref: '#/components/schemas/todo.v1.Todo'
-                    description: |-
-                        The todo item after the change. For `deleted` events only the id field
-                         is guaranteed to be populated.
-                eventTime:
-                    type: string
-                    description: Time at which the change was observed by the server.
-                    format: date-time
-            description: |-
-                TodoEvent is a server-sent message describing a change to a todo item.
-                 It is emitted by both WatchTodos and SyncTodos streams.
-        todo.v1.TodoSet:
-            type: object
-            properties:
-                todos:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/todo.v1.Todo'
-                    description: The page of todo items in the order requested by ListTodosRequest.order_by.
-                nextPageToken:
-                    type: string
-                    description: |-
-                        Token used to retrieve the next page via ListTodosRequest.page_token.
-                         Empty when there are no more results.
-            description: TodoSet is a paginated collection of todo items returned by ListTodos.
+            description: user Detail returned
 tags:
-    - name: AdminService
-      description: |-
-        AdminService is the back-office BFF. Every HTTP path is prefixed with
-         /admin to avoid the 14 method/path collisions with ShopService that the
-         source project had when both BFFs were deployed separately.
-    - name: ShopService
-      description: |-
-        ShopService is the C-end BFF. It exposes 22 RPCs over both HTTP (:8000) and
-         gRPC (:9000). The owner of a request is always derived from the JWT claims,
-         never from a client-supplied user id.
-    - name: TodoService
-      description: |-
-        TodoService provides a simple CRUD example for managing todo items.
-         It demonstrates unary, server-streaming, and bidirectional-streaming RPCs
-         together with AIP-style list filtering, ordering, and pagination.
+    - name: Admin
+      description: The admin service definition.
+    - name: Shop
+      description: The Shop service definition.

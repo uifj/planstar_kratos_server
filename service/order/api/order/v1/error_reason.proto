@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package Order.v1;
+
+option go_package = "order/api/order/v1;v1";
+option java_multiple_files = true;
+option java_package = "Order.v1";
+option objc_class_prefix = "APIOrderV1";
+
+enum ErrorReason {
+  ORDER_UNSPECIFIED = 0;
+  ORDER_NOT_FOUND = 1;
+}

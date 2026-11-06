@@ -1,0 +1,50 @@
+package biz
+
+import (
+	"context"
+	"log/slog"
+	"user/internal/domain"
+)
+
+//go:generate mockgen -destination=../mocks/mrepo/address.go -package=mrepo . AddressRepo
+type AddressRepo interface {
+	CreateAddress(ctx context.Context, a *domain.Address) (*domain.Address, error)
+	AddressListByUid(ctx context.Context, uid int64) ([]*domain.Address, error)
+	UpdateAddress(ctx context.Context, a *domain.Address) error
+	DefaultAddress(ctx context.Context, a *domain.Address) error
+	DeleteAddress(ctx context.Context, a *domain.Address) error
+	GetAddress(ctx context.Context, a *domain.Address) (*domain.Address, error)
+}
+
+type AddressUsecase struct {
+	repo AddressRepo
+	log  *slog.Logger
+}
+
+func NewAddressUsecase(repo AddressRepo, logger *slog.Logger) *AddressUsecase {
+	return &AddressUsecase{repo: repo, log: logger}
+}
+
+func (uc *AddressUsecase) AddAddress(ctx context.Context, a *domain.Address) (*domain.Address, error) {
+	return uc.repo.CreateAddress(ctx, a)
+}
+
+func (uc *AddressUsecase) AddressListByUid(ctx context.Context, uid int64) ([]*domain.Address, error) {
+	return uc.repo.AddressListByUid(ctx, uid)
+}
+
+func (uc *AddressUsecase) UpdateAddress(ctx context.Context, a *domain.Address) error {
+	return uc.repo.UpdateAddress(ctx, a)
+}
+
+func (uc *AddressUsecase) DefaultAddress(ctx context.Context, a *domain.Address) error {
+	return uc.repo.DefaultAddress(ctx, a)
+}
+
+func (uc *AddressUsecase) DeleteAddress(ctx context.Context, a *domain.Address) error {
+	return uc.repo.DeleteAddress(ctx, a)
+}
+
+func (uc *AddressUsecase) GetAddress(ctx context.Context, a *domain.Address) (*domain.Address, error) {
+	return uc.repo.GetAddress(ctx, a)
+}

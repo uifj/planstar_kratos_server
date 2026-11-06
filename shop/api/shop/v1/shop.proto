@@ -1,0 +1,408 @@
+syntax = "proto3";
+
+package shop.shop.v1;
+// 这里可以把 proto 文件下载下来，放到项目的 third_party 目录下
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "validate/validate.proto";
+
+option go_package = "shop/api/shop/v1;v1";
+// The Shop service definition.
+service Shop {
+  rpc Register (RegisterReq) returns (RegisterReply) {
+    option (google.api.http) = {
+      post: "/api/users/register",
+      body: "*",
+    };
+  }
+  rpc RefreshToken (RefreshTokenRequest) returns (RegisterReply) {
+    option (google.api.http) = {
+      post: "/api/users/refresh",
+      body: "*",
+    };
+  }
+  rpc Login (LoginReq) returns (RegisterReply) {
+    option (google.api.http) = {
+      post: "/api/users/login",
+      body: "*",
+    };
+  }
+  rpc Captcha (google.protobuf.Empty) returns (CaptchaReply) {
+    option (google.api.http) = {
+      get: "/api/users/captcha",
+    };
+  }
+  rpc Detail (google.protobuf.Empty) returns (UserDetailResponse) {
+    option (google.api.http) = {
+      get: "/api/users/detail",
+    };
+  }
+  rpc CreateAddress (CreateAddressReq) returns (AddressInfo) {
+    option (google.api.http) = {
+      post: "/api/address/create",
+      body: "*",
+    };
+  }
+  rpc AddressListByUid (google.protobuf.Empty) returns (ListAddressReply) {
+    option (google.api.http) = {
+      get: "/api/address/list/uid",
+    };
+  }
+  rpc UpdateAddress (UpdateAddressReq) returns (CheckResponse) {
+    option (google.api.http) = {
+      put: "/api/address/update",
+      body: "*",
+    };
+  }
+  rpc DefaultAddress (AddressReq) returns (CheckResponse) {
+    option (google.api.http) = {
+      put: "/api/address/default",
+      body: "*",
+    };
+  }
+  rpc DeleteAddress (AddressReq) returns (CheckResponse) {
+    option (google.api.http) = {
+      delete: "/api/address/delete",
+    };
+  }
+  rpc GoodsList (GoodsListRequest) returns (GoodsListReply) {
+    option (google.api.http) = {
+      get: "/api/goods/list",
+    };
+  }
+  rpc GoodsDetail (GoodsDetailRequest) returns (GoodsDetailReply) {
+    option (google.api.http) = {
+      get: "/api/goods/detail",
+    };
+  }
+  // 购物车
+  rpc CartList (CartListRequest) returns (CartListReply) {
+    option (google.api.http) = {
+      get: "/api/cart/list",
+    };
+  }
+  rpc CartAdd (CartAddRequest) returns (CartItemReply) {
+    option (google.api.http) = {
+      post: "/api/cart/add",
+      body: "*",
+    };
+  }
+  rpc CartUpdate (CartUpdateRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      put: "/api/cart/update",
+      body: "*",
+    };
+  }
+  rpc CartDelete (CartDeleteRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      delete: "/api/cart/delete",
+    };
+  }
+  // 订单
+  rpc OrderCreate (OrderCreateRequest) returns (OrderInfoReply) {
+    option (google.api.http) = {
+      post: "/api/order/create",
+      body: "*",
+    };
+  }
+  rpc OrderCancel (OrderCancelRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      post: "/api/order/cancel",
+      body: "*",
+    };
+  }
+  rpc OrderList (OrderListRequest) returns (OrderListReply) {
+    option (google.api.http) = {
+      get: "/api/order/list",
+    };
+  }
+  rpc OrderDetail (OrderDetailRequest) returns (OrderInfoReply) {
+    option (google.api.http) = {
+      get: "/api/order/detail",
+    };
+  }
+  // 支付（本地模拟，不接真实支付渠道）
+  rpc PaymentCreate (PaymentCreateRequest) returns (PaymentInfoReply) {
+    option (google.api.http) = {
+      post: "/api/payment/create",
+      body: "*",
+    };
+  }
+  rpc PaymentMockPay (PaymentMockPayRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      post: "/api/payment/mock-pay",
+      body: "*",
+    };
+  }
+}
+
+message CreateAddressReq {
+  int64 uid = 1;
+  string name = 2 [(validate.rules).string ={min_len: 1}];
+  string mobile = 3 [(validate.rules).string.len = 11];
+  string Province = 4 [(validate.rules).string ={min_len: 1}];
+  string City = 5 [(validate.rules).string ={min_len: 1}];
+  string Districts = 6 [(validate.rules).string ={min_len: 1}];
+  string address = 7 [(validate.rules).string ={min_len: 1}];
+  string post_code = 8;
+  int32 is_default = 9;
+}
+
+message UpdateAddressReq {
+  int64 uid = 1;
+  string name = 2;
+  string mobile = 3 [(validate.rules).string.len = 11];
+  string Province = 4 [(validate.rules).string ={min_len: 1}];
+  string City = 5 [(validate.rules).string ={min_len: 1}];
+  string Districts = 6 [(validate.rules).string ={min_len: 1}];
+  string address = 7 [(validate.rules).string ={min_len: 1}];
+  string post_code = 8;
+  int32 is_default = 9;
+  int64 id = 10 [(validate.rules).int64.gte = 1];
+}
+
+message AddressInfo {
+  int64 id = 1;
+  string name = 2 [(validate.rules).string ={min_len: 1}];
+  string mobile = 3 [(validate.rules).string.len = 11];
+  string Province = 4;
+  string City = 5;
+  string Districts = 6;
+  string address = 7;
+  string post_code = 8;
+  int32 is_default = 9;
+}
+
+message ListAddressReq {
+  int64 uid = 1;
+}
+
+message ListAddressReply {
+  repeated AddressInfo results = 1;
+}
+
+message AddressReq {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+  int64 uid = 2;
+}
+
+message CheckResponse{
+  bool success = 1;
+}
+
+// Data returned by registration and login
+message RegisterReply {
+  int64 id = 1;
+  string mobile = 3;
+  string username = 4;
+  string token = 5;
+  int64 expiredAt = 6;
+}
+
+message RegisterReq {
+  string mobile = 1 [(validate.rules).string.len = 11];
+  string username = 2 [(validate.rules).string = {min_len: 3, max_len: 15}];
+  string password = 3 [(validate.rules).string = {min_len: 8}];
+}
+
+message LoginReq {
+  string mobile = 1 [(validate.rules).string.len = 11];
+  string password = 2 [(validate.rules).string = {min_len: 8}];
+  string captcha = 3 [(validate.rules).string = {min_len: 5,max_len:5}];
+  string captchaId = 4  [(validate.rules).string ={min_len: 1}];
+}
+
+// user Detail returned
+message UserDetailResponse{
+  int64 id = 1;
+  string mobile = 2;
+  string nickName = 3;
+  int64 birthday = 4;
+  string gender = 5;
+  int32 role = 6;
+}
+
+message CaptchaReply{
+  string captchaId = 1;
+  string picPath = 2;
+}
+
+message RefreshTokenRequest {
+  string token = 1;
+}
+
+message GoodsListRequest {
+  int32 page = 1;
+  int32 pageSize = 2;
+  string keywords = 3;
+  int64 categoryId = 4;
+  int64 brandId = 5;
+}
+
+message GoodsItem {
+  int64 id = 1;
+  string name = 2;
+  string goodsSn = 3;
+  int64 marketPrice = 4;
+  bool onSale = 5;
+  bool isNew = 6;
+  bool isHot = 7;
+}
+
+message GoodsListReply {
+  int32 total = 1;
+  repeated GoodsItem list = 2;
+}
+
+message GoodsDetailRequest {
+  int64 id = 1;
+}
+
+message GoodsSkuDetail {
+  int64 id = 1;
+  int64 goodsId = 2;
+  string skuName = 3;
+  string skuCode = 4;
+  int64 price = 5;
+  int64 promotionPrice = 6;
+  string pic = 7;
+  int64 inventory = 8;
+  bool onSale = 9;
+}
+
+message GoodsImageDetail {
+  string url = 1;
+  int32 position = 2;
+  bool isMaster = 3;
+}
+
+message GoodsDetailReply {
+  int64 id = 1;
+  int64 categoryId = 2;
+  int64 brandId = 3;
+  int64 typeId = 4;
+  string name = 5;
+  string goodsSn = 6;
+  string goodsBrief = 7;
+  string goodsFrontImage = 8;
+  repeated string goodsImages = 9;
+  int64 marketPrice = 10;
+  bool onSale = 11;
+  bool shipFree = 12;
+  bool isNew = 13;
+  bool isHot = 14;
+  int64 soldNum = 15;
+  repeated GoodsSkuDetail skus = 16;
+  repeated GoodsImageDetail images = 17;
+}
+
+// 购物车
+message CartListRequest {}
+
+message CartItemReply {
+  int64 id = 1;
+  int64 userId = 2;
+  int64 goodsId = 3;
+  string goodsSn = 4;
+  string goodsName = 5;
+  int64 skuId = 6;
+  int64 goodsPrice = 7;
+  int32 goodsNum = 8;
+  bool isSelect = 9;
+}
+
+message CartListReply {
+  repeated CartItemReply list = 1;
+}
+
+message CartAddRequest {
+  int64 goodsId = 1 [(validate.rules).int64 = {gt:0}];
+  string goodsSn = 2 [(validate.rules).string.min_len = 1];
+  string goodsName = 3 [(validate.rules).string.min_len = 1];
+  int64 skuId = 4 [(validate.rules).int64 = {gt:0}];
+  int64 goodsPrice = 5 [(validate.rules).int64 = {gt:0}];
+  int32 goodsNum = 6 [(validate.rules).int32 = {gt:0}];
+  bool isSelect = 7;
+}
+
+message CartUpdateRequest {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+  int32 goodsNum = 2 [(validate.rules).int32.gt = 0];
+}
+
+message CartDeleteRequest {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+}
+
+// 订单
+message OrderCreateRequest {
+  int64 address = 1 [(validate.rules).int64 = {gt:0}];
+  repeated OrderCartItem cartItem = 2;
+}
+
+message OrderCartItem {
+  int64 cartId = 1 [(validate.rules).int64.gte = 1];
+  int64 skuId = 2 [(validate.rules).int64.gte = 1];
+  int32 skuNum = 3 [(validate.rules).int32.gt = 0];
+}
+
+message OrderInfoReply {
+  int64 id = 1;
+  int64 userId = 2;
+  string orderSn = 3;
+  string status = 4;
+  string post = 5;
+  int64 total = 6;
+  string address = 7;
+  string name = 8;
+  string mobile = 9;
+  string addTime = 10;
+  repeated OrderGoodsReply goods = 11;
+}
+
+message OrderGoodsReply {
+  int64 id = 1;
+  int64 skuId = 2;
+  string skuName = 3;
+  int64 skuPrice = 4;
+  int32 num = 5;
+  int64 totalPrice = 6;
+}
+
+message OrderListRequest {
+  int32 page = 1;
+  int32 pageSize = 2;
+}
+
+message OrderListReply {
+  int32 total = 1;
+  repeated OrderInfoReply list = 2;
+}
+
+message OrderCancelRequest {
+  string orderSn = 1 [(validate.rules).string.min_len = 1];
+}
+
+message OrderDetailRequest {
+  string orderSn = 1 [(validate.rules).string.min_len = 1];
+}
+
+// 支付（本地模拟）
+message PaymentCreateRequest {
+  string orderSn = 1 [(validate.rules).string.min_len = 1];
+  int64 amount = 2 [(validate.rules).int64.gt = 0];
+  string channel = 3;
+}
+
+message PaymentInfoReply {
+  int64 id = 1;
+  string paymentNo = 2;
+  string orderSn = 3;
+  int64 amount = 4;
+  string channel = 5;
+  int32 status = 6;
+}
+
+message PaymentMockPayRequest {
+  string paymentNo = 1 [(validate.rules).string.min_len = 1];
+}
