@@ -1,0 +1,52 @@
+{
+  "source_dir": "D:\\workspaces\\flutter_projects\\flutter_piaoniu_app\\docs\\sql_new",
+  "generated_files": {
+    "01_init_databases.sql": "4ee575b7ded8dddbe71ed7ae4f2521c20632df608b86c16516a8d24b06d3b185",
+    "02_user.sql": "6a77756d94987c9039dc3d06ba215a1cbde04f6ee6c549b1367e36904002a2a2",
+    "03_catalog.sql": "2eb996e811fd98cf16791b1a41671198921d358b918310383ea0e9d852ad5ba1",
+    "04_ticket_inventory.sql": "ca4d3253e7d91c7b35d6dbabe9f6de6ea40f868b4b71891fa7999ab3550e7387",
+    "05_order.sql": "a8ab685c53a02e334f3cd2eaf656846670b732decd773390287a8d68ef6e73eb",
+    "06_payment.sql": "80dccfd9bafea9d85457639938866beaea468ac010f8cd7ff91bbfca2bf30f79",
+    "07_marketing.sql": "3681f7e1637cdf6286039ed3aac7c16c64469f3b7016fff61f0aa8f12c284f6e",
+    "08_community.sql": "811ee7dc2600bda212eb29358a6fb3dd0f7d2bb657577330058e1bbb06aa7a6c",
+    "09_content_ops.sql": "7120b36697a21e5132a7f13dd0bfadcc40a5e02b362af29a2fe7a9d0d7e92c31",
+    "10_dict_enums.sql": "a2d7e439179aed65947e22b930f675d95a7275b828fb1d126e26f1fbe191fafd",
+    "11_rev_evidence.sql": "bd62f46ea600ab4cf6659fcca5bb56bb196d51451eb94497727182f1edfeb827",
+    "12_constraints.sql": "d168231d1ec9f51e5b55093b42bb3b090b8a5bff385313414f437520848c233d",
+    "13_query_indexes.sql": "29c7971767045c25a9bce41d113fb1e7f5c63104123029ee738464f968ece6cf",
+    "13_query_indexes.down.sql": "ecca6d8377ee2305743d1b8a3ad52b466d2b520071989187410f27b6417cd0b3",
+    "00_all.sql": "d578654a47204703f138c4373abeaa55e7b38e55393a9d925440fbeaf91b82bd",
+    "00_all_faithful.sql": "f7e119bbf98b4309ef8f316c5e95787feec9e8bfda7e7c927262108e800f11bb",
+    "90_teardown.sql": "a61c95c05a0eb28944a3d1d2504d43ba1b88de91140f8a58a55eec537ddd1d76",
+    "optional/PROPOSALS.sql": "ff3534b97fa95d7f7917a4854b6b7bcacb6500251aae7dddb30b40d07c808fcb",
+    "optional/drop_optional_fks.sql": "78d027d814afdbd9889a0deca2c154f97042372609e7cb45f8d7b7c34cb7ed24",
+    "preflight.json": "24f82d1a494dfd3a9bbb8b60ce73486e35fabe972787f3b88436a97ff523b0a4",
+    "verify.sql": "d3c233571bb48c29980b0ed70346185d674b14fa3b6e94ed89c8e96ce7a3ae7d",
+    "README.md": "bf2ab4fe102a969ebcef9e19044386f3a712a6a79d2506a5d3201c5237b98dc0"
+  },
+  "source_sha256": {
+    "sql_new/01_init_databases.sql": "2161632dea00f7361cb5dca145d956c6eedc201361970aa103d8bc562dc43571",
+    "sql_new/02_user.sql": "cb7d0490edb281caa7effe857e4e609cdef7b28a5ef91e3d021201dec45a2246",
+    "sql_new/03_catalog.sql": "61b09147f3a8dab84e9a64e110d06ac69f4000706660320638e27bbd38311e05",
+    "sql_new/04_ticket_inventory.sql": "593523111035953634626d7793135497823b030eb21f2e44b54b869f62318981",
+    "sql_new/05_order.sql": "6187fec837b1981d48441c9545c214c7cb84bab58d54c3da6f6963a027ca1ae3",
+    "sql_new/06_payment.sql": "f037162f965d029edd1811578495309f58e46bca97b29c535ead267239171a6d",
+    "sql_new/07_marketing.sql": "487eea71beb8a6fd946dc2cf3ba7a1ff69e6ca8bcd394c12045e0f2c820b25ec",
+    "sql_new/08_community.sql": "da8d75a63678817b32f914508972c099b653a79ffc8c170741b8d4400d0d0705",
+    "sql_new/09_content_ops.sql": "359f293ae5e7f31c0f9b4a6617b01c49286caba425d3705159b7e6eab79fe6a0",
+    "sql_new/10_dict_enums.sql": "bf21bac48e03b9a769c25f48196489d386f641e88dfbfaf112384c8bb4e351b1",
+    "sql_new/11_rev_evidence.sql": "96983dc9a2899dec5dd6ddb018c7a058f86e416ba6668b99f54d413ace0f1d2e",
+    "sql_new/12_constraints.sql": "cebe767e739b43c14553aac13051c45de14be96b7a97b84bc32034304af60334",
+    "sql_new/13_query_indexes.sql": "fb51c5e9076b3c01f884672e6aa0bf673c0cba1e6b2a67cea3ab515998f3efcb"
+  },
+  "fixes": {
+    "r1_r2_r3": "继承 docs/sql_new（本脚本不重做）",
+    "r4_tinyint_display_width_replaced": 119,
+    "r4_expected_warning_1681_removed": 119,
+    "sql_new_body_verbatim_variant": "00_all_faithful.sql"
+  },
+  "statement_count": {
+    "00_all.sql": 196,
+    "00_all_faithful.sql": 196
+  }
+}

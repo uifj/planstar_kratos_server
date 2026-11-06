@@ -1,0 +1,138 @@
+-- ========================================================================
+--  sql · 12_constraints.sql（S2 全量规范重构版）
+--  结论  : 本文件不再包含任何可执行的物理外键，语句数 = 0。
+--  依据  : 《阿里巴巴 Java 开发手册》MySQL 规约
+--            「【强制】不得使用外键与级联，一切外键概念必须在应用层解决。」
+--          理由：外键在写入时加锁、级联删除/更新会带来不可控的性能与数据风险，
+--                高并发互联网场景下应删减约束，改为应用层 + 索引保证一致性。
+--  处理  : 原 61 条外键（其中 24 条跨库）全部移除，
+--          对应关系字段一律保留普通索引（idx_<表>_<列>）以支撑关联查询性能。
+--  一致性: 由服务层保证，推荐做法见文末「应用层一致性约定」。
+-- ========================================================================
+
+--  no-op：本文件刻意不产生任何 DDL，保留在安装链中以维持 01..13 的编号顺序。
+
+-- ------------------------------------------------------------------------
+--  原 61 条外键的替代关系（全部改为「普通索引 + 应用层校验」）
+-- ------------------------------------------------------------------------
+--  planstar_user
+--    login_session.user_id            -> user_info.user_id
+--    real_name_info.user_id           -> user_info.user_id
+--    user_address.user_id             -> user_info.user_id
+--    user_follow.user_id              -> user_info.user_id
+--    user_statistic.user_id           -> user_info.user_id
+--    user_message.user_id             -> user_info.user_id
+--    chat_thread.user_id              -> user_info.user_id
+--    chat_message.thread_id           -> chat_thread.thread_id
+--  planstar_catalog
+--    venue.city_id                    -> city.city_id
+--    activity.city_id                 -> city.city_id
+--    activity.venue_id                -> venue.venue_id
+--    activity_event.activity_id       -> activity.activity_id
+--    activity_detail.activity_id      -> activity.activity_id
+--    activity_lineup.activity_id      -> activity.activity_id
+--    activity_gallery.activity_id     -> activity.activity_id
+--    activity_refund_policy.activity_id-> activity.activity_id
+--    activity_refund_rule_detail.rule_id -> activity_refund_rule.id
+--    activity_campaign.activity_id    -> activity.activity_id
+--    tour.actor_id                    -> actor.id
+--  planstar_ticket
+--    ticket_category.activity_event_id -> activity_event.id
+--    ticket_group.ticket_category_id  -> ticket_category.id
+--    ticket_seat.area_id              -> ticket_area.id
+--  planstar_order
+--    order_info.user_id               -> user_info.user_id
+--    order_info.activity_id           -> activity.activity_id
+--    order_event.order_id             -> order_info.order_id
+--    order_item.order_id              -> order_info.order_id
+--    order_good.order_id              -> order_info.order_id
+--    order_goods_package.order_id     -> order_info.order_id
+--    order_delivery.order_id          -> order_info.order_id
+--    order_confirm_snapshot.order_id  -> order_info.order_id
+--    order_postage.order_id           -> order_info.order_id
+--    order_comment.order_id           -> order_info.order_id
+--  planstar_payment
+--    payment.order_id                 -> order_info.order_id
+--    payment_channel.pay_id           -> payment.pay_id
+--    refund.order_id                  -> order_info.order_id
+--    gift_card.user_id                -> user_info.user_id
+--    gift_card_usage.order_id         -> order_info.order_id
+--    gift_card_usage.gift_card_id     -> gift_card.id
+--    wallet_account.user_id           -> user_info.user_id
+--    wallet_sequence.account_id       -> wallet_account.account_id
+--  planstar_marketing
+--    coupon.user_id                   -> user_info.user_id
+--    pin_tuan_campaign.activity_id    -> activity.activity_id
+--    pin_tuan_campaign_item.pin_tuan_id -> pin_tuan_campaign.id
+--    pin_tuan_order.pin_tuan_id       -> pin_tuan_campaign.id
+--    group_buy_member.group_id        -> pin_tuan_campaign.id
+--    proxy_buy_config.activity_id     -> activity.activity_id
+--    to_watch.user_id                 -> user_info.user_id
+--    favorite.user_id                 -> user_info.user_id
+--    favorite.activity_id             -> activity.activity_id
+--    transfer.user_id                 -> user_info.user_id
+--  planstar_community
+--    review.user_id                   -> user_info.user_id
+--    review.activity_id               -> activity.activity_id
+--    review_reply.review_id           -> review.id
+--    review_todo.user_id              -> user_info.user_id
+--    feed.user_id                     -> user_info.user_id
+--    feed_media.feed_id               -> feed.id
+--    user_article.user_id             -> user_info.user_id
+--    like_record.user_id              -> user_info.user_id
+--  planstar_content
+--    share_log.user_id                -> user_info.user_id
+--    user_feedback.user_id            -> user_info.user_id
+--    tracking_event.user_id           -> user_info.user_id
+
+-- ------------------------------------------------------------------------
+--  应用层一致性约定（替代外键的推荐做法）
+-- ------------------------------------------------------------------------
+--  1) 插入前校验：写子表前先按父表业务唯一键（如 user_info.user_id /
+--     activity.activity_id）做存在性校验，拒绝孤儿数据。
+--  2) 删除策略：父记录一律软删除（status 或 is_deleted），不做级联物理删除；
+--     确需物理删除时，先由服务层校验不存在引用。
+--  3) 事务边界：同库内多表写入放同一本地事务；跨库写走 Saga / 本地消息表，
+--     以最终一致替代强一致。
+--  4) 定期巡检：以离线任务核对孤儿率，例如
+--     SELECT COUNT(*) FROM planstar_order.order_info o
+--       LEFT JOIN planstar_user.user_info u ON u.user_id = o.user_id
+--      WHERE u.user_id IS NULL;
+--  5) 索引保障：所有 *_id 关联列均已建普通索引，避免缺失索引导致的关联扫描。
+
+-- ------------------------------------------------------------------------
+--  校验查询（建库后确认结构符合规范）
+-- ------------------------------------------------------------------------
+-- 1) 全库外键数量必须为 0
+-- SELECT COUNT(*) AS fk_count FROM information_schema.TABLE_CONSTRAINTS
+--   WHERE TABLE_SCHEMA LIKE 'planstar_%' AND CONSTRAINT_TYPE = 'FOREIGN KEY';
+-- 2) 每张业务表都必须有 id / gmt_create / gmt_modified
+-- SELECT t.TABLE_NAME FROM information_schema.TABLES t
+--   WHERE t.TABLE_SCHEMA LIKE 'planstar_%' AND t.TABLE_TYPE = 'BASE TABLE'
+--     AND (SELECT COUNT(*) FROM information_schema.COLUMNS c
+--          WHERE c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
+--            AND c.COLUMN_NAME IN ('id','gmt_create','gmt_modified')) < 3;
+-- 3) 单表索引数不超过 5
+-- SELECT TABLE_SCHEMA, TABLE_NAME, COUNT(DISTINCT INDEX_NAME) AS idx_num
+--   FROM information_schema.STATISTICS WHERE TABLE_SCHEMA LIKE 'planstar_%'
+--  GROUP BY TABLE_SCHEMA, TABLE_NAME HAVING idx_num > 5;
+-- 4) 枚举字典
+-- SELECT enum_name, COUNT(*) FROM `planstar_meta`.`dict_enum` GROUP BY enum_name;
+
+-- ------------------------------------------------------------------------
+--  落地提醒（与原 12 一致，供数据导入时参考）
+-- ------------------------------------------------------------------------
+--  a) 先拿真实库 information_schema 对齐表名 / 列名 / 类型，尤其是 DECIMAL 精度；
+--  b) 时间字段若是 DATETIME，用 FROM_UNIXTIME(col/1000) 做一次迁移校验；
+--  c) 状态类字段务必对照 dict_enum：OrderStatus 与 OrderUtils 前 4 个状态差 1，
+--     WAITING_FOR_TICKETS 的描述还是从 INIT 复制错的（wiki_zh/27 §11.1）；
+--  d) 94 个 DTO 的 ID 是 Java int，超过 2^31 会溢出（wiki_zh/27 §10），
+--     本 schema 已放宽为 BIGINT UNSIGNED；
+--  e) ActivityBean.id 与 activityId 是两个独立字段，服务端有时只填其中一个，
+--     导入时务必做 COALESCE 归一；
+--  f) MakeOrderRequestBody.channelAttributeInfo 是自嵌套 JSON 字符串，
+--     couponIds 与 campaignIds 互斥，giftCards 带实际抵扣额。
+
+-- ========================================================================
+--  EOF
+-- ========================================================================

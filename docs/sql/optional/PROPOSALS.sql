@@ -1,0 +1,171 @@
+-- ========================================================================
+--  sql_new（已修复版）· PROPOSALS.sql
+--  来源: docs/sql/PROPOSALS.sql  |  生成: tools/build_sql_new.py
+--  与基线的差异:
+--    R1 表尾显式 COLLATE=utf8mb4_unicode_ci（库/表/列三层排序规则统一）
+--    R2 8 处关联 ID 由 INT 对齐为 BIGINT（消除 fk_pin_tuan_orders_pin_tuan_id 阻塞）
+--    R3 4 处元数据代理主键补 COMMENT
+--  为什么这样设计: 以上三项不改变列语义、不拒绝历史数据、不影响 267 个 REST 契约，
+--    属于可确定性执行的规范类修复；会改变业务口径的提案全部留在 optional/PROPOSALS.sql。
+--  基线 docs/sql/ 未被修改；本目录可独立用于 MySQL 8.0 全新空库安装。
+--  验证边界: 见 VALIDATION.md（未做真实 MySQL 8.0 执行 / EXPLAIN / 压测 / HA 验证）。
+-- ========================================================================
+--  待业务确认；全注释、零可执行语句。
+
+-- =======================================================================
+--  Planstar 数据库评审 · 待确认提案（NOT EXECUTABLE / 全部注释）
+--  为什么单独放这里：用户要求「对存疑点主动提问澄清，不假设未声明的需求」。
+--  以下改动会改变业务语义、拒绝历史数据或破坏 267 个 REST 契约，
+--  因此只给出 DDL 草案 + 回滚草案，不纳入 000002/000003 的可执行迁移。
+--  确认顺序：先回答评审报告第 6 节的开放问题，再逐条转成正式 up/down。
+-- =======================================================================
+
+-- -----------------------------------------------------------------------
+-- P01 [待确认] 订单关键字段 NOT NULL + CHECK
+--   场景：下单主流程必须能唯一定位订单、用户、金额与创建时间。
+--   依据：MySQL 8.0.16+ CHECK 强制；Alibaba「业务唯一特性必须建唯一索引」。
+--   前置：确认 orders 是否会存「响应快照」（当前 229 列全部可空）。
+--   草案：
+--   ALTER TABLE `planstar_order`.`orders`
+--     MODIFY `order_number` VARCHAR(64) NOT NULL COMMENT '订单号',
+--     MODIFY `user_id` BIGINT NOT NULL,
+--     MODIFY `status` INT NOT NULL,
+--     MODIFY `pay_amount` DECIMAL(12,2) NOT NULL,
+--     MODIFY `add_time` BIGINT NOT NULL,
+--     ADD CONSTRAINT `chk_orders_amount` CHECK (`pay_amount` >= 0 AND `total_amount` >= 0),
+--     ADD CONSTRAINT `chk_orders_time` CHECK (`pay_time` IS NULL OR `add_time` IS NULL OR `pay_time` >= `add_time`);
+--   回滚：
+--   ALTER TABLE `planstar_order`.`orders` DROP CHECK `chk_orders_amount`, DROP CHECK `chk_orders_time`;
+--   ALTER TABLE `planstar_order`.`orders` MODIFY `order_number` VARCHAR(64) NULL, MODIFY `user_id` BIGINT NULL,
+--     MODIFY `status` INT NULL, MODIFY `pay_amount` DECIMAL(12,2) NULL, MODIFY `add_time` BIGINT NULL;
+--   风险：历史 DTO 快照中这些列可能为 NULL，ALTER 会失败；CHECK 在 8.0.16 前不强制。
+-- -----------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------
+-- P02 [待确认] 业务唯一约束
+--   场景：订单号 / 礼品卡号 / 代抢单号 / 手机号 不允许重复。
+--   依据：Alibaba【强制】业务唯一字段必须建唯一索引；MySQL 唯一索引允许多个 NULL。
+--   前置：先 SELECT 查重（Alibaba「数据订正先 select」），确认 NULL 是否为合法业务值。
+--   草案：
+--   ALTER TABLE `planstar_payment`.`gift_cards` MODIFY `serial_number` VARCHAR(128) NOT NULL,
+--     ADD UNIQUE KEY `uk_gift_serial` (`serial_number`);
+--   ALTER TABLE `planstar_marketing`.`proxy_buy_orders` MODIFY `order_number` VARCHAR(64) NOT NULL,
+--     ADD UNIQUE KEY `uk_proxy_order_number` (`order_number`);
+--   ALTER TABLE `planstar_user`.`users` MODIFY `mobile_no` VARCHAR(32) NOT NULL,
+--     ADD UNIQUE KEY `uk_users_mobile` (`mobile_no`);
+--   回滚：DROP INDEX 后 MODIFY ... NULL。
+--   风险：users 同时有 mobile_no 与 phone 两个冗余字段，需先定口径；
+--         复合唯一键（uk_follow/uk_towatch/uk_fav/uk_wallet_user）任一列为 NULL 时仍可重复。
+-- -----------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------
+-- P03 [待确认] 支付幂等 / 退款外部单号 / 钱包业务流水号
+--   场景：支付渠道重复回调、退款申请重放、钱包重复入账。
+--   依据：金融交易一致性；Alibaba 唯一索引规约。
+--   草案：
+--   ALTER TABLE `planstar_payment`.`payments`
+--     ADD COLUMN `provider_trade_no` VARCHAR(64) NULL COMMENT '渠道交易号',
+--     ADD COLUMN `payment_status` VARCHAR(32) NULL COMMENT 'INIT/SUCCESS/FAILED/CLOSED',
+--     ADD COLUMN `paid_at` BIGINT NULL COMMENT '支付完成时间',
+--     ADD COLUMN `idempotency_key` VARCHAR(128) NULL COMMENT '幂等键',
+--     ADD UNIQUE KEY `uk_payment_provider_trade` (`provider_trade_no`,`payment_status`),
+--     ADD UNIQUE KEY `uk_payment_idempotency` (`idempotency_key`);
+--   ALTER TABLE `planstar_payment`.`refunds`
+--     ADD COLUMN `out_refund_no` VARCHAR(64) NULL, ADD UNIQUE KEY `uk_refund_out_no` (`out_refund_no`);
+--   ALTER TABLE `planstar_payment`.`wallet_sequences`
+--     ADD COLUMN `biz_key` VARCHAR(128) NULL, ADD UNIQUE KEY `uk_walletseq_biz` (`biz_key`);
+--   回滚：DROP INDEX + DROP COLUMN（按逆序）。
+--   风险：现有 PayInfo DTO 无这些字段，需服务端改造；唯一键含 NULL 列时仍可重复，需要 NOT NULL。
+--   演示：mock 00_schema.sql 已用 uk_mock_pay_order / uk_mock_proxy_number 演示幂等基线，
+--         02_validate.sql V08/V08b 校验。
+-- -----------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------
+-- P04 [待确认] 实体 / 响应封装 / 浏览者状态 拆表（3NF）
+--   场景：reviews 的分页字段、feeds 的 liked/next_page_key、coupons 的 success/data、
+--         users 的 follow_him/followed_by_him 都依赖「请求者」或「响应批次」而非实体本身。
+--   依据：第三范式；ISO/IEC 11179-1:2023 数据元定义；Alibaba 冗余字段须考虑同步。
+--   草案（新表，不动基线列）：
+--   CREATE TABLE `planstar_community`.`feed_page_meta` (
+--     `request_key` VARCHAR(128) NOT NULL, `next_page_key` VARCHAR(256), `has_more` TINYINT(1),
+--     PRIMARY KEY (`request_key`));
+--   CREATE TABLE `planstar_community`.`user_feed_states` (
+--     `viewer_id` BIGINT NOT NULL, `feed_id` BIGINT NOT NULL, `liked` TINYINT(1),
+--     PRIMARY KEY (`viewer_id`,`feed_id`));
+--   备选 B：不拆表，把宽表重命名为 `*_response_snapshot` 并声明「只读归档」，
+--           避免误当权威实体；成本低，但反范式仍存在。
+--   回滚：DROP TABLE（新建表，无数据损失）。
+--   风险：需服务端读写改造；JSON 快照与归一化子表并存且无同步触发器，
+--         必须先明确 source-of-truth（建议子表权威、JSON 为不可变快照）。
+-- -----------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------
+-- P05 [待确认] 时间列 epoch BIGINT → DATETIME(3)
+--   场景：按时间范围归档、分区、BI 报表、时区展示。
+--   依据：Alibaba 表必备三字段 gmt_create/gmt_modified 为 date_time；
+--         MySQL 分区通常依赖日期列。
+--   草案：新增 `gmt_create DATETIME(3)` / `gmt_modified DATETIME(3)`，
+--         用 `FROM_UNIXTIME(add_time/1000)` 回填，应用双写后再停用 BIGINT 列。
+--   回滚：DROP COLUMN 新增列（BIGINT 列保留，可安全回退）。
+--   风险：267 个 REST 契约与 Flutter `_parseOrder()` 使用 `createTime` 字符串解析；
+--         epoch ms 无时区信息，转换需明确时区（建议 UTC 存储、客户端本地化）。
+-- -----------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------
+-- P06 [待确认] 命名 / 保留字 / 布尔 / 必备三字段
+--   场景：ORM、BI、跨方言迁移工具遇到 `desc`/`rank`/`schema`/`group` 等保留字。
+--   依据：Alibaba【强制】禁保留字、表名单数、is_xxx + unsigned tinyint、
+--         表必备三字段、pk_/uk_/idx_ 索引命名、注释及时更新。
+--   草案（示例，需全表扫描后批量生成）：
+--   ALTER TABLE `planstar_catalog`.`activities` CHANGE COLUMN `desc` `description` TEXT;
+--   ALTER TABLE `planstar_community`.`feeds` CHANGE COLUMN `rank` `rank_weight` INT;
+--   ALTER TABLE `planstar_catalog`.`activities` CHANGE COLUMN `schema` `jump_schema` VARCHAR(1024);
+--   回滚：反向 CHANGE COLUMN。
+--   风险：破坏 267 个 REST 契约与 Flutter 解析器；本 schema 保留复表名 / add_time
+--         是「逆向保真」的有意选择，冲突应记录而非静默重命名。演示项目不建议一次性改名。
+-- -----------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------
+-- P07 [待确认] DOUBLE → DECIMAL / 折扣与金额口径
+--   场景：users.score、activities.rank 参与排序比较；coupons.discount_rate 参与算价。
+--   依据：Alibaba【强制】小数禁用 float/double；ISO 11179 数据元值域唯一。
+--   草案：
+--   ALTER TABLE `planstar_user`.`users` MODIFY `score` DECIMAL(12,4);
+--   ALTER TABLE `planstar_catalog`.`activities` MODIFY `rank` DECIMAL(12,4);
+--   ⚠ discount_rate 口径未定（DDL 注释「万分比」 vs Flutter「85=85折」），
+--     在业务确认前禁止写任何数据换算脚本。
+--   回滚：MODIFY 回 DOUBLE（可能丢精度）。
+--   风险：折扣口径错配直接造成资金差错（评审 F-05）；优先级高于本类型改造。
+-- -----------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------
+-- P08 [待确认] 敏感字段加密 / 脱敏视图 / 最小权限
+--   场景：证件号、手机号、access_token、visitor_token、订单联系人 JSON 快照。
+--   依据：用户要求的加密/脱敏、权限最小化、SQL 注入防护；Alibaba ORM 规约。
+--   草案：
+--   CREATE VIEW `planstar_order`.`v_orders_masked` AS
+--     SELECT `order_id`,`order_number`,`user_id`,`status`,`pay_amount`,
+--            CONCAT(LEFT(`phone`,3),'****',RIGHT(`phone`,4)) AS `phone_masked`
+--     FROM `planstar_order`.`orders`;
+--   CREATE USER 'planstar_read'@'%' IDENTIFIED BY '<rotate-me>';
+--   GRANT SELECT ON `planstar_order`.* TO 'planstar_read'@'%';
+--   回滚：DROP VIEW / REVOKE / DROP USER。
+--   风险：加密后无法按原值模糊查询，需要盲索引；静态 DDL 评审无法证明运行时
+--         TLS / 审计日志 / 参数化查询已启用。
+-- -----------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------
+-- P09 [待确认] 分区 / 归档 / 分库分表触发条件
+--   场景：orders、feeds、wallet_sequences、tracking_events 为潜在增长表。
+--   依据：Alibaba【推荐】单表 >500 万行或 >2GB 才分库分表；勿提前分片。
+--   触发公式（无真实指标，仅给方法）：
+--     R(3) = 日均订单量 × 365 × 3 × (1 + 明细行倍数)
+--     当 R(3) > 5,000,000 或 单表 > 2GB 时才启动
+--   备选 A：按 user_id 哈希分库（订单列表天然带 user_id）
+--   备选 B：按 pay_time 范围分表 / orders_archive（归档友好，跨期查询需聚合）
+--   ⚠ 与 12_constraints.sql 的 61 条外键互斥：MySQL 8.0 明确
+--     InnoDB 用户分区表不支持外键（父子表均不可），必须先定 F-12 外键策略。
+--   回滚：分片/归档一旦落地不可简单回滚，需双写 + 灰度 + 数据校验。
+-- -----------------------------------------------------------------------
+
+-- EOF（本文件没有任何可执行语句）

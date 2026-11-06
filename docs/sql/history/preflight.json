@@ -1,0 +1,529 @@
+{
+  "schema": {
+    "table_count": 89,
+    "column_count": 1444,
+    "databases": [
+      "planstar_user",
+      "planstar_catalog",
+      "planstar_ticket",
+      "planstar_order",
+      "planstar_payment",
+      "planstar_marketing",
+      "planstar_community",
+      "planstar_content",
+      "planstar_meta"
+    ]
+  },
+  "fk_count": 61,
+  "fk_rows": [
+    {
+      "constraint": "fk_login_sessions_user_id",
+      "child": "planstar_user.login_sessions.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_real_name_infos_user_id",
+      "child": "planstar_user.real_name_infos.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_user_addresses_user_id",
+      "child": "planstar_user.user_addresses.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_user_follows_user_id",
+      "child": "planstar_user.user_follows.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_user_statistics_user_id",
+      "child": "planstar_user.user_statistics.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_user_messages_user_id",
+      "child": "planstar_user.user_messages.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_chat_threads_user_id",
+      "child": "planstar_user.chat_threads.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_chat_messages_thread_id",
+      "child": "planstar_user.chat_messages.thread_id",
+      "parent": "planstar_user.chat_threads.thread_id",
+      "child_type": "VARCHAR(64)",
+      "parent_type": "VARCHAR(64)"
+    },
+    {
+      "constraint": "fk_venues_city_id",
+      "child": "planstar_catalog.venues.city_id",
+      "parent": "planstar_catalog.cities.city_id",
+      "child_type": "INT",
+      "parent_type": "INT"
+    },
+    {
+      "constraint": "fk_activities_city_id",
+      "child": "planstar_catalog.activities.city_id",
+      "parent": "planstar_catalog.cities.city_id",
+      "child_type": "INT",
+      "parent_type": "INT"
+    },
+    {
+      "constraint": "fk_activities_venue_id",
+      "child": "planstar_catalog.activities.venue_id",
+      "parent": "planstar_catalog.venues.venue_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_activity_events_activity_id",
+      "child": "planstar_catalog.activity_events.activity_id",
+      "parent": "planstar_catalog.activities.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_activity_details_activity_id",
+      "child": "planstar_catalog.activity_details.activity_id",
+      "parent": "planstar_catalog.activities.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_activity_lineups_activity_id",
+      "child": "planstar_catalog.activity_lineups.activity_id",
+      "parent": "planstar_catalog.activities.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_activity_galleries_activity_id",
+      "child": "planstar_catalog.activity_galleries.activity_id",
+      "parent": "planstar_catalog.activities.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_activity_refund_policies_activity_id",
+      "child": "planstar_catalog.activity_refund_policies.activity_id",
+      "parent": "planstar_catalog.activities.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_activity_refund_rule_details_rule_id",
+      "child": "planstar_catalog.activity_refund_rule_details.rule_id",
+      "parent": "planstar_catalog.activity_refund_rules.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_activity_campaigns_activity_id",
+      "child": "planstar_catalog.activity_campaigns.activity_id",
+      "parent": "planstar_catalog.activities.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_tours_actor_id",
+      "child": "planstar_catalog.tours.actor_id",
+      "parent": "planstar_catalog.actors.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_ticket_categories_activity_event_id",
+      "child": "planstar_ticket.ticket_categories.activity_event_id",
+      "parent": "planstar_catalog.activity_events.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_ticket_groups_ticket_category_id",
+      "child": "planstar_ticket.ticket_groups.ticket_category_id",
+      "parent": "planstar_ticket.ticket_categories.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_ticket_seats_area_id",
+      "child": "planstar_ticket.ticket_seats.area_id",
+      "parent": "planstar_ticket.ticket_areas.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_orders_user_id",
+      "child": "planstar_order.orders.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_orders_activity_id",
+      "child": "planstar_order.orders.activity_id",
+      "parent": "planstar_catalog.activities.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_order_events_order_id",
+      "child": "planstar_order.order_events.order_id",
+      "parent": "planstar_order.orders.order_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_order_items_order_id",
+      "child": "planstar_order.order_items.order_id",
+      "parent": "planstar_order.orders.order_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_order_goods_order_id",
+      "child": "planstar_order.order_goods.order_id",
+      "parent": "planstar_order.orders.order_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_order_goods_packages_order_id",
+      "child": "planstar_order.order_goods_packages.order_id",
+      "parent": "planstar_order.orders.order_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_order_deliveries_order_id",
+      "child": "planstar_order.order_deliveries.order_id",
+      "parent": "planstar_order.orders.order_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_order_confirm_snapshots_order_id",
+      "child": "planstar_order.order_confirm_snapshots.order_id",
+      "parent": "planstar_order.orders.order_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_payments_order_id",
+      "child": "planstar_payment.payments.order_id",
+      "parent": "planstar_order.orders.order_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_payment_channels_pay_id",
+      "child": "planstar_payment.payment_channels.pay_id",
+      "parent": "planstar_payment.payments.pay_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_refunds_order_id",
+      "child": "planstar_payment.refunds.order_id",
+      "parent": "planstar_order.orders.order_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_order_postage_order_id",
+      "child": "planstar_order.order_postage.order_id",
+      "parent": "planstar_order.orders.order_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_order_comments_order_id",
+      "child": "planstar_order.order_comments.order_id",
+      "parent": "planstar_order.orders.order_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_coupons_user_id",
+      "child": "planstar_marketing.coupons.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_gift_cards_user_id",
+      "child": "planstar_payment.gift_cards.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_gift_card_usages_order_id",
+      "child": "planstar_payment.gift_card_usages.order_id",
+      "parent": "planstar_order.orders.order_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_gift_card_usages_gift_card_id",
+      "child": "planstar_payment.gift_card_usages.gift_card_id",
+      "parent": "planstar_payment.gift_cards.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_wallet_accounts_user_id",
+      "child": "planstar_payment.wallet_accounts.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_wallet_sequences_account_id",
+      "child": "planstar_payment.wallet_sequences.account_id",
+      "parent": "planstar_payment.wallet_accounts.account_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_pin_tuan_campaigns_activity_id",
+      "child": "planstar_marketing.pin_tuan_campaigns.activity_id",
+      "parent": "planstar_catalog.activities.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_pin_tuan_campaign_items_pin_tuan_id",
+      "child": "planstar_marketing.pin_tuan_campaign_items.pin_tuan_id",
+      "parent": "planstar_marketing.pin_tuan_campaigns.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_pin_tuan_orders_pin_tuan_id",
+      "child": "planstar_marketing.pin_tuan_orders.pin_tuan_id",
+      "parent": "planstar_marketing.pin_tuan_campaigns.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_group_buy_members_group_id",
+      "child": "planstar_marketing.group_buy_members.group_id",
+      "parent": "planstar_marketing.pin_tuan_campaigns.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_proxy_buy_configs_activity_id",
+      "child": "planstar_marketing.proxy_buy_configs.activity_id",
+      "parent": "planstar_catalog.activities.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_to_watch_user_id",
+      "child": "planstar_marketing.to_watch.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_favorites_user_id",
+      "child": "planstar_marketing.favorites.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_favorites_activity_id",
+      "child": "planstar_marketing.favorites.activity_id",
+      "parent": "planstar_catalog.activities.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_reviews_user_id",
+      "child": "planstar_community.reviews.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_reviews_activity_id",
+      "child": "planstar_community.reviews.activity_id",
+      "parent": "planstar_catalog.activities.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_review_replies_review_id",
+      "child": "planstar_community.review_replies.review_id",
+      "parent": "planstar_community.reviews.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_review_todos_user_id",
+      "child": "planstar_community.review_todos.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_feeds_user_id",
+      "child": "planstar_community.feeds.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_feed_media_feed_id",
+      "child": "planstar_community.feed_media.feed_id",
+      "parent": "planstar_community.feeds.id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_user_articles_user_id",
+      "child": "planstar_community.user_articles.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_likes_user_id",
+      "child": "planstar_community.likes.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_transfers_user_id",
+      "child": "planstar_marketing.transfers.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_share_logs_user_id",
+      "child": "planstar_content.share_logs.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_feedback_user_id",
+      "child": "planstar_content.feedback.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    },
+    {
+      "constraint": "fk_tracking_events_user_id",
+      "child": "planstar_content.tracking_events.user_id",
+      "parent": "planstar_user.users.user_id",
+      "child_type": "BIGINT",
+      "parent_type": "BIGINT"
+    }
+  ],
+  "index_statement_count": 9,
+  "index_rows": [
+    {
+      "index": "idx_order_user_addtime",
+      "table": "planstar_order.orders",
+      "columns": [
+        "user_id",
+        "add_time",
+        "order_id"
+      ]
+    },
+    {
+      "index": "idx_orderev_order_time",
+      "table": "planstar_order.order_events",
+      "columns": [
+        "order_id",
+        "add_time",
+        "id"
+      ]
+    },
+    {
+      "index": "idx_event_act_start",
+      "table": "planstar_catalog.activity_events",
+      "columns": [
+        "activity_id",
+        "start",
+        "id"
+      ]
+    },
+    {
+      "index": "idx_tc_event_status",
+      "table": "planstar_ticket.ticket_categories",
+      "columns": [
+        "activity_event_id",
+        "status",
+        "id"
+      ]
+    },
+    {
+      "index": "idx_coupon_user_status_expiry",
+      "table": "planstar_marketing.coupons",
+      "columns": [
+        "user_id",
+        "status",
+        "effective_time_to",
+        "id"
+      ]
+    },
+    {
+      "index": "idx_walletseq_account_time",
+      "table": "planstar_payment.wallet_sequences",
+      "columns": [
+        "account_id",
+        "time",
+        "id"
+      ]
+    },
+    {
+      "index": "idx_review_act_time",
+      "table": "planstar_community.reviews",
+      "columns": [
+        "activity_id",
+        "add_time",
+        "id"
+      ]
+    },
+    {
+      "index": "idx_feed_addtime_id",
+      "table": "planstar_community.feeds",
+      "columns": [
+        "add_time",
+        "id"
+      ]
+    },
+    {
+      "index": "idx_feed_addtime",
+      "table": "planstar_community.feeds",
+      "action": "DROP"
+    }
+  ],
+  "issues": [],
+  "status": "PASS"
+}

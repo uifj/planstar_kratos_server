@@ -1,0 +1,3 @@
+# run_log_clean.txt — 00_all.sql @ 2026-11-05T15:56:31Z
+# --- stdout (warnings) ---
+# --- stderr (errors) ---

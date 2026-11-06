@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>sql_rebuildnew · MySQL 实跑验证</title>
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--line:#e3e6ec;--text:#1f2329;--muted:#646a73;--ok:#0a7f4d;--bad:#c0392b;--accent:#2b5cff}
+*{box-sizing:border-box}body{margin:0;padding:32px;background:var(--bg);color:var(--text);font:14px/1.65 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1080px;margin:0 auto}h1{font-size:26px;margin:0 0 6px}h2{font-size:18px;margin:28px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.sub{color:var(--muted);margin-bottom:24px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 22px;margin-bottom:16px}
+.hero{display:flex;gap:14px;flex-wrap:wrap}.pill{background:#eef3ff;color:var(--accent);border-radius:20px;padding:5px 14px;font-weight:600}
+.pill.ok{background:#e8f7ef;color:var(--ok)}.pill.warn{background:#fff4e5;color:#a56400}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:13px}th{background:#f2f4f8;font-weight:600}
+tr:last-child td{border-bottom:none}.ok{color:var(--ok);font-weight:600}.bad{color:var(--bad);font-weight:600}
+code{background:#f2f4f8;padding:1px 5px;border-radius:4px;font-size:12px}
+ul{margin:6px 0;padding-left:20px}li{margin:4px 0}.muted{color:var(--muted);font-size:13px}
+</style></head><body><div class="wrap">
+<h1>sql_rebuildnew · MySQL 实跑验证</h1>
+<div class="sub">完整建库脚本在本机 Docker 的 MySQL 8.4.10 上从空实例执行并复核</div>
+
+<div class="card hero">
+<span class="pill ok">校验 16/16 PASS</span>
+<span class="pill ok">干净版 0 ERROR / 0 WARNING</span>
+<span class="pill">原样版 0 ERROR / 119 WARNING</span>
+<span class="pill">9 库 · 89 表 · 1444 列</span>
+<span class="pill">61 外键 · 182 索引</span>
+</div>
+
+<div class="card"><h2 style="margin-top:0;border:none;padding:0">运行环境</h2>
+<table><tr><th>项</th><th>值</th></tr>
+<tr><td>镜像</td><td><code>sha256:8dbcf531a03aade657e181b9cf2f1d1803ce621a1d55610cb44cb531ab7d7db6</code> (8dbcf531a03a)</td></tr>
+<tr><td>容器</td><td><code>planstar-mysql-verify</code> / <code>b37b28717154768480f630d903c3837fa1a0a5b16e77a3c36d110751e8b25caf</code></td></tr>
+<tr><td>MySQL</td><td>8.4.10 · MySQL Community Server - GPL</td></tr>
+<tr><td>服务端默认排序规则</td><td><code>utf8mb4_0900_ai_ci</code>（库/表已显式覆盖为 <code>utf8mb4_unicode_ci</code>）</td></tr>
+<tr><td>sql_mode</td><td><code>ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION</code></td></tr>
+<tr><td>执行脚本</td><td><code>00_all.sql</code>（196 条语句 / 293175 字节）</td></tr>
+</table></div>
+
+<h2>校验项</h2>
+<table><tr><th>#</th><th>检查</th><th>状态</th><th>实测</th><th>期望</th></tr><tr><td>C01</td><td>9 个服务库且字符集/排序规则正确</td><td class="ok">PASS</td><td>9</td><td>9</td></tr><tr><td>C02</td><td>基表数量</td><td class="ok">PASS</td><td>89</td><td>89</td></tr><tr><td>C03</td><td>列数量（真实 information_schema）</td><td class="ok">PASS</td><td>1444</td><td>1444</td></tr><tr><td>C04</td><td>所有列均有 COMMENT</td><td class="ok">PASS</td><td>0</td><td>0</td></tr><tr><td>C05</td><td>JSON 列数量</td><td class="ok">PASS</td><td>222</td><td>222</td></tr><tr><td>C06</td><td>外键定义数 = 实存外键数</td><td class="ok">PASS</td><td>61 = 61</td><td>61 = 61</td></tr><tr><td>C07</td><td>跨库外键引用数</td><td class="ok">PASS</td><td>24</td><td>24</td></tr><tr><td>C08</td><td>索引数量 >= 169（含 13 条件索引与 InnoDB 自动建索引）</td><td class="ok">PASS</td><td>182</td><td>>= 169</td></tr><tr><td>C09</td><td>89 张表全部 InnoDB + utf8mb4_unicode_ci（R1 实跑）</td><td class="ok">PASS</td><td>InnoDB/utf8mb4_unicode_ci/89</td><td>InnoDB / utf8mb4_unicode_ci / 89</td></tr><tr><td>C10</td><td>4 组证据种子行数</td><td class="ok">PASS</td><td>{'dict_enums': 143, '_rev_dto_field_catalog': 1736, '_rev_endpoint_catalog': 267, '_rev_dto_table_mapping': 217}</td><td>{'dict_enums': 143, '_rev_dto_field_catalog': 1736, '_rev_endpoint_catalog': 267, '_rev_dto_table_mapping': 217}</td></tr><tr><td>C11</td><td>00_all.sql 实跑 0 ERROR / 0 WARNING</td><td class="ok">PASS</td><td>0 / 0</td><td>0 / 0</td></tr><tr><td>C12</td><td>00_all_faithful.sql 仅 119 条 Warning 1681（其余 0 ERROR）</td><td class="ok">PASS</td><td>119 × ['1681']</td><td>119 × 1681 / 0 ERROR</td></tr><tr><td>C13</td><td>同库外键真实拒绝孤儿行（ERROR 1452）</td><td class="ok">PASS</td><td>PASS</td><td>PASS</td></tr><tr><td>C14</td><td>跨库外键真实拒绝孤儿行（ERROR 1452）</td><td class="ok">PASS</td><td>PASS</td><td>PASS</td></tr><tr><td>C15</td><td>docs/sql_new 源文件 sha256 未变</td><td class="ok">PASS</td><td>0</td><td>0</td></tr><tr><td>C16</td><td>静态预检（61 FK / 9 索引语句引用与类型）</td><td class="ok">PASS</td><td>PASS / 0 issues</td><td>PASS / 0 issues</td></tr></table>
+
+<h2>对象与证据</h2>
+<div class="card"><ul>
+<li>9 个库全部 <code>utf8mb4 / utf8mb4_unicode_ci</code>；89 张表全部 <code>InnoDB + utf8mb4_unicode_ci</code>（R1 实跑确认）。</li>
+<li>证据种子：<code>dict_enums 143</code> ·
+<code>_rev_dto_field_catalog 1736</code> ·
+<code>_rev_endpoint_catalog 267</code> ·
+<code>_rev_dto_table_mapping 217</code>。</li>
+<li>61 条外键定义 = 61 条 <code>REFERENTIAL_CONSTRAINTS</code>；
+其中 <b>24 条跨库</b>外键全部创建成功（同实例条件满足）。</li>
+<li>外键强制生效：同库 / 跨库各插入一条必违例记录，均被 <code>ERROR 1452</code> 拒绝，子表残留 0 行。</li>
+</ul></div>
+
+<h2>边界（未验证 / 不声称）</h2>
+<div class="card"><ul><li>实跑环境为 MySQL 8.4.10 LTS（镜像 mysql:8），不是 MySQL 8.0；DDL 方言按 8.0 编写，在更严格的 8.4 上零错误通过。</li><li>未做 EXPLAIN 执行计划 / 索引选择性 / 锁竞争 / QPS / 慢查询 / 复制延迟 / 高可用切换 / 分区与归档实测。</li><li>8 个条件索引（13_query_indexes.sql）仍属候选，无真实负载数据，不声称性能收益。</li><li>未落地 deep_review 的 P01–P17 语义提案（Q1–Q10 未确认）；D-01..D-17 结构性结论仍成立。</li><li>「能跑通」只证明 DDL 语法、对象引用、外键与种子数据完整，不等于「符合原生产业务逻辑」——原服务端建库 DDL 从未获得。</li><li>00_all.sql 是单次全新空库安装脚本；重复执行会因外键/索引重名与证据种子重复插入而报错，重装须先执行 90_teardown.sql。</li></ul>
+<p class="muted">生成：tools/verify_mysql.py · 2026-11-05T23:56:39+08:00</p></div>
+</div></body></html>

@@ -1,0 +1,67 @@
+-- ========================================================================
+--  sql · 13_query_indexes.sql（S2 全量规范重构版）
+--  结论  : 本文件不再产生任何 ALTER，语句数 = 0。
+--  原因  : 原 8 个「条件索引候选」已全部内联进 02..09 的 CREATE TABLE，
+--          且原候选存在重叠前缀（例如 orders 的 (user_id,add_time) 与
+--          (user_id,status)、activity_event 的 (activity_id,start_time) 与
+--          (activity_id)、(start_time)），违反阿里「禁止冗余索引」规约。
+--  现状  : 每张表的二级索引已按「最左前缀 + 单表 ≤ 5 个」规则重建，
+--          命名统一为 idx_<单数表>_<列> / uk_<单数表>_<列>。
+--  后续  : 如需新增索引，请先对真实查询做 EXPLAIN，确认无同前缀索引后再上线。
+-- ========================================================================
+
+--  no-op：保留在安装链中，仅维持 01..13 的编号顺序。
+
+-- ------------------------------------------------------------------------
+--  原 8 个候选索引的落位说明
+-- ------------------------------------------------------------------------
+--  [planstar_order.order_info]
+--    原候选 idx_order_user_addtime (user_id, add_time, order_id)
+--    现内联  idx_order_info_user_id_status (user_id, status) +
+--            idx_order_info_gmt_create (gmt_create)
+--    说明  : 订单列表的稳定游标以 id 递增替代 gmt_create；按用户 + 状态过滤
+--            走复合索引，按时间线翻页走 gmt_create 索引，避免三列宽索引。
+--
+--  [planstar_order.order_event]
+--    原候选 (order_id, add_time, id)
+--    现内联  idx_order_event_order_id (order_id)
+--    说明  : 单订单的事件量级极小（< 100 行），按 order_id 取回后内存排序即可。
+--
+--  [planstar_catalog.activity_event]
+--    原候选 idx_event_act_start (activity_id, start, id)
+--    现内联  idx_activity_event_activity_id (activity_id) +
+--            idx_activity_event_start_time (start_time)
+--    说明  : 场次日历查询按 activity_id 过滤后行数已很小，再按 start_time 排序
+--            可由优化器自动选择单列索引，无需三列复合。
+--
+--  [planstar_ticket.ticket_category]
+--    原候选 (activity_event_id, status, id)
+--    现内联  idx_ticket_category_activity_event_id (activity_event_id)
+--    说明  : status 为低区分度枚举，纳入复合索引收益有限且增加写放大。
+--
+--  [planstar_marketing.coupon]
+--    原候选 (user_id, status, effective_time_to, id)
+--    现内联  idx_coupon_user_id_status (user_id, status)
+--    说明  : 我的优惠券先按 user_id + status 过滤，到期时间在结果集内排序，
+--            避免把 effective_time_to 拉进索引造成写放大。
+--
+--  [planstar_payment.wallet_sequence]
+--    原候选 (account_id, time, id)
+--    现内联  idx_wallet_sequence_user_id_gmt_create (user_id, gmt_create)
+--    说明  : 当前钱包流水契约以 user_id 维度查询 + gmt_create 倒序，
+--            account_id 为账户内主键，可用主键还原，不单独建索引。
+--
+--  [planstar_community.review]
+--    原候选 (activity_id, add_time, id)
+--    现内联  idx_review_activity_id (activity_id) + idx_review_user_id (user_id)
+--    说明  : 演出详情评价按 activity_id 过滤，「我的评价」按 user_id 过滤，
+--            两个高频入口各一条索引，排序在结果集内完成。
+--
+--  [planstar_community.feed]
+--    原候选 (add_time, id)
+--    现内联  idx_feed_gmt_create (gmt_create)
+--    说明  : 发现流以 gmt_create 倒序 + 主键 id 做稳定游标，无需额外复合索引。
+
+-- ========================================================================
+--  EOF
+-- ========================================================================
