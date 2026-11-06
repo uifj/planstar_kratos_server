@@ -1,7 +1,7 @@
 ARG GOPROXY=https://goproxy.cn,https://proxy.golang.org,direct
 ARG VERSION=unknown
 
-FROM golang:1.26.5 AS builder
+FROM golang:1.27.2 AS builder
 
 ARG GOPROXY
 ARG VERSION
