@@ -14,6 +14,7 @@ import (
 	"github.com/google/wire"
 	"github.com/olivere/elastic/v7"
 
+	tracing "github.com/go-kratos/kratos/contrib/otel/v3/tracing"
 	"github.com/go-kratos/kratos/v3/middleware/recovery"
 	kratosgrpc "github.com/go-kratos/kratos/v3/transport/grpc"
 
@@ -121,7 +122,10 @@ func NewInventoryServiceClient(sr *conf.Service) inventoryV1.InventoryClient {
 	conn, err := kratosgrpc.NewClient(
 		context.Background(),
 		kratosgrpc.WithEndpoint(sr.GetInventory().GetEndpoint()),
-		kratosgrpc.WithMiddleware(recovery.Recovery()),
+		kratosgrpc.WithMiddleware(
+			tracing.Client(),
+			recovery.Recovery(),
+		),
 		kratosgrpc.WithTimeout(2*time.Second),
 	)
 	if err != nil {

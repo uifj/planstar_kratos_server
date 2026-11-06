@@ -6,12 +6,22 @@ import (
 	"net/http"
 	"os"
 
+	tracing "github.com/go-kratos/kratos/contrib/otel/v3/tracing"
 	"github.com/go-kratos/kratos/v3"
 	"github.com/go-kratos/kratos/v3/config"
 	"github.com/go-kratos/kratos/v3/config/file"
 	"github.com/go-kratos/kratos/v3/log"
 	"github.com/go-kratos/kratos/v3/registry"
 	"github.com/go-kratos/kratos/v3/transport/grpc"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 
 	"user/internal/conf"
 
@@ -34,14 +44,40 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-// serveHealthz exposes a lightweight /healthz endpoint for container probes.
-func serveHealthz(addr string) {
+// setTracerProvider 配置 Jaeger tracer provider。
+func setTracerProvider(url string) error {
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(url)))
+	if err != nil {
+		return err
+	}
+	tp := tracesdk.NewTracerProvider(
+		tracesdk.WithSampler(tracesdk.ParentBased(tracesdk.TraceIDRatioBased(1.0))),
+		tracesdk.WithBatcher(exp),
+		tracesdk.WithResource(resource.NewSchemaless(
+			semconv.ServiceNameKey.String(Name),
+			attribute.String("env", "dev"),
+		)),
+	)
+	otel.SetTracerProvider(tp)
+	return nil
+}
+
+// initMetrics 启动 Prometheus 指标端点（含 /metrics 与 /healthz）。
+func initMetrics(addr string) {
+	exporter, err := prometheus.New()
+	if err != nil {
+		panic(err)
+	}
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter))
+	otel.SetMeterProvider(provider)
+
 	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
-	_ = http.ListenAndServe(addr, mux)
+	go func() { _ = http.ListenAndServe(addr, mux) }()
 }
 
 func newApp(logger *slog.Logger, gs *grpc.Server, rr registry.Registrar) *kratos.App {
@@ -60,6 +96,7 @@ func main() {
 	flag.Parse()
 	logger := log.NewLogger(
 		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true, Level: slog.LevelInfo}),
+		log.WithExtractor(tracing.TraceAttrs),
 	).With(
 		slog.String("service.id", id),
 		slog.String("service.name", Name),
@@ -88,8 +125,12 @@ func main() {
 		panic(err)
 	}
 
-	// serve healthz for container healthchecks
-	go serveHealthz("0.0.0.0:9101")
+	if err := setTracerProvider(bc.Trace.Endpoint); err != nil {
+		panic(err)
+	}
+
+	// start Prometheus metrics endpoint (also exposes /healthz)
+	go initMetrics("0.0.0.0:9101")
 
 	app, cleanup, err := initApp(bc.Server, bc.Data, &rc, logger)
 	if err != nil {

@@ -13,6 +13,7 @@ import (
 	consulAPI "github.com/hashicorp/consul/api"
 	"github.com/google/wire"
 
+	tracing "github.com/go-kratos/kratos/contrib/otel/v3/tracing"
 	"github.com/go-kratos/kratos/v3/middleware/recovery"
 	kratosgrpc "github.com/go-kratos/kratos/v3/transport/grpc"
 
@@ -70,7 +71,10 @@ func NewOrderServiceClient(sr *conf.Service) orderV1.OrderClient {
 	conn, err := kratosgrpc.NewClient(
 		context.Background(),
 		kratosgrpc.WithEndpoint(sr.GetOrder().GetEndpoint()),
-		kratosgrpc.WithMiddleware(recovery.Recovery()),
+		kratosgrpc.WithMiddleware(
+			tracing.Client(),
+			recovery.Recovery(),
+		),
 		kratosgrpc.WithTimeout(2*time.Second),
 	)
 	if err != nil {

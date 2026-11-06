@@ -14,6 +14,7 @@ import (
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
 
+	tracing "github.com/go-kratos/kratos/contrib/otel/v3/tracing"
 	"github.com/go-kratos/kratos/v3/middleware/recovery"
 	kratosgrpc "github.com/go-kratos/kratos/v3/transport/grpc"
 
@@ -131,7 +132,10 @@ func NewUserServiceClient(sr *conf.Service) userV1.UserClient {
 	conn, err := kratosgrpc.NewClient(
 		context.Background(),
 		kratosgrpc.WithEndpoint(sr.GetUser().GetEndpoint()),
-		kratosgrpc.WithMiddleware(recovery.Recovery()),
+		kratosgrpc.WithMiddleware(
+			tracing.Client(),
+			recovery.Recovery(),
+		),
 		kratosgrpc.WithTimeout(2*time.Second),
 	)
 	if err != nil {
@@ -145,7 +149,10 @@ func NewCartServiceClient(sr *conf.Service) cartV1.CartClient {
 	conn, err := kratosgrpc.NewClient(
 		context.Background(),
 		kratosgrpc.WithEndpoint(sr.GetCart().GetEndpoint()),
-		kratosgrpc.WithMiddleware(recovery.Recovery()),
+		kratosgrpc.WithMiddleware(
+			tracing.Client(),
+			recovery.Recovery(),
+		),
 		kratosgrpc.WithTimeout(2*time.Second),
 	)
 	if err != nil {
@@ -159,7 +166,10 @@ func NewGoodsServiceClient(sr *conf.Service) goodsV1.GoodsClient {
 	conn, err := kratosgrpc.NewClient(
 		context.Background(),
 		kratosgrpc.WithEndpoint(sr.GetGoods().GetEndpoint()),
-		kratosgrpc.WithMiddleware(recovery.Recovery()),
+		kratosgrpc.WithMiddleware(
+			tracing.Client(),
+			recovery.Recovery(),
+		),
 		kratosgrpc.WithTimeout(2*time.Second),
 	)
 	if err != nil {

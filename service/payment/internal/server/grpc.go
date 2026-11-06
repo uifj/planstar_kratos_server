@@ -3,11 +3,14 @@ package server
 import (
 	"log/slog"
 
+	kmetrics "github.com/go-kratos/kratos/contrib/otel/v3/metrics"
+	tracing "github.com/go-kratos/kratos/contrib/otel/v3/tracing"
 	"github.com/go-kratos/kratos/v3/middleware/logging"
 	"github.com/go-kratos/kratos/v3/middleware/metadata"
 	"github.com/go-kratos/kratos/v3/middleware/recovery"
 	"github.com/go-kratos/kratos/v3/middleware/validate"
 	"github.com/go-kratos/kratos/v3/transport/grpc"
+	"go.opentelemetry.io/otel"
 
 	v1 "payment/api/payment/v1"
 	"payment/internal/conf"
@@ -16,11 +19,19 @@ import (
 
 // NewGRPCServer new a gRPC server.
 func NewGRPCServer(c *conf.Server, s *service.PaymentService, logger *slog.Logger) *grpc.Server {
+	meter := otel.Meter("kratos")
+	requests, _ := kmetrics.DefaultRequestsCounter(meter, "server_requests_code_total")
+	seconds, _ := kmetrics.DefaultSecondsHistogram(meter, "server_requests_seconds_bucket")
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
 			metadata.Server(),
 			validate.Validator(),
+			tracing.Server(),
+			kmetrics.Server(
+				kmetrics.WithRequests(requests),
+				kmetrics.WithSeconds(seconds),
+			),
 			logging.Server(logger),
 		),
 	}

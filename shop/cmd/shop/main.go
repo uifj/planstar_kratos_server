@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 
+	tracing "github.com/go-kratos/kratos/contrib/otel/v3/tracing"
 	"github.com/go-kratos/kratos/v3"
 	"github.com/go-kratos/kratos/v3/config"
 	"github.com/go-kratos/kratos/v3/config/file"
@@ -59,6 +60,7 @@ func main() {
 	flag.Parse()
 	logger := log.NewLogger(
 		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true, Level: slog.LevelInfo}),
+		log.WithExtractor(tracing.TraceAttrs),
 	).With(
 		slog.String("service.id", id),
 		slog.String("service.name", Name),
