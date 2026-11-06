@@ -1,0 +1,20 @@
+groups:
+  - name: planstar
+    rules:
+      - alert: PlanstarServiceDown
+        expr: up{job="planstar-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "planstar-api 已下线"
+          description: "Prometheus 已连续 2 分钟无法抓取 planstar-api 的指标，请检查服务状态。"
+
+      - alert: PlanstarInfraDown
+        expr: up{job=~"mysql|redis|consul"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "基础设施 {{ $labels.job }} 已下线"
+          description: "Prometheus 已连续 2 分钟无法抓取 {{ $labels.job }} 的指标，请检查基础设施状态。"

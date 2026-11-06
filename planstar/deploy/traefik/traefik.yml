@@ -1,0 +1,18 @@
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+  dashboard:
+    address: ":8080"
+
+api:
+  dashboard: true
+  insecure: true
+
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+
+# Let's Encrypt 证书解析器；邮箱与存储由 compose 的 command 注入
+# （避免在静态配置里写死敏感邮箱）。

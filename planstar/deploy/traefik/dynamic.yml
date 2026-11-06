@@ -1,0 +1,47 @@
+http:
+  routers:
+    # 业务 API：本地/测试用 localhost；生产替换为你真实的域名
+    planstar:
+      rule: "Host(`localhost`) || Host(`127.0.0.1`)"
+      entryPoints: [web]
+      service: planstar
+
+    # 生产 HTTPS（取消注释并替换域名，同时确保 compose 已注入 ACME 邮箱）
+    # planstar-secure:
+    #   rule: "Host(`api.example.com`)"
+    #   entryPoints: [websecure]
+    #   service: planstar
+    #   tls:
+    #     certResolver: letsencrypt
+
+    # 可观测面板（子域名路由；也可直接端口访问）
+    grafana:
+      rule: "Host(`grafana.localhost`) || Host(`grafana.example.com`)"
+      entryPoints: [web]
+      service: grafana
+    prometheus:
+      rule: "Host(`prometheus.localhost`) || Host(`prometheus.example.com`)"
+      entryPoints: [web]
+      service: prometheus
+    jaeger:
+      rule: "Host(`jaeger.localhost`) || Host(`jaeger.example.com`)"
+      entryPoints: [web]
+      service: jaeger
+
+  services:
+    planstar:
+      loadBalancer:
+        servers:
+          - url: "http://planstar-api:8098"
+    grafana:
+      loadBalancer:
+        servers:
+          - url: "http://grafana:3000"
+    prometheus:
+      loadBalancer:
+        servers:
+          - url: "http://prometheus:9090"
+    jaeger:
+      loadBalancer:
+        servers:
+          - url: "http://jaeger:16686"

@@ -4,6 +4,10 @@
 #   cp .env.example .env        # 修改口令/镜像目标
 #   docker compose up -d --build
 # 一键推送部署: ./deploy.sh  （见脚本头部说明）
+#
+# 可观测栈（对齐仓库 deploy/）:
+#   Prometheus + Alertmanager + Grafana + Loki/Promtail + Traefik
+#   mysqld-exporter / redis-exporter 基础设施指标
 # =====================================================================
 
 name: planstar
@@ -139,6 +143,45 @@ services:
     logging: *default-logging
     networks: [planstar]
 
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./deploy/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+    logging: *default-logging
+    networks: [planstar]
+
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.15.1
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "root:${MYSQL_ROOT_PASSWORD:-root}@tcp(mysql:3306)/"
+    ports:
+      - "9104:9104"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    logging: *default-logging
+    networks: [planstar]
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
+    ports:
+      - "9121:9121"
+    depends_on:
+      redis:
+        condition: service_healthy
+    logging: *default-logging
+    networks: [planstar]
+
   prometheus:
     image: prom/prometheus:v2.53.0
     restart: unless-stopped
@@ -146,11 +189,17 @@ services:
       - "9090:9090"
     volumes:
       - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus/rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
       - --web.enable-lifecycle
+    depends_on:
+      - alertmanager
+      - mysqld-exporter
+      - redis-exporter
+    logging: *default-logging
     networks: [planstar]
 
   grafana:
@@ -167,6 +216,55 @@ services:
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
+      - loki
+    logging: *default-logging
+    networks: [planstar]
+
+  loki:
+    image: grafana/loki:3.1.0
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/loki-config.yml"]
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./deploy/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    logging: *default-logging
+    networks: [planstar]
+
+  promtail:
+    image: grafana/promtail:3.1.0
+    restart: unless-stopped
+    command: ["-config.file=/etc/promtail/promtail-config.yml"]
+    volumes:
+      - ./deploy/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - loki
+    logging: *default-logging
+    networks: [planstar]
+
+  traefik:
+    image: traefik:v3.1
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - ./deploy/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./deploy/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - acme_data:/acme
+    command:
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-ops@example.com}
+      - --certificatesresolvers.letsencrypt.acme.storage=/acme/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+    depends_on:
+      - planstar-api
+      - grafana
+      - prometheus
+      - jaeger
+    logging: *default-logging
     networks: [planstar]
 
   planstar-api:
@@ -220,6 +318,8 @@ volumes:
   consul_data:
   prometheus_data:
   grafana_data:
+  loki_data:
+  acme_data:
 
 networks:
   planstar:
