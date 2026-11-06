@@ -64,8 +64,7 @@ Prometheus / Alertmanager / Grafana / Loki / Promtail / Traefik。
 
 | 工作流 | 触发 | 产物 |
 |---|---|---|
-| [`go.yml`](.github/workflows/go.yml)（Planstar CI） | push / PR 到 main（`planstar/**`） | `go build` + `go vet` + `go test` |
-| [`planstar-deploy.yml`](.github/workflows/planstar-deploy.yml) | push 到 main（`planstar/**`） | 镜像 `main`/`latest` → GHCR → SSH 部署 → **Deployments** |
+| [`planstar-deploy.yml`](.github/workflows/planstar-deploy.yml) | push / PR 到 main（`planstar/**`） | PR：仅 build/vet/test；push：测试 → 镜像 `main`/`latest` → GHCR → SSH 部署 → **Deployments** |
 | [`planstar-release.yml`](.github/workflows/planstar-release.yml) | push tag `v*.*.*` | 镜像 `0.1.0`/`0.1`/`v0.1.0`/`latest`（**Packages**）+ **Release** + 部署 |
 
 发布新版本：

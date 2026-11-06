@@ -64,9 +64,9 @@ go test ./...
 
 ## CI/CD
 
-- `.github/workflows/go.yml` — build + vet + test in `planstar/`.
-- `.github/workflows/planstar-deploy.yml` — push to main → GHCR (`main`/`latest`)
-  → SSH deploy → GitHub Deployments.
+- `.github/workflows/planstar-deploy.yml` — on push to main: build + vet + test,
+  then GHCR (`main`/`latest`) → SSH deploy → GitHub Deployments. Pull requests run
+  the test job only (no image push, no deploy).
 - `.github/workflows/planstar-release.yml` — tag `v*.*.*` → semver image
   (`0.1.0`/`0.1`/`v0.1.0`/`latest`) in GitHub Packages + GitHub Release + deploy.
 

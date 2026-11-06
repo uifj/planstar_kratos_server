@@ -1,12 +1,18 @@
-# Planstar 一键推送部署：push 到 main -> 构建镜像 -> 推送 GHCR -> SSH 部署
+# Planstar 持续交付：push 到 main -> 测试 -> 构建镜像 -> 推送 GHCR -> SSH 部署
+# PR 仅执行测试（不构建镜像、不部署）。
 #
-# 需在仓库 Settings -> Secrets and variables 配置：
-#   Actions secrets:  SERVER_HOST / SERVER_USER / SERVER_SSH_KEY / SERVER_PORT
-#                     APP_DIR（远程 clone 目录），GHCR_TOKEN（私有镜像拉取）
+# 需在仓库 Settings -> Secrets and variables 配置（部署用）：
+#   SERVER_HOST / SERVER_USER / SERVER_SSH_KEY / SERVER_PORT / APP_DIR
+#   GHCR_TOKEN（私有镜像拉取，可选）
 name: planstar-deploy
 
 on:
   push:
+    branches: [main]
+    paths:
+      - "planstar/**"
+      - ".github/workflows/planstar-deploy.yml"
+  pull_request:
     branches: [main]
     paths:
       - "planstar/**"
@@ -17,9 +23,41 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/planstar-api
 
+defaults:
+  run:
+    working-directory: planstar
+
 jobs:
+  test:
+    name: Test (build / vet / unit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+          cache-dependency-path: planstar/go.sum
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
   build-push:
     name: Build & push image
+    needs: test
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -56,7 +94,7 @@ jobs:
     name: Deploy to server
     needs: build-push
     runs-on: ubuntu-latest
-    if: ${{ vars.SERVER_HOST != '' || secrets.SERVER_HOST != '' }}
+    if: github.event_name != 'pull_request' && (vars.SERVER_HOST != '' || secrets.SERVER_HOST != '')
     permissions:
       contents: read
       packages: read
@@ -64,7 +102,7 @@ jobs:
     # 记录到 GitHub Deployments 面板（Environment）
     environment:
       name: production
-      url: http://${{ secrets.SERVER_HOST }}:8098
+      url: http://${{ secrets.SERVER_HOST || 'localhost' }}:8098
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
