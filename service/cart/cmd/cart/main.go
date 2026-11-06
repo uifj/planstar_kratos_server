@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log/slog"
+	"net/http"
 	"os"
 
 	"cart/internal/conf"
@@ -30,6 +31,16 @@ var (
 
 func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
+}
+
+// serveHealthz exposes a lightweight /healthz endpoint for container probes.
+func serveHealthz(addr string) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+	_ = http.ListenAndServe(addr, mux)
 }
 
 func newApp(logger *slog.Logger, gs *grpc.Server, rr registry.Registrar) *kratos.App {
@@ -75,6 +86,9 @@ func main() {
 	if err := c.Scan(&rc); err != nil {
 		panic(err)
 	}
+
+	// serve healthz for container healthchecks
+	go serveHealthz("0.0.0.0:9103")
 
 	app, cleanup, err := initApp(bc.Server, bc.Data, &rc, logger)
 	if err != nil {
