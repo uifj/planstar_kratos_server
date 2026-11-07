@@ -1,0 +1,7 @@
+.git
+bin
+console/node_modules
+console/dist
+console/.umi
+console/.umi-production
+*.log

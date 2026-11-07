@@ -1,0 +1,248 @@
+syntax = "proto3";
+
+package planstar.admin.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "planstar/admin/api/planstar/admin/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.planstar.admin.v1";
+
+// User is a business user of the Planstar platform (planstar_user.user_info).
+message User {
+  // Business user ID (user_info.user_id).
+  int64 id = 1;
+  // Display name (user_info.user_name).
+  string name = 2;
+  // Mobile number (user_info.mobile_no).
+  string mobile = 3;
+  // Avatar URL (user_info.avatar).
+  string avatar = 4;
+  // Account status, same semantics as user_info.status.
+  int32 status = 5;
+  // Creation time (user_info.gmt_create).
+  google.protobuf.Timestamp created_at = 6;
+  // Last update time (user_info.gmt_modified).
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// UserSet is a page of users.
+message UserSet {
+  repeated User users = 1;
+  // Token for the next page; empty when there are no more rows.
+  string next_page_token = 2;
+}
+
+// Project is a catalog project (planstar_catalog.project).
+message Project {
+  // Business project ID (project.project_id).
+  int64 id = 1;
+  string title = 2;
+  string subtitle = 3;
+  // Primary category ID (project.category_id).
+  int64 category_id = 4;
+  // Category name resolved from project_category.name.
+  string category_name = 5;
+  // Publish status: 0 draft, 1 published, 2 under review, 3 rejected.
+  int32 publish_status = 6;
+  // Funding status: preheating/ongoing/achieved/delivered/failed.
+  string funding_status = 7;
+  // Goal amount in cents.
+  int64 goal_amount = 8;
+  // Raised amount / goal amount in permille; 0 when the goal is unset.
+  int32 achievement_permille = 9;
+  int32 supporter_count = 10;
+  // Creator display name from creator_profile.display_name.
+  string creator_name = 11;
+  google.protobuf.Timestamp created_at = 12;
+}
+
+// ProjectSet is a page of projects.
+message ProjectSet {
+  repeated Project projects = 1;
+  string next_page_token = 2;
+}
+
+// Order is a unified order (planstar_order.order_info).
+message Order {
+  // Business order ID (order_info.order_id).
+  int64 id = 1;
+  // Order number (order_info.order_number).
+  string order_no = 2;
+  int64 user_id = 3;
+  // Paid amount in cents (order_info.pay_amount).
+  int64 amount = 4;
+  // Order status (order_info.status, see dict_enum.OrderStatus).
+  int32 status = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// OrderSet is a page of orders.
+message OrderSet {
+  repeated Order orders = 1;
+  string next_page_token = 2;
+}
+
+// Report is a moderation report (planstar_catalog.project_report).
+message Report {
+  // Business report ID (project_report.report_id).
+  int64 id = 1;
+  string target_type = 2;
+  int64 target_id = 3;
+  int64 project_id = 4;
+  int64 user_id = 5;
+  string reason_code = 6;
+  string description = 7;
+  repeated string evidence = 8;
+  // pending / accepted / rejected.
+  string status = 9;
+  string handle_note = 10;
+  google.protobuf.Timestamp handle_time = 11;
+  google.protobuf.Timestamp created_at = 12;
+}
+
+// ReportSet is a page of reports.
+message ReportSet {
+  repeated Report reports = 1;
+  string next_page_token = 2;
+}
+
+// BlacklistHit is one category-blacklist match reported by the ops service.
+message BlacklistHit {
+  // Rule name, e.g. 金融集资 / 空气企划.
+  string rule = 1;
+  // Matched keyword or missing field name.
+  string keyword = 2;
+}
+
+// ReviewProjectReply is the result of a project review.
+message ReviewProjectReply {
+  // Project view after the review.
+  Project project = 1;
+  // Blacklist matches; populated by the ops service on success.
+  repeated BlacklistHit hits = 2;
+  // Whether the project is blocked by the blacklist.
+  bool blocked = 3;
+}
+
+// ListUsersRequest is the request for ListUsers.
+message ListUsersRequest {
+  // Optional. Matches user name, mobile number or user ID.
+  string keyword = 1;
+  // Optional. Account status; omit to list every status.
+  optional int32 status = 2;
+  // Optional. Defaults to 20, capped at 200.
+  int32 page_size = 3;
+  // Optional. Token returned by the previous page.
+  string page_token = 4;
+}
+
+// UpdateUserStatusRequest is the request for UpdateUserStatus.
+message UpdateUserStatusRequest {
+  // Required. Business user ID.
+  int64 id = 1;
+  // Required. New account status (user_info.status semantics).
+  int32 status = 2;
+}
+
+// ListProjectsRequest is the request for ListProjects.
+message ListProjectsRequest {
+  // Optional. Matches project title, subtitle, project number or project ID.
+  string keyword = 1;
+  // Optional. Publish status (0/1/2/3); omit to list every status.
+  optional int32 publish_status = 2;
+  // Optional. Defaults to 20, capped at 200.
+  int32 page_size = 3;
+  // Optional. Token returned by the previous page.
+  string page_token = 4;
+}
+
+// ReviewProjectRequest is the request for ReviewProject.
+message ReviewProjectRequest {
+  // Required. Business project ID.
+  int64 id = 1;
+  // Required. approve or reject.
+  string decision = 2;
+}
+
+// ListOrdersRequest is the request for ListOrders.
+message ListOrdersRequest {
+  // Optional. Matches order number or user ID.
+  string keyword = 1;
+  // Optional. Order status; omit to list every status.
+  optional int32 status = 2;
+  // Optional. Defaults to 20, capped at 200.
+  int32 page_size = 3;
+  // Optional. Token returned by the previous page.
+  string page_token = 4;
+}
+
+// ListReportsRequest is the request for ListReports.
+message ListReportsRequest {
+  // Optional. pending / accepted / rejected; empty lists every status.
+  string status = 1;
+  // Optional. Defaults to 20, capped at 200.
+  int32 page_size = 2;
+  // Optional. Token returned by the previous page.
+  string page_token = 3;
+}
+
+// HandleReportRequest is the request for HandleReport.
+message HandleReportRequest {
+  // Required. Business report ID.
+  int64 id = 1;
+  // Required. accepted or rejected.
+  string status = 2;
+  // Optional. Resolution note; the ops service fills a default when empty.
+  string note = 3;
+}
+
+// ConsoleService exposes read-mostly business management APIs for the console.
+service ConsoleService {
+  // ListUsers lists business users.
+  rpc ListUsers (ListUsersRequest) returns (UserSet) {
+    option (google.api.http) = {
+      get: "/v1/planstar/users"
+    };
+  }
+  // UpdateUserStatus updates the account status of a business user.
+  rpc UpdateUserStatus (UpdateUserStatusRequest) returns (User) {
+    option (google.api.http) = {
+      put: "/v1/planstar/users/{id}/status"
+      body: "*"
+    };
+  }
+  // ListProjects lists projects for moderation.
+  rpc ListProjects (ListProjectsRequest) returns (ProjectSet) {
+    option (google.api.http) = {
+      get: "/v1/planstar/projects"
+    };
+  }
+  // ReviewProject approves or rejects a project through the ops service.
+  rpc ReviewProject (ReviewProjectRequest) returns (ReviewProjectReply) {
+    option (google.api.http) = {
+      post: "/v1/planstar/projects/{id}/review"
+      body: "*"
+    };
+  }
+  // ListOrders lists unified orders.
+  rpc ListOrders (ListOrdersRequest) returns (OrderSet) {
+    option (google.api.http) = {
+      get: "/v1/planstar/orders"
+    };
+  }
+  // ListReports lists moderation reports.
+  rpc ListReports (ListReportsRequest) returns (ReportSet) {
+    option (google.api.http) = {
+      get: "/v1/planstar/reports"
+    };
+  }
+  // HandleReport accepts or rejects a report through the ops service.
+  rpc HandleReport (HandleReportRequest) returns (Report) {
+    option (google.api.http) = {
+      post: "/v1/planstar/reports/{id}/handle"
+      body: "*"
+    };
+  }
+}

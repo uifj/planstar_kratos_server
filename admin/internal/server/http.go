@@ -1,53 +1,38 @@
 package server
 
 import (
-	"context"
 	"log/slog"
 
-	"github.com/go-kratos/kratos/contrib/middleware/jwt/v3"
-	kmetrics "github.com/go-kratos/kratos/contrib/otel/v3/metrics"
-	tracing "github.com/go-kratos/kratos/contrib/otel/v3/tracing"
+	v1 "planstar/admin/api/kratos/admin/v1"
+	consolev1 "planstar/admin/api/planstar/admin/v1"
+	"planstar/admin/internal/conf"
+	"planstar/admin/internal/service"
+	"planstar/admin/pkg/auth"
+	adminrecovery "planstar/admin/pkg/recovery"
+	"planstar/admin/pkg/validate"
+
+	"github.com/go-kratos/kratos/contrib/otel/v3/tracing"
 	"github.com/go-kratos/kratos/v3/middleware/logging"
-	"github.com/go-kratos/kratos/v3/middleware/recovery"
-	"github.com/go-kratos/kratos/v3/middleware/selector"
-	"github.com/go-kratos/kratos/v3/middleware/validate"
 	"github.com/go-kratos/kratos/v3/transport/http"
-	jwt2 "github.com/golang-jwt/jwt/v5"
-	"github.com/gorilla/handlers"
-	"go.opentelemetry.io/otel"
-	v1 "admin/api/admin/v1"
-	"admin/internal/conf"
-	"admin/internal/service"
 )
 
-// NewHTTPServer new an HTTP s.
-func NewHTTPServer(c *conf.Server, ac *conf.Auth, s *service.AdminService, logger *slog.Logger) *http.Server {
-	meter := otel.Meter("kratos")
-	requests, _ := kmetrics.DefaultRequestsCounter(meter, "server_requests_code_total")
-	seconds, _ := kmetrics.DefaultSecondsHistogram(meter, "server_requests_seconds_bucket")
+// NewHTTPServer new an HTTP server.
+func NewHTTPServer(c *conf.Server, cfg auth.Config, admin *service.AdminService, console *service.ConsoleService, revoked auth.RevocationStore, metrics *Metrics, logger *slog.Logger) *http.Server {
+	origins := c.GetHttp().GetCorsAllowOrigins()
 	var opts = []http.ServerOption{
-		http.Middleware(
-			rateLimitMiddleware(),
-			recovery.Recovery(),
-			validate.Validator(),
-			tracing.Server(),
-			kmetrics.Server(
-				kmetrics.WithRequests(requests),
-				kmetrics.WithSeconds(seconds),
-			),
-			selector.Server(
-				jwt.Server(func(token *jwt2.Token) (interface{}, error) {
-					return []byte(ac.JwtKey), nil
-				}, jwt.WithSigningMethod(jwt2.SigningMethodHS256)),
-				adminOnlyMiddleware(),
-			).Match(NewWhiteListMatcher()).Build(),
-			logging.Server(logger),
+		// CORS runs first so a disallowed Origin is rejected before any
+		// authentication work; auth.Middleware therefore does not repeat it.
+		http.Filter(
+			auth.CORS(origins),
+			auth.Middleware(cfg, revoked),
 		),
-		http.Filter(handlers.CORS(
-			handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
-			handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
-			handlers.AllowedOrigins([]string{"*"}),
-		)),
+		http.Middleware(
+			adminrecovery.Recovery(logger),
+			logging.Server(logger),
+			metrics.Middleware(),
+			tracing.Server(),
+			validate.Middleware(),
+		),
 	}
 	if c.Http.Network != "" {
 		opts = append(opts, http.Network(c.Http.Network))
@@ -59,21 +44,7 @@ func NewHTTPServer(c *conf.Server, ac *conf.Auth, s *service.AdminService, logge
 		opts = append(opts, http.Timeout(c.Http.Timeout.AsDuration()))
 	}
 	srv := http.NewServer(opts...)
-	v1.RegisterAdminHTTPServer(srv, s)
+	v1.RegisterAdminServiceHTTPServer(srv, admin)
+	consolev1.RegisterConsoleServiceHTTPServer(srv, console)
 	return srv
-}
-
-// NewWhiteListMatcher 白名单不需要token验证的接口
-func NewWhiteListMatcher() selector.MatchFunc {
-	whiteList := make(map[string]struct{})
-	whiteList["/admin.admin.v1.admin/Captcha"] = struct{}{}
-	whiteList["/admin.admin.v1.admin/Login"] = struct{}{}
-	whiteList["/admin.admin.v1.admin/Register"] = struct{}{}
-	whiteList["/admin.admin.v1.admin/RefreshToken"] = struct{}{}
-	return func(ctx context.Context, operation string) bool {
-		if _, ok := whiteList[operation]; ok {
-			return false
-		}
-		return true
-	}
 }

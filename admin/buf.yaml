@@ -1,8 +1,6 @@
 version: v2
 modules:
   - path: api
-  - path: third_party
-    excludes:
-      - third_party/google
+  - path: internal
 deps:
   - buf.build/googleapis/googleapis

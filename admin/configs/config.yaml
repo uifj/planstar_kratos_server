@@ -1,25 +1,80 @@
-name: admin.api
 server:
+  # dev/staging/prod. Production flips the security checks in conf.Validate.
+  env: dev
   http:
-    addr: 0.0.0.0:9099
-    timeout: 1s
+    addr: 0.0.0.0:9100
+    timeout: 10s
+    cors_allow_origins:
+      - http://localhost:8000
+      - http://127.0.0.1:8000
+      # npm run dev 固定 PORT=3000；直接用 npx max dev 时可用 PORT 覆盖。
+      - http://localhost:3000
+      - http://127.0.0.1:3000
+      # Umi 开发代理会把 Origin 改写成后端地址，联调时同样需要放行。
+      - http://localhost:9100
+      - http://127.0.0.1:9100
+  grpc:
+    addr: 0.0.0.0:9101
+    timeout: 10s
+  # Ops endpoints (/metrics, /healthz, /readyz) stay on loopback.
+  admin:
+    addr: 127.0.0.1:9110
 data:
   database:
-    driver: postgres
-    source: postgres://postgres:root@127.0.0.1:5432/shop_user?sslmode=disable&TimeZone=Asia/Shanghai
+    driver: mysql
+    source: root:root@tcp(127.0.0.1:3306)/planstar_admin?timeout=5s&parseTime=True&loc=Asia%2FShanghai&charset=utf8mb4
+    # Development conveniences. Keep both false in production and apply schema
+    # changes as a separate reviewed step (planstar/sql/19_admin_console.sql).
+    debug: true
+    auto_migrate: false
   redis:
     addr: 127.0.0.1:6379
+    # Local Redis container runs with --requirepass root.
     password: root
-    read_timeout: 0.2s
-    write_timeout: 0.2s
-trace:
-  endpoint: http://127.0.0.1:14268/api/traces
+    db: 0
+    read_timeout: 0.5s
+    write_timeout: 0.5s
 auth:
-  jwt_key: hqFr%3ddt32DGlSTOI5cO6@TH#Admin
-service:
-  user:
-    endpoint: discovery:///shop.user.service
-  goods:
-    endpoint: discovery:///shop.goods.service
-  order:
-    endpoint: discovery:///shop.order.service
+  # Obvious development placeholder. Never reuse it outside local dev.
+  jwt_secret: planstar-admin-dev-only-secret
+  cookie_name: psAdminToken
+  cookie_domain: ""
+  cookie_secure: false
+  # google.protobuf.Duration uses the "<seconds>s" JSON form: 8h / 10m / 15m.
+  token_ttl: 28800s
+  login_max_attempts: 5
+  login_window: 600s
+  login_lock: 900s
+planstar:
+  # Business service ops endpoints.
+  ops_base_url: http://127.0.0.1:9108
+  ops_token: ""
+  ops_timeout: 5s
+notify:
+  sms:
+    enabled: false
+    provider: ""
+    endpoint: ""
+    access_key: ""
+    access_secret: ""
+    sign_name: ""
+    template_code: ""
+  email:
+    enabled: false
+    provider: ""
+    smtp_host: ""
+    smtp_port: 0
+    username: ""
+    password: ""
+    from: ""
+storage:
+  oss:
+    enabled: false
+    provider: ""
+    endpoint: ""
+    region: ""
+    bucket: ""
+    access_key: ""
+    access_secret: ""
+    cdn_host: ""
+    presign_ttl_seconds: 0

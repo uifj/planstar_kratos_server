@@ -1,30 +1,27 @@
-ARG GOPROXY=https://proxy.golang.org,direct
-ARG VERSION=unknown
-
 FROM golang:1.26.5 AS builder
 
-ARG GOPROXY
-ARG VERSION
-
-COPY . /src
 WORKDIR /src
 
-RUN GOPROXY=$GOPROXY make build VERSION=$VERSION
+COPY . .
+
+ENV GOTOOLCHAIN=local
+RUN CGO_ENABLED=0 GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go build -trimpath -ldflags "-s -w -X main.Version=docker -X main.Name=admin.api" -o /out/server ./cmd/server
 
 FROM debian:stable-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-		ca-certificates  \
-		curl \
+        ca-certificates \
         netbase \
-        && rm -rf /var/lib/apt/lists/ \
-        && apt-get autoremove -y && apt-get autoclean -y
+        curl \
+        tzdata \
+        && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /src/bin /app
+COPY --from=builder /out/server /app/server
 
 WORKDIR /app
 
-EXPOSE 9099
+EXPOSE 9100 9101 9110
+
 VOLUME /data/conf
 
-CMD ["./admin", "-conf", "/data/conf"]
+CMD ["./server", "-conf", "/data/conf"]

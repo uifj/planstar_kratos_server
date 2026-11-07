@@ -1,20 +1,78 @@
-# admin 后台管理服务
+# Kratos Admin Template
+A Kratos service template with an Ant Design Pro console: sign-in, an overview
+dashboard, and admin management backed by AIP filtering and pagination.
 
-后台管理 HTTP 服务，提供登录、注册、用户与地址管理接口，管理员权限通过 `AuthorityId=2` 控制。
+![Overview](docs/overview.png)
 
-- HTTP 端口：`9099`
-- 数据库：`shop_user`（复用用户库）
-- 服务名（Consul）：`admin.api`
+<table>
+  <tr>
+    <td width="50%"><img src="docs/admins.png" alt="Admin management"></td>
+    <td width="50%"><img src="docs/login.png" alt="Sign in"></td>
+  </tr>
+</table>
 
-## 本地运行
+## Best Practice
+Google AIP(https://google.aip.dev/general):
+1. Resource-oriented design
+2. Filtering
+3. Pagination
+4. Field masks
+5. Field behavior
 
-```bash
-make build
-./bin/admin -conf configs
+## Generate API files
+Proto generation is driven by [buf](https://buf.build). Dependencies such as
+googleapis are resolved from the Buf Schema Registry (`buf.build/googleapis/googleapis`),
+so there is no vendored `third_party/` directory.
+```shell
+# Install tooling (buf + wire)
+make init
+# Generate API files (pb.go, grpc, kratos http, openapi.yaml, console TS clients) from api/*.proto
+make api
+# Generate internal config (internal/conf/conf.pb.go) from internal/*.proto
+make config
 ```
 
-依赖 PostgreSQL、Redis、Consul、Jaeger，可通过根目录 `make infra-up` 启动基础设施。
+## Run Console Application
+```shell
+# Enter console directory, install dependencies and start development server
+cd console
+npm install
+npm run dev
+```
 
-## 配置
+The generated clients work with any Promise-based HTTP client that returns JSON.  
+Services are defined and re-exported from this file: `console/src/services/index.ts`.  
+```typescript
+import { createAdminServiceClient } from "@/services/kratos/admin/v1/index";
 
-配置见 `configs/config.yaml`，敏感字段（含 `auth.jwt_key`）通过 `config.local.yaml` 覆盖，说明见 [docs/configuration.md](../docs/configuration.md)。
+type Request = {
+  path: string;
+  method: string;
+  body: string | null;
+};
+
+function requestHandler({ path, method, body }: Request) { ... }
+
+export function createAdminService() {
+  return createAdminServiceClient(requestHandler);
+}
+```
+
+Example using the generated client:
+```typescript
+import { createAdminService } from "@/services/index";
+
+const adminService = createAdminService();
+
+const handleLogin = async (username: string, password: string) => {
+  try {
+    const response = await adminService.Login({
+      username: username,
+      password: password,
+    });
+    console.log("Login successful:", response);
+  } catch (error) {
+    console.error("Login failed:", error);
+  }
+};
+```

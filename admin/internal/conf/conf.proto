@@ -1,16 +1,17 @@
 syntax = "proto3";
-package admin.api;
+package kratos.api;
 
-option go_package = "admin/internal/conf;conf";
+option go_package = "planstar/admin/internal/conf;conf";
 
 import "google/protobuf/duration.proto";
 
 message Bootstrap {
   Server server = 1;
   Data data = 2;
-  Trace trace = 3;
-  Auth auth = 4;
-  Service service = 5;
+  Auth auth = 3;
+  Planstar planstar = 4;
+  Notify notify = 5;
+  Storage storage = 6;
 }
 
 message Server {
@@ -18,53 +19,103 @@ message Server {
     string network = 1;
     string addr = 2;
     google.protobuf.Duration timeout = 3;
+    // Browser origins allowed by CORS. Never contains "*" in production.
+    repeated string cors_allow_origins = 4;
+  }
+  message GRPC {
+    string network = 1;
+    string addr = 2;
+    google.protobuf.Duration timeout = 3;
   }
   HTTP http = 1;
+  GRPC grpc = 2;
+  // Admin endpoints (/metrics, /healthz, /readyz) listen separately so they
+  // can stay bound to the loopback interface.
+  HTTP admin = 3;
+  // Runtime environment: dev, staging, prod.
+  string env = 4;
 }
 
 message Data {
   message Database {
     string driver = 1;
     string source = 2;
+    // Log every generated statement. Development only.
+    bool debug = 3;
+    // Create or update tables from the ent schema on startup. Leave false in
+    // production and apply migrations as a separate, reviewed step.
+    bool auto_migrate = 4;
+    // Connection pool limits. Zero values fall back to 20 / 10 / 30m.
+    int32 max_open_conns = 5;
+    int32 max_idle_conns = 6;
+    google.protobuf.Duration conn_max_lifetime = 7;
   }
   message Redis {
     string network = 1;
     string addr = 2;
     google.protobuf.Duration read_timeout = 3;
     google.protobuf.Duration write_timeout = 4;
+    string password = 5;
+    int32 db = 6;
   }
   Database database = 1;
   Redis redis = 2;
 }
 
-message Service {
-  message User {
-    string endpoint = 1;
-  }
-  message Goods {
-    string endpoint = 1;
-  }
-  message Order {
-    string endpoint = 1;
-  }
-  User user = 1;
-  Goods goods = 2;
-  Order order = 3;
-}
-
-message Trace {
-  string endpoint = 1;
-}
-
-
-message Registry {
-  message Consul {
-    string address = 1;
-    string scheme = 2;
-  }
-  Consul consul = 1;
-}
-
 message Auth {
-  string jwt_key = 1;
+  string jwt_secret = 1;
+  string cookie_name = 2;
+  string cookie_domain = 3;
+  bool cookie_secure = 4;
+  google.protobuf.Duration token_ttl = 5;
+  int32 login_max_attempts = 6;
+  google.protobuf.Duration login_window = 7;
+  google.protobuf.Duration login_lock = 8;
+}
+
+message Planstar {
+  string ops_base_url = 1;
+  string ops_token = 2;
+  google.protobuf.Duration ops_timeout = 3;
+}
+
+message Notify {
+  SMS sms = 1;
+  Email email = 2;
+}
+
+message SMS {
+  bool enabled = 1;
+  string provider = 2;
+  string endpoint = 3;
+  string access_key = 4;
+  string access_secret = 5;
+  string sign_name = 6;
+  string template_code = 7;
+}
+
+message Email {
+  bool enabled = 1;
+  string provider = 2;
+  string smtp_host = 3;
+  int32 smtp_port = 4;
+  string username = 5;
+  string password = 6;
+  string from = 7;
+}
+
+message Storage {
+  OSS oss = 1;
+}
+
+message OSS {
+  bool enabled = 1;
+  string provider = 2;
+  string endpoint = 3;
+  string region = 4;
+  string bucket = 5;
+  string access_key = 6;
+  string access_secret = 7;
+  string cdn_host = 8;
+  int64 presign_ttl_seconds = 9;
 }

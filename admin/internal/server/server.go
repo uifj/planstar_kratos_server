@@ -4,5 +4,5 @@ import (
 	"github.com/google/wire"
 )
 
-// ProviderSet is s providers.
-var ProviderSet = wire.NewSet(NewHTTPServer)
+// ProviderSet is server providers.
+var ProviderSet = wire.NewSet(NewGRPCServer, NewHTTPServer, NewOpsServer, NewMetrics)

@@ -2,130 +2,179 @@ package data
 
 import (
 	"context"
-	"log/slog"
+	"database/sql"
+	"errors"
+	"fmt"
+	"strings"
 	"time"
 
-	consul "github.com/go-kratos/kratos/contrib/registry/consul/v3"
-	tracing "github.com/go-kratos/kratos/contrib/otel/v3/tracing"
-	"github.com/go-kratos/kratos/v3/middleware/recovery"
-	"github.com/go-kratos/kratos/v3/registry"
-	"github.com/go-kratos/kratos/v3/transport/grpc"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/wire"
-	consulAPI "github.com/hashicorp/consul/api"
-	grpcx "google.golang.org/grpc"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
-	goodsV1 "admin/api/service/goods/v1"
-	orderV1 "admin/api/service/order/v1"
-	userV1 "admin/api/service/user/v1"
-	"admin/internal/conf"
+	"github.com/redis/go-redis/v9"
+	"google.golang.org/protobuf/types/known/durationpb"
+
+	"planstar/admin/internal/conf"
+	"planstar/admin/internal/data/ent"
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewDB, NewUserRepo, NewAddressRepo, NewPermissionRepo, NewUserServiceClient, NewGoodsServiceClient, NewOrderServiceClient, NewRegistrar, NewDiscovery)
+var ProviderSet = wire.NewSet(NewData, NewAdminRepo, NewRevocationStore, NewAttemptLimiter, NewConsoleRepo, NewOpsClient, NewAuditRepo)
 
-// Data .
+const (
+	defaultMaxOpenConns    = 20
+	defaultMaxIdleConns    = 10
+	defaultConnMaxLifetime = 30 * time.Minute
+	defaultRedisAddr       = "127.0.0.1:6379"
+	startupPingTimeout     = 5 * time.Second
+)
+
+// Data holds the long-lived storage clients shared by every repo. Repos receive
+// *Data and never construct clients of their own.
 type Data struct {
-	log *slog.Logger
-	db  *gorm.DB
-	uc  userV1.UserClient
-	gc  goodsV1.GoodsClient
+	// db is the ent client used by the generated repository builders.
+	db *ent.Client
+	// readDB is a plain database/sql pool for queries and writes that do not
+	// need ent (health checks, audit rows).
+	readDB *sql.DB
+	// redis backs login throttling, sessions and short-lived caches.
+	redis *redis.Client
 }
 
-// NewData .
-func NewData(c *conf.Data, db *gorm.DB, uc userV1.UserClient, gc goodsV1.GoodsClient, logger *slog.Logger) (*Data, error) {
-	l := logger.With("module", "data")
-	return &Data{log: l, db: db, uc: uc, gc: gc}, nil
-}
-
-// NewDB 连接 MySQL（admin 本地权限表）
-func NewDB(c *conf.Data) *gorm.DB {
-	db, err := gorm.Open(mysql.Open(c.Database.Source), &gorm.Config{})
-	if err != nil {
-		panic(err)
+// NewData creates the storage clients. It returns an error instead of exiting
+// the process so the caller decides how to report a bad configuration.
+func NewData(c *conf.Data, s *conf.Server) (*Data, func(), error) {
+	dc := c.GetDatabase()
+	if dc.GetAutoMigrate() && isProduction(s.GetEnv()) {
+		return nil, nil, fmt.Errorf(
+			"data.database.auto_migrate must be false when server.env is %q; apply planstar/sql migrations instead",
+			s.GetEnv(),
+		)
 	}
-	return db
+
+	db, err := ent.Open("mysql", dc.GetSource())
+	if err != nil {
+		return nil, nil, fmt.Errorf("open ent client: %w", err)
+	}
+	if dc.GetDebug() {
+		db = db.Debug()
+	}
+
+	readDB, err := sql.Open("mysql", dc.GetSource())
+	if err != nil {
+		_ = db.Close()
+		return nil, nil, fmt.Errorf("open mysql pool: %w", err)
+	}
+	readDB.SetMaxOpenConns(poolInt(dc.GetMaxOpenConns(), defaultMaxOpenConns))
+	readDB.SetMaxIdleConns(poolInt(dc.GetMaxIdleConns(), defaultMaxIdleConns))
+	readDB.SetConnMaxLifetime(poolDuration(dc.GetConnMaxLifetime(), defaultConnMaxLifetime))
+
+	pingCtx, cancel := context.WithTimeout(context.Background(), startupPingTimeout)
+	defer cancel()
+	if err := readDB.PingContext(pingCtx); err != nil {
+		_ = readDB.Close()
+		_ = db.Close()
+		return nil, nil, fmt.Errorf("ping mysql: %w", err)
+	}
+
+	rc := newRedisClient(c.GetRedis())
+
+	// Auto migration is a convenience for local development only; production
+	// schema changes are applied through the reviewed SQL migrations.
+	if dc.GetAutoMigrate() {
+		if err := db.Schema.Create(context.Background()); err != nil {
+			_ = rc.Close()
+			_ = readDB.Close()
+			_ = db.Close()
+			return nil, nil, fmt.Errorf("auto migrate schema: %w", err)
+		}
+	}
+
+	d := &Data{
+		db:     db,
+		readDB: readDB,
+		redis:  rc,
+	}
+	return d, d.Cleanup, nil
 }
 
-// NewUserServiceClient 链接用户服务 grpc
-func NewUserServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery) userV1.UserClient {
-	conn, err := grpc.NewClient(
-		context.Background(),
-		grpc.WithEndpoint(sr.User.Endpoint),
-		grpc.WithDiscovery(rr),
-		grpc.WithMiddleware(
-			tracing.Client(),
-			recovery.Recovery(),
-		),
-		grpc.WithTimeout(2*time.Second),
-		grpc.WithOptions(grpcx.WithStatsHandler(&tracing.ClientHandler{})),
-	)
-	if err != nil {
-		panic(err)
-	}
-	c := userV1.NewUserClient(conn)
-	return c
+// DB exposes the ent client used by the repositories.
+func (d *Data) DB() *ent.Client {
+	return d.db
 }
 
-// NewGoodsServiceClient 链接商品服务 grpc
-func NewGoodsServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery) goodsV1.GoodsClient {
-	conn, err := grpc.NewClient(
-		context.Background(),
-		grpc.WithEndpoint(sr.Goods.Endpoint),
-		grpc.WithDiscovery(rr),
-		grpc.WithMiddleware(
-			tracing.Client(),
-			recovery.Recovery(),
-		),
-		grpc.WithTimeout(2*time.Second),
-		grpc.WithOptions(grpcx.WithStatsHandler(&tracing.ClientHandler{})),
-	)
-	if err != nil {
-		panic(err)
-	}
-	return goodsV1.NewGoodsClient(conn)
+// SQL exposes the plain database/sql pool for queries and writes that are
+// awkward to express with ent.
+func (d *Data) SQL() *sql.DB {
+	return d.readDB
 }
 
-// NewOrderServiceClient 链接订单服务 grpc
-func NewOrderServiceClient(ac *conf.Auth, sr *conf.Service, rr registry.Discovery) orderV1.OrderClient {
-	conn, err := grpc.NewClient(
-		context.Background(),
-		grpc.WithEndpoint(sr.Order.Endpoint),
-		grpc.WithDiscovery(rr),
-		grpc.WithMiddleware(
-			tracing.Client(),
-			recovery.Recovery(),
-		),
-		grpc.WithTimeout(2*time.Second),
-		grpc.WithOptions(grpcx.WithStatsHandler(&tracing.ClientHandler{})),
-	)
-	if err != nil {
-		panic(err)
-	}
-	return orderV1.NewOrderClient(conn)
+// Redis exposes the shared Redis client.
+func (d *Data) Redis() *redis.Client {
+	return d.redis
 }
 
-// NewRegistrar add consul
-func NewRegistrar(conf *conf.Registry) registry.Registrar {
-	c := consulAPI.DefaultConfig()
-	c.Address = conf.Consul.Address
-	c.Scheme = conf.Consul.Scheme
-	cli, err := consulAPI.NewClient(c)
-	if err != nil {
-		panic(err)
+// Ready reports whether both MySQL and Redis accept commands. It backs the
+// /readyz probe; startup only pings MySQL, so a temporarily unavailable Redis
+// surfaces here instead of preventing the process from starting.
+func (d *Data) Ready(ctx context.Context) error {
+	var errs []error
+	if err := d.readDB.PingContext(ctx); err != nil {
+		errs = append(errs, fmt.Errorf("mysql not ready: %w", err))
 	}
-	r := consul.New(cli, consul.WithHealthCheck(true))
-	return r
+	if err := d.redis.Ping(ctx).Err(); err != nil {
+		errs = append(errs, fmt.Errorf("redis not ready: %w", err))
+	}
+	return errors.Join(errs...)
 }
 
-func NewDiscovery(conf *conf.Registry) registry.Discovery {
-	c := consulAPI.DefaultConfig()
-	c.Address = conf.Consul.Address
-	c.Scheme = conf.Consul.Scheme
-	cli, err := consulAPI.NewClient(c)
-	if err != nil {
-		panic(err)
+// Cleanup closes every long-lived client. It is safe to call from the Wire
+// cleanup hook and releases resources in reverse creation order.
+func (d *Data) Cleanup() {
+	_ = d.redis.Close()
+	_ = d.readDB.Close()
+	_ = d.db.Close()
+}
+
+func newRedisClient(c *conf.Data_Redis) *redis.Client {
+	network := c.GetNetwork()
+	if network == "" {
+		network = "tcp"
 	}
-	r := consul.New(cli, consul.WithHealthCheck(false))
-	return r
+	addr := c.GetAddr()
+	if addr == "" {
+		addr = defaultRedisAddr
+	}
+	return redis.NewClient(&redis.Options{
+		Network:      network,
+		Addr:         addr,
+		Password:     c.GetPassword(),
+		DB:           int(c.GetDb()),
+		ReadTimeout:  c.GetReadTimeout().AsDuration(),
+		WriteTimeout: c.GetWriteTimeout().AsDuration(),
+	})
+}
+
+func poolInt(v, fallback int32) int {
+	if v <= 0 {
+		return int(fallback)
+	}
+	return int(v)
+}
+
+func poolDuration(d *durationpb.Duration, fallback time.Duration) time.Duration {
+	if v := d.AsDuration(); v > 0 {
+		return v
+	}
+	return fallback
+}
+
+// isProduction mirrors conf.Validate's environment check so auto_migrate can
+// never run against a production database.
+func isProduction(env string) bool {
+	switch strings.ToLower(strings.TrimSpace(env)) {
+	case "prod", "production":
+		return true
+	default:
+		return false
+	}
 }

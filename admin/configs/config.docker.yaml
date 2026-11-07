@@ -1,0 +1,73 @@
+server:
+  # Production checks are enforced by conf.Validate.
+  env: prod
+  http:
+    addr: 0.0.0.0:9100
+    timeout: 10s
+    # Add the console origins explicitly; never use "*".
+    cors_allow_origins: ["https://admin.planstar.top"]
+  grpc:
+    addr: 0.0.0.0:9101
+    timeout: 10s
+  admin:
+    addr: 0.0.0.0:9110
+data:
+  database:
+    driver: mysql
+    # Injected through ADMIN_DATA_DATABASE_SOURCE.
+    source: ""
+    debug: false
+    auto_migrate: false
+  redis:
+    addr: redis:6379
+    # Injected through ADMIN_DATA_REDIS_PASSWORD.
+    password: ""
+    db: 0
+    read_timeout: 0.5s
+    write_timeout: 0.5s
+auth:
+  # Injected through ADMIN_AUTH_JWT_SECRET (>= 32 characters in production).
+  jwt_secret: ""
+  cookie_name: psAdminToken
+  cookie_domain: ""
+  cookie_secure: true
+  # google.protobuf.Duration JSON form: 8h / 10m / 15m.
+  token_ttl: 28800s
+  login_max_attempts: 5
+  login_window: 600s
+  login_lock: 900s
+planstar:
+  # If the business service ops listener is not 9108 (for example 8098),
+  # update this value (or override ADMIN_PLANSTAR_OPS_BASE_URL).
+  ops_base_url: http://planstar:9108
+  # Injected through ADMIN_PLANSTAR_OPS_TOKEN.
+  ops_token: ""
+  ops_timeout: 5s
+notify:
+  sms:
+    enabled: false
+    provider: ""
+    endpoint: ""
+    access_key: ""
+    access_secret: ""
+    sign_name: ""
+    template_code: ""
+  email:
+    enabled: false
+    provider: ""
+    smtp_host: ""
+    smtp_port: 0
+    username: ""
+    password: ""
+    from: ""
+storage:
+  oss:
+    enabled: false
+    provider: ""
+    endpoint: ""
+    region: ""
+    bucket: ""
+    access_key: ""
+    access_secret: ""
+    cdn_host: ""
+    presign_ttl_seconds: 0

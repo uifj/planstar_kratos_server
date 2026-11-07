@@ -1,72 +1,40 @@
+GOHOSTOS:=$(shell go env GOHOSTOS)
 GOPATH:=$(shell go env GOPATH)
 VERSION=$(shell git describe --tags --always)
-INTERNAL_PROTO_FILES=$(shell find internal -name *.proto)
-API_PROTO_FILES=$(shell find api -name *.proto)
 
 .PHONY: init
 # init env
 init:
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-	go install github.com/go-kratos/kratos/cmd/kratos/v3@latest
-	go install github.com/go-kratos/kratos/cmd/protoc-gen-go-http/v3@latest
-	go install github.com/go-kratos/kratos/cmd/protoc-gen-go-errors/v3@latest
-	go install github.com/google/gnostic/cmd/protoc-gen-openapi@v0.6.1
-
-.PHONY: errors
-# generate errors code
-errors:
-	protoc --proto_path=. \
-               --proto_path=./third_party \
-               --go_out=paths=source_relative:. \
-               --go-errors_out=paths=source_relative:. \
-               $(API_PROTO_FILES)
+	go install github.com/google/wire/cmd/wire@latest
+	go install github.com/bufbuild/buf/cmd/buf@latest
 
 .PHONY: config
 # generate internal proto
 config:
-	protoc --proto_path=. \
-	       --proto_path=./third_party \
- 	       --go_out=paths=source_relative:. \
-	       $(INTERNAL_PROTO_FILES)
+	buf generate --template buf.gen.config.yaml
 
 .PHONY: api
 # generate api proto
 api:
-	protoc --proto_path=. \
-	       --proto_path=./third_party \
- 	       --go_out=paths=source_relative:. \
- 	       --go-http_out=paths=source_relative:. \
- 	       --go-grpc_out=paths=source_relative:. \
- 	       --openapi_out==paths=source_relative:. \
- 	       --validate_out=paths=source_relative,lang=go:. \
-	       $(API_PROTO_FILES)
+	buf generate --template buf.gen.yaml
 
 .PHONY: build
 # build
 build:
-	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/admin ./cmd/admin
+	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
 
 .PHONY: generate
 # generate
 generate:
 	go generate ./...
-
-# wire
-wire:
-	cd cmd/admin/ && wire
-
-.PHONY: test # 快速测试，运行repo以外的所有测试
-test:
-	ginkgo -r -cover -v .
+	go mod tidy
 
 .PHONY: all
 # generate all
 all:
-	make api;
-	make errors;
-	make config;
-	make generate;
+	make api
+	make config
+	make generate
 
 # show help
 help:
@@ -78,7 +46,7 @@ help:
 	@awk '/^[a-zA-Z\-\_0-9]+:/ { \
 	helpMessage = match(lastLine, /^# (.*)/); \
 		if (helpMessage) { \
-			helpCommand = substr($$1, 0, index($$1, ":")-1); \
+			helpCommand = substr($$1, 0, index($$1, ":")); \
 			helpMessage = substr(lastLine, RSTART + 2, RLENGTH); \
 			printf "\033[36m%-22s\033[0m %s\n", helpCommand,helpMessage; \
 		} \
