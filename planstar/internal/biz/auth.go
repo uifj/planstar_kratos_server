@@ -16,7 +16,10 @@ import (
 var (
 	ErrBadRequest   = errors.New("bad request")
 	ErrUnauthorized = errors.New("unauthorized")
+	ErrForbidden    = errors.New("forbidden")
 	ErrNotFound     = errors.New("not found")
+	ErrConflict     = errors.New("conflict")
+	ErrRateLimited  = errors.New("rate limited")
 	ErrLoginFailed  = errors.New("login failed")
 )
 

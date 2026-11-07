@@ -23,12 +23,14 @@ func NewToken() string {
 }
 
 // SetCookie 下发 psSession：同时写 Set-Cookie 与响应头（客户端两处都读）。
-func SetCookie(w http.ResponseWriter, token string) {
+// secure 可选，缺省为 false；生产环境应传入 true 以启用 Secure。
+func SetCookie(w http.ResponseWriter, token string, secure ...bool) {
 	c := &http.Cookie{
 		Name:     CookieKey,
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   len(secure) > 0 && secure[0],
 		MaxAge:   int(SessionTTL.Seconds()),
 		SameSite: http.SameSiteLaxMode,
 	}
