@@ -81,7 +81,8 @@ jobs:
     name: Deploy release to server
     needs: release
     runs-on: ubuntu-latest
-    if: ${{ vars.SERVER_HOST != '' || secrets.SERVER_HOST != '' }}
+    # 部署前置条件只看仓库变量（secrets 不可用于 job 级 if 表达式）
+    if: ${{ vars.SERVER_HOST != '' }}
     permissions:
       contents: read
       packages: read
@@ -89,7 +90,7 @@ jobs:
     # 记录到 GitHub Deployments 面板（Environment）
     environment:
       name: production
-      url: http://${{ secrets.SERVER_HOST || 'localhost' }}:8098
+      url: http://${{ vars.SERVER_HOST || 'localhost' }}:8098
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
