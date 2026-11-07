@@ -51,12 +51,12 @@
     <div class="card"><h3>演出与动态</h3><p>演出列表 / 热门榜 / 详情，动态与评论，支持分页与城市、分类筛选。</p></div>
     <div class="card"><h3>订单与支付</h3><p>下单、订单列表与详情、取消；金额元存库、分输出。</p></div>
     <div class="card"><h3>用户与认证</h3><p>Cookie 会话、图形验证码、短信码限流与登录失败保护。</p></div>
-    <div class="card"><h3>可观测性</h3><p>Prometheus 指标、Jaeger 链路追踪、结构化日志与告警规则。</p></div>
+    <div class="card"><h3>可观测性</h3><p>OpenMetrics 指标、OTLP → Collector → Jaeger 链路、结构化日志与告警规则。</p></div>
   </div>
   <h2>服务端点</h2>
   <div class="grid">
     <div class="card"><h3>业务 API</h3><p><code>:8098</code></p></div>
-    <div class="card"><h3>运维端口</h3><p><code>:9108</code> /metrics · /healthz · /readyz</p></div>
+    <div class="card"><h3>运维端口</h3><p><code>127.0.0.1:9108</code> /metrics（Bearer 鉴权）· 结构化 /healthz /readyz</p></div>
   </div>
 </main>
 <footer class="wrap">Planstar · 由 Kratos v3 构建</footer>

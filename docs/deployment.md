@@ -25,27 +25,34 @@ docker compose up -d --build
 | 地址 | 用途 |
 | --- | --- |
 | `http://127.0.0.1:8098` | 业务 API |
-| `http://127.0.0.1:9108/healthz` | 存活探针 |
-| `http://127.0.0.1:9108/readyz` | 就绪探针（MySQL/Redis/ES） |
-| `http://127.0.0.1:9108/metrics` | Prometheus 指标 |
+| `http://127.0.0.1:9108/healthz` | 存活探针（匿名，只表示进程存活） |
+| `http://127.0.0.1:9108/readyz` | 就绪探针（结构化 `checks[]`；MySQL/Redis 关键，ES/RabbitMQ/Consul 可选） |
+| `http://127.0.0.1:9108/metrics` | Prometheus/OpenMetrics（需 `Authorization: Bearer`） |
 | `http://127.0.0.1:9090` | Prometheus |
+| `http://127.0.0.1:9093` | Alertmanager |
 | `http://127.0.0.1:3000` | Grafana（默认 `admin/admin`，见 `.env`） |
 | `http://127.0.0.1:8500` | Consul UI |
 | `http://127.0.0.1:15672` | RabbitMQ 管理台（`root/root`） |
 | `http://127.0.0.1:16686` | Jaeger UI |
+| `http://127.0.0.1:4317` / `4318` | OTel Collector OTLP gRPC/HTTP（仅宿主机回环，便于本机调试） |
 | `http://127.0.0.1:8080` | Traefik Dashboard |
+
+> `9108` 在 compose 中发布为 `127.0.0.1:9108:9108`，即**只绑定宿主机回环**；
+> 生产请通过内网/跳板机或反向代理访问，不要改成 `0.0.0.0:9108`。
 
 ### 验证命令
 
 ```bash
 curl -fsS http://127.0.0.1:9108/healthz
-# {"status":"ok"}
+# {"service":"planstar.api","version":"...","status":"ok","timestamp":"...","uptime_seconds":...}
 
-curl -fsS http://127.0.0.1:9108/readyz
-# {"status":"ready"}；依赖不可用时 HTTP 503 + {"status":"unavailable"}
+curl -sS http://127.0.0.1:9108/readyz
+# 200：{"ready":true,"status":"ok|degraded","checks":[{"name":"mysql",...},...]}
+# 503：{"ready":false,"status":"fail","checks":[...]}；看 checks[] 中 status=fail 的项
 
-curl -fsS http://127.0.0.1:9108/metrics | head
-# planstar_http_requests_total / planstar_http_request_duration_seconds / go_* / process_*
+curl -fsS -H "Authorization: Bearer $PLANSTAR_OPS_TOKEN" \
+  http://127.0.0.1:9108/metrics | grep planstar_build_info
+# planstar_build_info{env="prod",go_version="...",version="..."} 1
 
 curl -D captcha.headers -o captcha.png http://127.0.0.1:8098/v1/user/captcha
 # 200 image/png，并下发 psCaptcha Cookie
@@ -77,11 +84,35 @@ curl -i -X POST http://127.0.0.1:8098/v1/user/login \
 cd /opt/planstar/planstar
 cp .env.example .env
 # 编辑 .env：数据库/Redis/RabbitMQ 口令、PLANSTAR_IMAGE、PLANSTAR_TAG、GRAFANA 口令、ACME_EMAIL
+# 生产必须设置运维令牌（/metrics 与 /admin* 的 Bearer 凭据）
+PLANSTAR_OPS_TOKEN="$(openssl rand -hex 32)"
+# 按需限制运维端点来源
+# PLANSTAR_OPS_ALLOWED_CIDRS=10.0.0.0/8
+# 配置 Alertmanager 邮件（values 见 2.4 节）
+# AM_SMTP_SMARTHOST=smtp.example.com:587
+# AM_SMTP_FROM=planstar-alert@example.com
+# AM_SMTP_AUTH_USERNAME=...
+# AM_SMTP_AUTH_PASSWORD=...
+# AM_ALERT_EMAIL_TO=ops@example.com
+
+# 把同一令牌写入 Prometheus 抓取凭据文件（Prometheus 不支持 ${VAR}）
+mkdir -p deploy/prometheus
+(umask 077; printf '%s' "$PLANSTAR_OPS_TOKEN" > deploy/prometheus/ops_token)
+chmod 600 deploy/prometheus/ops_token
+
 docker compose pull
 docker compose up -d --remove-orphans
 ```
 
-`planstar/docker-compose.yml` 使用 `configs/config.prod.yaml`，并挂载为容器内 `/data/conf/config.yaml`；敏感口令通过 `PLANSTAR_MYSQL_PASSWORD`、`PLANSTAR_REDIS_PASSWORD`、`PLANSTAR_MQ_ADDR` 注入，不写入配置文件。
+`planstar/docker-compose.yml` 使用 `configs/config.prod.yaml`，并挂载为容器内
+`/data/conf/config.yaml`；敏感口令通过 `PLANSTAR_MYSQL_PASSWORD`、
+`PLANSTAR_REDIS_PASSWORD`、`PLANSTAR_MQ_ADDR`、`PLANSTAR_OPS_TOKEN` 注入，不写入配置文件。
+`deploy.sh` 会自动把 `$PLANSTAR_OPS_TOKEN` 写入 `deploy/prometheus/ops_token`（权限
+`0600`，已 gitignore）并同步到服务器；手动部署时需按上面的命令自行创建。
+
+`server.env=prod` 且 `PLANSTAR_OPS_TOKEN` 为空时，`planstar-api` 会在启动阶段直接退出，
+这是有意的 fail-fast。若轮换令牌，必须同时更新 `.env` 与 `deploy/prometheus/ops_token`，
+否则 Prometheus 抓取 `/metrics` 会 401，触发 `PlanstarOpsAuthFailureSpike`。
 
 ### 2.2 一键推送部署
 
@@ -107,6 +138,42 @@ docker push ghcr.io/uifj/planstar-api:v0.1.0
 
 镜像基于 `golang:1.26.5` 多阶段构建，运行层为 `debian:stable-slim`，非 root 用户，暴露 `8098/9108`，内置 `curl` 健康检查。
 
+### 2.4 OpenTelemetry Collector
+
+`planstar-api` 只向 compose 网络内的 `otel-collector:4317` 发送 OTLP/gRPC，
+collector 批处理后转发到 `jaeger:4317`：
+
+| 配置键 | 生产值 | 说明 |
+| --- | --- | --- |
+| `trace.endpoint` | `otel-collector:4317` | 留空关闭 tracing；也可用 `PLANSTAR_TRACE_ENDPOINT` 覆盖 |
+| `trace.insecure` | `true` | 内网明文 gRPC；默认 `true` |
+| `trace.env` | `prod` | 资源属性 `deployment.environment` |
+| `trace.sample_ratio` | `0.1` | 10% 采样 |
+
+- `otel-collector` 配置挂载自 `deploy/otel/collector.yaml`，OTLP 接收端 `4317/4318`
+  仅在宿主机回环发布，容器间走 `planstar` 网络。
+- collector 自身指标暴露在 `8889`（Prometheus `job="otel-collector"`），健康检查
+  `13133`。
+- collector 不可用不会阻塞应用启动或业务请求，只会导致新 trace 缺失；恢复后 SDK
+  自动重连。
+
+### 2.5 Alertmanager 邮件通知
+
+`deploy/alertmanager/alertmanager.yml` 使用 `${AM_*}` 占位，`entrypoint.sh` 在启动前
+渲染到 `/tmp`（`umask 077`）。在 `planstar/.env` 配置：
+
+| 环境变量 | 示例 | 说明 |
+| --- | --- | --- |
+| `AM_SMTP_SMARTHOST` | `smtp.example.com:587` | SMTP 地址 |
+| `AM_SMTP_FROM` | `planstar-alert@example.com` | 发件人 |
+| `AM_SMTP_AUTH_USERNAME` | `alert@example.com` | SMTP 用户名 |
+| `AM_SMTP_AUTH_PASSWORD` | `******` | SMTP 密码/授权码 |
+| `AM_ALERT_EMAIL_TO` | `ops@example.com` | 收件人 |
+
+- `smtp_require_tls: true`；本地 MailHog/smtp4dev（明文 1025）调试时临时改为 `false`。
+- `critical` 每 1h 重复，`warning` 每 4h；恢复通知开启。
+- 修改后重建容器：`docker compose up -d --force-recreate alertmanager`。
+
 ## 3. 回滚
 
 ### 3.1 应用回滚（推荐）
@@ -120,7 +187,18 @@ docker compose -f planstar/docker-compose.yml up -d --remove-orphans planstar-ap
 docker compose -f planstar/docker-compose.yml ps
 ```
 
-回滚后立即验证 `/healthz`、`/readyz` 与一条只读业务接口（如 `GET /v1/home/banners`）。
+回滚后立即验证 `/healthz`、`/readyz`、带 Bearer 的 `/metrics` 与一条只读业务接口
+（如 `GET /v1/home/banners`）。
+
+回滚注意：
+
+- 回滚应用镜像不改变 `PLANSTAR_OPS_TOKEN`；若旧版本尚未引入 Bearer 鉴权，Prometheus
+  的 `authorization` 配置仍可正常工作（旧版忽略该头）。
+- 若回滚同时调整了 `deploy/prometheus` 或 `deploy/alertmanager`，需重新执行
+  `docker compose up -d --force-recreate prometheus alertmanager`，并用
+  `promtool check rules` / `amtool check-config` 校验。
+- `otel-collector`、`alertmanager` 与 `planstar-api` 独立重启；collector 故障不影响
+  业务回滚。
 
 ### 3.2 数据回滚
 
@@ -190,7 +268,7 @@ curl -fsS http://127.0.0.1:9108/readyz
 | `server.http.request_timeout_seconds` | `15` | 单请求超时，超时返回 504 |
 | `server.http.max_body_bytes` | `1048576` | 请求体上限 1 MiB；`/v1/upload` 内部放宽到 20 MiB |
 | `server.http.cors_allow_origins` | `[]` | 跨域白名单；空数组仅允许同源 |
-| `server.admin.addr` | `0.0.0.0:9108` | 运维监听，勿暴露公网 |
+| `server.admin.addr` | `0.0.0.0:9108` | 容器内运维监听；compose 仅发布到宿主机 `127.0.0.1:9108` |
 | `data.mysql.addr` | `mysql:3306` | Compose 服务名 |
 | `data.mysql.user` | `root` | 生产建议改为最小权限账号 |
 | `data.mysql.password` | 空 | 由 `PLANSTAR_MYSQL_PASSWORD` 覆盖 |
@@ -207,8 +285,9 @@ curl -fsS http://127.0.0.1:9108/readyz
 | `auth.send_code_cooldown_seconds` | `60` | 同一手机号发码冷却 |
 | `auth.send_code_ip_limit_per_minute` | `10` | 同一 IP 每分钟发码上限（取 TCP 对端 IP） |
 | `auth.login_fail_captcha_threshold` | `3` | 连续登录失败后要求图形码 |
-| `trace.endpoint` | `http://jaeger:14268/api/traces` | 留空关闭 tracing |
-| `trace.env` | `prod` | 环境标签 |
+| `trace.endpoint` | `otel-collector:4317` | OTLP/gRPC；留空关闭 tracing，可用 `PLANSTAR_TRACE_ENDPOINT` 覆盖 |
+| `trace.insecure` | `true` | OTLP 明文连接（内网 collector），可用 `PLANSTAR_TRACE_INSECURE` 覆盖 |
+| `trace.env` | `prod` | 环境标签（`deployment.environment`） |
 | `trace.sample_ratio` | `0.1` | 10% 采样 |
 | `mq.addr` | `amqp://rabbitmq:5672/` | 由 `PLANSTAR_MQ_ADDR` 覆盖为带账号密码的完整 URL |
 | `mq.exchange` | `planstar.exchange` | topic exchange |
@@ -216,8 +295,30 @@ curl -fsS http://127.0.0.1:9108/readyz
 | `registry.consul.address` | `consul:8500` | 留空则不注册 |
 | `registry.consul.scheme` | `http` | |
 | `registry.consul.service_host` | `planstar-api` | 注册到 Consul 的可达主机名 |
+| `ops.token` | 空 | 由 `PLANSTAR_OPS_TOKEN` 注入；生产必填，空值启动失败 |
+| `ops.allowed_cidrs` | `[]` | 由 `PLANSTAR_OPS_ALLOWED_CIDRS` 逗号分隔注入；空表示不限制 |
+| `ops.probe_cache_ttl_seconds` | `2` | `/readyz` 结果缓存 |
+| `ops.probe_timeout_seconds` | `2` | 单项探测超时 |
+| `ops.probe_total_timeout_seconds` | `3` | 整轮探测总超时 |
+| `ops.metrics_max_inflight` | `8` | 指标抓取并发预算（配置项，当前由 admin 超时兜底） |
+| `ops.metrics_timeout_seconds` | `5` | 指标抓取超时预算 |
+| `ops.readiness.*.critical` | `mysql/redis=true`，其余 `false` | 关键依赖开关 |
+| `ops.readiness.*.timeout_seconds` | `2` | 单项超时覆盖 |
 
-`.env` 中除上述覆盖项外，还包含 `MYSQL_ROOT_PASSWORD`、`REDIS_PASSWORD`、`RABBITMQ_USER`、`RABBITMQ_PASS`、`PLANSTAR_IMAGE`、`PLANSTAR_TAG`、`VERSION`、Grafana 账号、`ACME_EMAIL`、`SERVER_*`、`APP_DIR`。报价快照有效期可用 `PLANSTAR_QUOTE_TTL_SECONDS` 覆盖（默认 900 秒，见 `internal/biz/quote.go`）。
+`.env` 中除上述覆盖项外，还包含 `MYSQL_ROOT_PASSWORD`、`REDIS_PASSWORD`、`RABBITMQ_USER`、
+`RABBITMQ_PASS`、`PLANSTAR_IMAGE`、`PLANSTAR_TAG`、`VERSION`、`PLANSTAR_OPS_TOKEN`、
+`AM_SMTP_*`/`AM_ALERT_EMAIL_TO`、Grafana 账号、`ACME_EMAIL`、`SERVER_*`、`APP_DIR`。
+报价快照有效期可用 `PLANSTAR_QUOTE_TTL_SECONDS` 覆盖（默认 900 秒，见 `internal/biz/quote.go`）。
+
+部署前配置自检：
+
+```bash
+docker compose -f planstar/docker-compose.yml config -q
+```
+
+该命令只校验 compose 结构与环境变量插值，不会启动容器；CI 的
+`observability-config` job 也会执行同一检查，并用 `promtool`/`amtool` 校验告警与
+Alertmanager 配置。
 
 ## 6. 常见启动失败排查
 
@@ -230,7 +331,11 @@ curl -fsS http://127.0.0.1:9108/readyz
 | `planstar-api` 反复重启，日志 `init elasticsearch ...` | ES 未就绪或地址不可达；`NewData` 启动即检查 MySQL/Redis/ES | `docker compose logs elasticsearch`；等待健康检查通过；确认 `config.prod.yaml` 地址 |
 | Elasticsearch 容器退出码 78 / `max virtual memory areas` | Linux 宿主机 `vm.max_map_count` 过小 | `sysctl -w vm.max_map_count=262144` 并写入 `/etc/sysctl.conf` |
 | Elasticsearch OOM | 默认堆 512m，数据量大或内存不足 | 调大 `ES_JAVA_OPTS`，并保证宿主机内存充足 |
-| `/readyz` 返回 503 | MySQL、Redis 或 ES 健康检查失败 | 分别 `docker compose logs mysql/redis/elasticsearch`；`/healthz` 只代表进程存活 |
+| `/readyz` 返回 503 | MySQL/Redis 等 `critical=true` 检查失败，或启动/停机闸门关闭 | 看响应 `checks[]` 中 `status=fail` 的项；分别 `docker compose logs mysql/redis`；`/healthz` 只代表进程存活 |
+| `/readyz` 200 但 `status=degraded` | ES/RabbitMQ/Consul 等可选依赖失败（`skipped` 表示未配置） | `checks[]` 定位；可选依赖不应触发 503，按业务影响决定是否处置 |
+| `planstar-api` 启动即退出，日志 `生产环境必须配置 PLANSTAR_OPS_TOKEN` | `server.env=prod` 且运维令牌为空 | 在 `.env` 设置 `PLANSTAR_OPS_TOKEN`，并同步 `deploy/prometheus/ops_token` 后重建 |
+| Prometheus target DOWN，`/metrics` 401 | `ops_token` 与 `PLANSTAR_OPS_TOKEN` 不一致 | 重新写入 `deploy/prometheus/ops_token` 并 `docker compose up -d --force-recreate prometheus` |
+| `/metrics` 403 | 来源不在 `PLANSTAR_OPS_ALLOWED_CIDRS` | 补充 CIDR（取 TCP 对端 IP）或留空关闭白名单 |
 | Consul 注册失败导致启动退出 | `registry.consul.address` 指向不可达 Consul，kratos registrar 注册失败 | 恢复 Consul；或清空 `registry.consul.address` 关闭注册 |
 | RabbitMQ 健康检查长时间未通过 | 首次启动初始化较慢 | 等待 1~2 分钟；查看 `docker compose logs rabbitmq` |
 | `planstar-api` 日志 `open /data/conf/config.yaml: no such file` | compose 挂载路径错误/未在 `planstar/` 目录执行 | 确认在 `planstar/` 下执行，且 `configs/config.prod.yaml` 存在 |

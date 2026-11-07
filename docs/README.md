@@ -20,8 +20,10 @@
 
 | 文档 | 内容 | 状态 |
 | --- | --- | --- |
+| [product/POSITIONING.md](product/POSITIONING.md) | 产品定位、品牌表达、用户分层、业务闭环与品类边界的唯一事实源 | 有效 |
 | [architecture.md](architecture.md) | 当前单体架构与技术事实 | 有效 |
-| [api/API_CONTRACT.md](api/API_CONTRACT.md) | 客户端接口契约（23 个唯一端点 + `GET /v1/user/` 尾斜杠别名） | 有效 |
+| [api/API_CONTRACT.md](api/API_CONTRACT.md) | 客户端接口契约（23 个已实现端点 + `GET /v1/user/` 尾斜杠别名；第 7.7 节为企划域契约定义，尚未实现） | 有效 |
+| [api/ADMIN_CONTRACT.md](api/ADMIN_CONTRACT.md) | 运营后台契约：举报处理台列表与处置（仅 `ADMIN_ADDR` 管理端口） | 有效 |
 | [deployment.md](deployment.md) | 部署与回滚手册 | 有效 |
 | [operations.md](operations.md) | 运维与故障处置手册 | 有效 |
 | [sql/README.md](sql/README.md) | 9 个 `planstar_*` 库建库脚本与演示数据说明 | 有效（数据基线） |
@@ -49,7 +51,7 @@
 | `GET :9108/healthz`、`/readyz` | 200 / 200 |
 | 契约测试 `go test ./internal/server -run TestRoutesMatchContract` | 通过（23 个唯一端点） |
 | `gofmt -l .`、`go build ./...`、`go vet ./...`、`go test ./...` | 全部通过 |
-| `flutter analyze lib test packages/infras/core/lib`、`flutter test` | 无问题 / 140 项通过 |
+| `flutter analyze lib test packages/infras/core/lib`、`flutter test` | 无问题 / 153 项通过 |
 | 登录（发码 → 登录） | 200，`psSession` Cookie 含 `HttpOnly; Secure; SameSite=Lax; Max-Age=2592000` |
 | 发码重复请求 | 第二次 429 `RATE_LIMITED` |
 | 未登录访问订单 | 401 `UNAUTHORIZED` |

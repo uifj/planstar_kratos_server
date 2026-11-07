@@ -10,11 +10,13 @@
 把原 13 个编号文件按阿里规约整体重写，整理成一份**顺序正确、可一次性执行**的建库脚本，
 并在真实 MySQL 8.4.10 上跑通。
 
-- `00_all.sql` —— **一键完整安装**（9 库 / 86 张业务表 + 3 张证据表 / 0 物理外键 / 索引全部内联）
+- `00_all.sql` —— **一键完整安装**（9 库 / 97 张业务表 + 3 张证据表 / 0 物理外键 / 索引全部内联）
 - `01..13_*.sql` —— 分文件副本，便于逐段 `SOURCE` 或复用
 - `90_teardown.sql` —— 逆序删库（**破坏性**，执行前确认无业务数据）
-- `14_mock_seed.sql` —— 由 Flutter mock 数据映射生成的演示种子（7 库 / 40 表 / 870 行），
-  在 `00_all.sql` 之后**可选**执行，不属于建库流程
+- `15_project_domain.sql` —— 企划域增量 DDL（企划、回报档位、进度更新、支持记录等 11 张表），
+  必须在 `14_mock_seed.sql` 之前执行
+- `14_mock_seed.sql` —— 由 Flutter mock 数据映射生成的演示种子（企划/支持/社区域），
+  在 `00_all.sql` + `15_project_domain.sql` 之后**可选**执行，不属于建库流程
 - `verify.sql` —— 实跑后 `information_schema` 复核查询
 - `optional/PROPOSALS.sql` —— 只读设计提案，全注释、0 可执行语句（表名仍是旧命名，仅作历史参考）
 - `history/` —— **重构前历史快照**（旧验证结论、旧 manifest、旧工具、`00_all_faithful.sql`），
@@ -25,11 +27,11 @@
 | 项 | 数量 |
 | --- | --- |
 | 数据库 | 9（`planstar_user / catalog / ticket / order / payment / marketing / community / content / meta`） |
-| 业务表 | 86 |
+| 业务表 | 97 |
 | 证据表（`_rev_*`，非业务，原样保留） | 3 |
-| 列 | 1,590 |
+| 列 | 1,760 |
 | 物理外键 | **0** |
-| 索引 | 230（含主键；单表二级索引 ≤ 5） |
+| 索引 | 271（含主键；单表二级索引 ≤ 5） |
 | 枚举字典种子 | 143 行 |
 | 证据种子 | 1,736 / 267 / 217 行 |
 
@@ -38,7 +40,7 @@
 | 阿里规约 | 落地结果 |
 | --- | --- |
 | 表名、字段名单数、小写 | 85 张复数表名全部改单数（`users→user_info`、`orders→order_info`、`likes→like_record`、`feedback→user_feedback`、`dict_enums→dict_enum` 等） |
-| 必备三字段 | 每表都有 `id BIGINT UNSIGNED AUTO_INCREMENT` + `gmt_create` + `gmt_modified`（86/86） |
+| 必备三字段 | 每表都有 `id BIGINT UNSIGNED AUTO_INCREMENT` + `gmt_create` + `gmt_modified`（97/97） |
 | 时间字段命名 | 统一 `gmt_create` / `gmt_modified`，`DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`，更新时间带 `ON UPDATE` |
 | 布尔字段 | 全部 `is_xxx TINYINT UNSIGNED NOT NULL DEFAULT 0`（`is_` 前缀且类型正确：100%） |
 | 金额字段 | 全部 `DECIMAL(12,2)`；利率类 `DECIMAL(10,4)`；**0 个 FLOAT/DOUBLE** |
@@ -46,8 +48,8 @@
 | 唯一索引 | 业务唯一键补齐 UNIQUE（`user_info.mobile_no`、`order_info.order_number`、`gift_card.serial_number` 等），且唯一键列全部 `NOT NULL` |
 | 禁止外键与级联 | 原 61 条外键（含 24 条跨库）全部移除，见 `12_constraints.sql` 的替代约定 |
 | 禁止冗余索引 | 原 8 个条件索引取消，改为内联；去除 5 组前缀冗余，单表二级索引 ≤ 5 |
-| 字段必须注释 | 1,590 列 **0 缺注释**（保留原 DTO 字段映射，便于追溯） |
-| 字符集 | 9 库、89 表全部 `utf8mb4 / utf8mb4_unicode_ci`；86 张业务表均 `ROW_FORMAT=DYNAMIC`（3 张证据表未显式指定，沿用默认） |
+| 字段必须注释 | 1,760 列 **0 缺注释**（保留原 DTO 字段映射，便于追溯） |
+| 字符集 | 9 库、100 表全部 `utf8mb4 / utf8mb4_unicode_ci`；97 张业务表均 `ROW_FORMAT=DYNAMIC`（3 张证据表未显式指定，沿用默认） |
 | 禁用存储过程 | 无存储过程、无触发器、无视图 |
 
 > `dict_enum.code` 是唯一的 signed `INT`：种子含 `-1` 的枚举（`DeliverType.UNKOWN`、
@@ -62,7 +64,8 @@
 11_rev_evidence.sql     ->  3 张证据表 + 2,363 行证据
 12_constraints.sql      ->  no-op（0 外键，仅应用层一致性说明）
 13_query_indexes.sql    ->  no-op（索引已内联到建表语句）
-14_mock_seed.sql        ->  可选：Flutter mock 演示数据（40 表 / 870 行）
+15_project_domain.sql   ->  企划域增量 DDL（11 张表，必须在 14 之前）
+14_mock_seed.sql        ->  可选：企划/支持/社区域演示种子
 ```
 
 `00_all.sql` 已按此顺序拼接；各分文件自带 `USE`。

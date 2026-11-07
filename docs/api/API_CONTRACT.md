@@ -6,7 +6,7 @@
 
 - **唯一事实源**：`planstar/internal/service/service.go` 的 `Register` 路由表，以及同目录各 handler。
 - 服务监听 `8098`；所有路径区分大小写，使用 `METHOD /path` 精确匹配。
-- 当前注册 24 条路由，对应 **23 个唯一端点**：`GET /v1/user/` 是 `GET /v1/user` 的尾斜杠别名，复用同一 handler，本契约只记录一次。
+- 当前注册 46 条路由，对应 **45 个唯一端点**：`GET /v1/user/` 是 `GET /v1/user` 的尾斜杠别名，复用同一 handler，本契约只记录一次。
 - 成功响应为裸 JSON（无 `{code,message,data}` 信封），`Content-Type: application/json; charset=utf-8`；图片端点返回 `image/png`。
 - 请求体字段大小写敏感，允许的字段别名已在各端点列出；未列出的字段当前被忽略。
 
@@ -68,7 +68,7 @@
 - 服务端会话有效期由 `auth.session_expire_days` 控制（默认 30 天），写入 `login_session.expire_time` 与 Redis TTL；Cookie 的 `Max-Age` 固定为 30 天（`internal/pkg/session/session.go`）。
 - `dvid`：登录成功时若无设备号，服务端生成并同时写 `Set-Cookie: dvid=...` 与响应头 `dvid`。
 - 图形码：`GET /v1/user/captcha` 写 `psCaptcha` Cookie（HttpOnly，5 分钟），明文码存 Redis 并一次性消费。
-- 需要登录的端点：订单 4 个、消息 3 个、用户资料/地址 6 个；其余目录与动态端点匿名可访问。
+- 需要登录的端点：订单 8 个、消息 3 个、客服会话 4 个、用户资料/地址 6 个；其余目录与动态端点匿名可访问。
 - 发码风控：同一手机号默认 60 秒冷却，同一 IP 默认每分钟 10 次（`auth.send_code_cooldown_seconds` / `auth.send_code_ip_limit_per_minute`），超限返回 `429 RATE_LIMITED`；IP 取 TCP 对端地址，不信任 `X-Forwarded-For`，经反向代理部署时可能被计为同一 IP。
 - 登录失败风控：连续失败达到 `auth.login_fail_captcha_threshold`（默认 3）后要求图形码。发码/失败计数为**进程内**语义，多实例独立计数。
 
@@ -130,7 +130,11 @@ POST /v1/user/login
 - 风控：同一手机号 10 分钟内失败 3 次后要求图形码
 - 错误：`400 BAD_REQUEST`（手机号/请求格式非法）、`401 UNAUTHORIZED`（密码或验证码错误）、`413 PAYLOAD_TOO_LARGE`、`500 INTERNAL`
 
-### 7.2 演出库
+### 7.2 演出库（legacy · 仅线下回报可选）
+
+> 产品主叙事已从「演出/购票」切换为「企划/支持」。本节端点保留，仅服务线下活动型企划的
+> 场次与座位能力；新客户端请优先使用 7.7 企划域接口。字段语义对应关系：
+> 演出 → 企划、场次 → 线下回报场次、票档 → 回报档位、购票 → 支持。
 
 GET /v1/home/banners
 
@@ -231,6 +235,42 @@ POST /v1/messages/read
 - 说明：只更新当前用户的消息；`messageId<=0` 返回 400
 - 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`、`500 INTERNAL`
 
+GET /v1/chat/threads
+
+- 鉴权：是（`psSession`）
+- 请求：无参数
+- 响应：`ChatThread[]`，字段见第 8.11 节；按 `gmt_modified` 降序，仅当前用户
+- 错误：`401 UNAUTHORIZED`、`500 INTERNAL`
+
+GET /v1/chat/threads/{id}/messages
+
+- 鉴权：是
+- 请求：
+  | 参数 | 类型 | 必填 | 说明 |
+  | --- | --- | --- | --- |
+  | `limit` | int | 否 | 默认 20，上限 100；`<=0` 时回退读取 `pageSize` |
+  | `pageSize` | int | 否 | `limit` 缺省时的别名，默认 20 |
+  | `before` | int64 | 否 | 上一页最小 `id`（游标），只返回 `id < before` 的消息；`0` 表示最新一页 |
+- 响应：`ChatMessage[]`，字段见第 8.11 节；单页内按发送时间升序，便于客户端直接追加
+- 说明：会话必须属于当前用户，否则 404
+- 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`、`404 NOT_FOUND`、`500 INTERNAL`
+
+POST /v1/chat/threads/{id}/messages
+
+- 鉴权：是
+- 请求体：`{"text": "你好"}`；兼容别名 `content` / `message`，去首尾空白后 1~2000 字符
+- 响应：`ChatMessage`（落库后的消息，`fromMe=true`、`senderName` 取当前用户昵称）
+- 说明：写入 `chat_message` 并同步更新会话 `preview` 与 `gmt_modified`
+- 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`、`404 NOT_FOUND`、`500 INTERNAL`
+
+POST /v1/chat/threads/{id}/read
+
+- 鉴权：是
+- 请求体：无
+- 响应：`{"unreadCount": 0}`
+- 说明：只清零当前用户该会话的 `unread_count`
+- 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`、`404 NOT_FOUND`、`500 INTERNAL`
+
 ### 7.5 订单
 
 GET /v1/order/list
@@ -285,6 +325,41 @@ POST /v3/unifiedOrder/makeOrder
 - 说明：服务端按报价快照或当前权威价格重算金额，**忽略客户端金额的定价作用**。创建在单个事务内完成：幂等查询 → 原子扣减 `planstar_ticket.ticket_category.stock`（影响 0 行即 `SOLD_OUT`）→ 写 `order_info` → 写 `order_idempotency`。订单 ID 由应用侧生成（毫秒时间戳 + 随机位），`order_number` 为 `PN + 毫秒 + 6 位随机` 且有唯一索引；不存在 `MAX(id)+1` 逻辑。演出数据通过 `CatalogReader` 端口从 catalog 库读取，不再跨库直查
 - 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`（缺 `activityId`/`quoteId`/`amount` 或 body 非法）、`409 PRICE_CHANGED`、`409 SOLD_OUT`、`409 LIMIT_EXCEEDED`、`409 QUOTE_EXPIRED`、`413 PAYLOAD_TOO_LARGE`、`500 INTERNAL`
 
+POST /v1/unifiedPay/pay
+
+- 鉴权：是
+- 请求体：
+  | 字段 | 类型 | 必填 | 说明 |
+  | --- | --- | --- | --- |
+  | `orderNumber` | string | 是 | 订单号（兼容 `order_number`） |
+  | `channel` | string | 是 | `wechat` / `alipay` / `unionpay` / `balance`（兼容 `payChannel` / `pay_channel`） |
+- 响应：`PaymentOrder`，字段见第 8.12 节；金额单位为**分**，`expireAt` 为毫秒时间戳
+- 说明：按 `(order_number, channel)` 唯一幂等，同一订单同一渠道重复调用返回同一 `payNo`；已过期（`pending` 或读取时已落为 `expired`）的支付单再次调用会重置为 `pending` 并续期 30 分钟。`payParams` 当前为占位对象 `{}`，字段留给后续支付 SDK
+- 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`（缺订单号/渠道非法）、`404 NOT_FOUND`（订单不存在或不属于当前用户）、`409 CONFLICT`（订单已关闭/已退款）、`500 INTERNAL`
+
+GET /v1/unifiedPay/payDetail
+
+- 鉴权：是
+- 请求：query `payNo` 或 `orderNumber`，二者至少一个；只传 `orderNumber` 时返回该订单最新一笔支付单
+- 响应：`PaymentOrder`，字段见第 8.12 节
+- 说明：读取时若 `status=pending` 且已过 `expireAt`，返回 `status=expired`，并同步把库内状态落为 `expired`
+- 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`（两者都未传）、`404 NOT_FOUND`、`500 INTERNAL`
+
+POST /v1/order/{id}/refund
+
+- 鉴权：是
+- 请求体：`reasonCode`（string，可选，缺省 `other`；白名单 `notNeeded` / `boughtWrong` / `tooExpensive` / `foundBetter` / `other`）、`reasonText`（string，可选，≤512 字，兼容 `reason`）
+- 响应：`Refund`，字段见第 8.12 节；`refundableAmount` 单位为**分**
+- 说明：按 `order_id` 唯一幂等，同一订单重复提交返回同一 `refundNo`；仅 `order_info.status` 为 1~5 的订单可退，0/6/7 返回 409
+- 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`（`id` 非法/原因码不在白名单/原因过长）、`404 NOT_FOUND`、`409 REFUND_NOT_ALLOWED`、`500 INTERNAL`
+
+GET /v1/order/{id}/refund
+
+- 鉴权：是
+- 请求：路径参数 `id`（订单 ID）
+- 响应：`Refund`，字段见第 8.12 节
+- 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`、`404 NOT_FOUND`（订单不存在或尚无退款单）、`500 INTERNAL`
+
 ### 7.6 用户与地址
 
 GET /v1/user
@@ -333,9 +408,151 @@ POST /v1/myaddress/default/{id}
 - 说明：事务内先清除当前用户所有默认标记，再把目标地址置为默认；不存在或非本人地址不报 404，仍返回 `{}`
 - 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`、`500 INTERNAL`
 
+## 7.7 企划域
+
+GET /v1/projects/hot
+
+- 鉴权：否
+- 请求：`page`、`pageSize`
+- 响应：`ProjectSummary[]`，字段见第 8.10 节
+- 说明：按 `is_featured`、`rank_weight`、`supporter_count` 降序；仅返回 `publish_status=1 AND status=1`
+- 错误：`500 INTERNAL`
+
+GET /v1/projects
+
+- 鉴权：否
+- 请求：
+  | 参数 | 类型 | 必填 | 说明 |
+  | --- | --- | --- | --- |
+  | `page` | int | 否 | 默认 1 |
+  | `pageSize` | int | 否 | 默认 20，上限 100 |
+  | `categoryId` | int64 | 否 | 企划一级品类 |
+  | `fundingStatus` | string | 否 | `preheating` / `ongoing` / `achieved` / `delivered` / `failed` |
+  | `sort` | string | 否 | `hot`（默认）/ `new` / `ending` / `achievement` |
+- 响应：`ProjectSummary[]`
+- 错误：`400 BAD_REQUEST`（枚举非法）、`500 INTERNAL`
+
+GET /v1/projects/{id}
+
+- 鉴权：否
+- 请求：路径参数 `id`（int64，企划 ID）
+- 响应：`ProjectDetail`，在 `ProjectSummary` 基础上填充：
+  - `story`、`gallery[]`、`riskNote`、`deliveryPlan`、`fundUsage`、`faq[]`
+  - `refundRule`、`refundDays`（未达成退款规则可视化）
+  - `ratingAvg`（十分制，保留一位小数）、`reviewCount`、`showCount`
+  - `creator`：`creatorId`、`displayName`、`avatar`、`isVerified`、`projectNum`、`successNum`、`fulfillmentRate`
+  - `rewardTiers[]`：字段见第 8.10 节
+  - `updates[]`（最近 5 条）、`stretchGoals[]`
+- 错误：`400 BAD_REQUEST`、`404 NOT_FOUND`、`500 INTERNAL`
+
+GET /v1/projects/{id}/reward-tiers
+
+- 鉴权：否
+- 响应：`RewardTier[]`，按 `sort` 升序
+- 错误：`404 NOT_FOUND`、`500 INTERNAL`
+
+GET /v1/projects/{id}/updates
+
+- 鉴权：否（`is_supporter_only=1` 的条目需登录且已支持）
+- 请求：`page`、`pageSize`
+- 响应：`ProjectUpdate[]`，按 `publish_time` 降序
+- 错误：`401 UNAUTHORIZED`（未登录且存在仅支持者可见内容）、`403 FORBIDDEN`（已登录但未支持）、`500 INTERNAL`
+
+POST /v1/projects/{id}/pledges
+
+- 鉴权：是（`psSession`）
+- 请求体：
+  | 字段 | 类型 | 必填 | 说明 |
+  | --- | --- | --- | --- |
+  | `rewardTierId` | int64 | 是 | 回报档位 ID |
+  | `quantity` | int | 否 | 默认 1，单笔上限 99 |
+  | `isAnonymous` | bool | 否 | 默认 false |
+  | `message` | string | 否 | 支持留言，≤255 字 |
+  | `addressId` | int64 | 否 | 周边类回报必填 |
+- 响应：`Pledge`，字段见第 8.10 节
+- 说明：校验企划 `funding_status in (preheating, ongoing)`、档位库存与地址完整性；限量档位原子扣减库存，创建后状态为 `pending`，等待支付
+- 错误：`400 BAD_REQUEST`、`401 UNAUTHORIZED`、`404 NOT_FOUND`（企划不存在）、`409 CONFLICT`（库存不足/已结束）、`500 INTERNAL`
+
+GET /v1/pledges
+
+- 鉴权：是（`psSession`）
+- 请求：`page`、`pageSize`、`status`（可选）
+- 响应：`Pledge[]`，按 `gmt_create` 降序
+- 错误：`401 UNAUTHORIZED`、`500 INTERNAL`
+
+GET /v1/pledges/{id}
+
+- 鉴权：是（仅本人）
+- 响应：单个 `Pledge`
+- 错误：`401 UNAUTHORIZED`、`404 NOT_FOUND`、`500 INTERNAL`
+
+GET /v1/creators/{id}
+
+- 鉴权：否
+- 响应：`CreatorProfile` 字段平铺 + `projects: ProjectSummary[]`（其已发布企划，按 `rank_weight` 降序）
+- 错误：`404 NOT_FOUND`、`500 INTERNAL`
+
+GET /v1/projects/{id}/faqs
+
+- 鉴权：否
+- 响应：`ProjectFaq[]`，按 `sort` 升序；与 `ProjectDetail.faq` 同源
+- 错误：`404 NOT_FOUND`、`500 INTERNAL`
+
+GET /v1/projects/{id}/reviews
+
+- 鉴权：否
+- 请求：`page`、`pageSize`、`sort`（`latest` 默认 / `hot`）、`onlyShow`（bool，仅看晒单）
+- 响应：`{items: ProjectReview[], ratingAvg: number, reviewCount: int, showCount: int}`
+- 说明：仅返回 `status=1`；匿名评价隐藏 `userName`/`userAvatar`；`ratingAvg` 为十分制一位小数
+- 错误：`404 NOT_FOUND`、`500 INTERNAL`
+
+POST /v1/projects/{id}/reviews
+
+- 鉴权：是（`psSession`）
+- 请求体：
+  | 字段 | 类型 | 必填 | 说明 |
+  | --- | --- | --- | --- |
+  | `pledgeId` | int64 | 是 | 本人的支持记录，且 `pledge_status=delivered` |
+  | `rating` | int | 是 | 1–5 |
+  | `content` | string | 否 | ≤1024 字 |
+  | `images` | string[] | 否 | 晒单图片 |
+  | `isShow` | bool | 否 | 默认 false |
+  | `isAnonymous` | bool | 否 | 默认 false |
+- 响应：`ProjectReview`
+- 说明：同一 `pledgeId` 仅可评价一次；评价进入 `status=1`，命中风控词则 `status=2`
+- 错误：`400 BAD_REQUEST`、`401 UNAUTHORIZED`、`403 FORBIDDEN`（非本人/未交付）、`409 CONFLICT`（重复评价）、`500 INTERNAL`
+
+POST /v1/projects/{id}/reports
+
+- 鉴权：是（`psSession`）
+- 请求体：
+  | 字段 | 类型 | 必填 | 说明 |
+  | --- | --- | --- | --- |
+  | `targetType` | string | 是 | `project` / `review` / `feed` / `pledge` |
+  | `targetId` | int64 | 是 | 举报对象 ID |
+  | `reasonCode` | string | 是 | `fraud` / `infringe` / `porn` / `violence` / `false_claim` / `other` |
+  | `description` | string | 否 | ≤1024 字 |
+  | `evidence` | string[] | 否 | 证据图片 |
+- 响应：`ProjectReport`（`status=pending`）
+- 说明：同一用户对同一对象 24 小时内重复举报返回 `409`
+- 错误：`400 BAD_REQUEST`、`401 UNAUTHORIZED`、`409 CONFLICT`、`500 INTERNAL`
+
+GET /v1/rankings
+
+- 鉴权：否
+- 请求：
+  | 参数 | 类型 | 必填 | 说明 |
+  | --- | --- | --- | --- |
+  | `type` | string | 否 | `hot`（默认）/ `achievement` / `ending` |
+  | `categoryId` | int64 | 否 | 品类筛选 |
+  | `limit` | int | 否 | 默认 10，上限 50 |
+- 响应：`ProjectRanking`，含 `type`、`generatedAt(毫秒时间戳)`、`items[]`（`rank`、`project`、`metricValue`）
+- 说明：`hot` 按支持人数与 `rank_weight`，`achievement` 按达成率，`ending` 按剩余天数升序；仅统计 `funding_status in (ongoing, achieved)`
+- 错误：`400 BAD_REQUEST`、`500 INTERNAL`
+
 ## 8. 响应模型
 
-字段名以 `internal/biz/models.go` 为准；同义字段为兼容客户端而重复输出。
+字段名以 `internal/biz` 包内的模型文件为准；同义字段为兼容客户端而重复输出。
 
 ### 8.1 SendCodeResp
 
@@ -383,15 +600,69 @@ POST /v1/myaddress/default/{id}
 
 `id`、`addressId`、`name`、`consignee`、`mobile`、`phone`、`province`、`city`、`district`、`region`、`detail`、`address`、`isDefault`、`default`
 
+### 8.10 企划域
+
+> 以下模型对应第 7.7 节，已在 `internal/biz/project.go` 落地，属于第 1 节所述
+> 45 个唯一端点。金额字段与第 3 节一致，均为**分**。
+
+`ProjectSummary`：
+`projectId(int64)`、`projectNo(string)`、`title(string)`、`subtitle(string,omitempty)`、`cover(string)`、`categoryId(int64)`、`categoryName(string)`、`projectType(string)`、`creatorId(int64)`、`creatorName(string)`、`goalAmount(int64)`、`raisedAmount(int64)`、`supporterCount(int)`、`deadline(毫秒时间戳)`、`remainingDays(int)`、`fundingStatus(string)`、`achievementRate(int, 千分比)`、`minSupportAmount(int64)`、`tags(string[])`、`isFeatured(bool)`
+
+`RewardTier`：
+`rewardTierId(int64)`、`title(string)`、`price(int64)`、`rewardType(string)`、`items(string[])`、`limitNum(int)`、`soldNum(int)`、`remainingNum(int, 不限量档位省略该字段)`、`estimatedDeliveryTime(string, omitempty)`、`isEarlyBird(bool)`、`isLimited(bool)`
+
+`ProjectUpdate`：
+`updateId(int64)`、`title(string)`、`content(string)`、`images(string[])`、`isSupporterOnly(bool)`、`publishTime(毫秒时间戳)`
+
+`StretchGoal`：
+`goalId(int64)`、`title(string)`、`description(string,omitempty)`、`targetAmount(int64)`、`currentAmount(int64)`、`isAchieved(bool)`、`sort(int)`
+
+`Pledge`：
+`pledgeId(int64)`、`pledgeNo(string)`、`projectId(int64)`、`rewardTierId(int64)`、`supportAmount(int64)`、`quantity(int)`、`isAnonymous(bool)`、`supportMessage(string,omitempty)`、`deliveryType(string)`、`pledgeStatus(string)`、`paidTime(毫秒时间戳, 0=未支付)`、`deliveredTime(毫秒时间戳, 0=未发货)`、`trackingNo(string,omitempty)`、`contentUrl(string,omitempty)`、`redeemCode(string,omitempty)`、`redeemedTime(毫秒时间戳, 0=未核销)`
+
+`CreatorProfile`：
+`creatorId(int64)`、`displayName(string)`、`avatar(string)`、`isVerified(bool)`、`projectNum(int)`、`successNum(int)`、`fulfillmentRate(int, 千分比)`、`bio(string,omitempty)`
+
+`ProjectFaq`：
+`faqId(int64)`、`question(string)`、`answer(string)`、`sort(int)`
+
+`ProjectReview`：
+`reviewId(int64)`、`projectId(int64)`、`userName(string)`、`userAvatar(string,omitempty)`、`rating(int)`、`content(string,omitempty)`、`images(string[])`、`isShow(bool)`、`isAnonymous(bool)`、`likeCount(int)`、`gmtCreate(毫秒时间戳)`
+
+`ProjectReport`：
+`reportId(int64)`、`targetType(string)`、`targetId(int64)`、`reasonCode(string)`、`description(string,omitempty)`、`evidence(string[])`、`status(string)`、`handleNote(string,omitempty)`、`gmtCreate(毫秒时间戳)`
+
+`ProjectRanking`：
+`type(string)`、`generatedAt(毫秒时间戳)`、`items[]`：`rank(int)`、`project(ProjectSummary)`、`metricValue(int64)`
+
+### 8.11 客服会话（ChatThread / ChatMessage）
+
+`ChatThread`：`threadId(int64)`、`title(string)`、`preview(string)`、`updatedAt(string, yyyy-MM-dd HH:mm:ss)`、`unreadCount(int)`、`avatarUrl(string)`、`isOfficial(bool)`
+
+`ChatMessage`：`id(int64)`、`text(string)`、`sentAt(string, yyyy-MM-dd HH:mm:ss)`、`fromMe(bool)`、`senderName(string)`
+
+### 8.12 支付单与退款单（PaymentOrder / Refund）
+
+`PaymentOrder`：`payNo(string)`、`orderNumber(string)`、`amount(int64, 分)`、`channel(string)`、`status(string, pending/success/failed/expired)`、`payParams(object, 当前为 {})`、`expireAt(毫秒时间戳)`、`paidAt(毫秒时间戳, 0=未支付)`、`thirdTradeNo(string, 空字符串=未支付)`
+
+`Refund`：`refundNo(string)`、`orderId(int64)`、`refundableAmount(int64, 分)`、`status(string, applied/processing/success/rejected)`、`expectedArrivalDays(int)`
+
 ## 9. 端点与数据表映射
 
 | 端点域 | 主要表 |
 | --- | --- |
 | 登录 / 发码 / 图形码 | `planstar_user.user_info`、`login_session`、`login_code` |
 | Banner | `planstar_content.banner` |
-| 演出列表 / 热门 / 详情 | `planstar_catalog`（activity、activity_event、activity_category、city、venue、activity_lineup、activity_detail）+ `planstar_ticket`（ticket_category、ticket_group） |
+| 企划列表 / 详情 / 档位 / 进度 | `planstar_catalog`（project、reward_tier、project_update、stretch_goal、project_faq、project_category、project_sub_tag、creator_profile） |
+| 评价晒单 / 举报风控 | `planstar_catalog.project_review`、`project_report` |
+| 榜单 | `planstar_catalog.project`（`funding_status` + `rank_weight` 索引） |
+| 支持记录 / 支持下单 | `planstar_order.pledge` |
+| 组队支持 | `planstar_catalog.support_team`、`support_team_member` |
+| 演出列表 / 热门 / 详情（legacy） | `planstar_catalog`（activity、activity_event、activity_category、city、venue、activity_lineup、activity_detail）+ `planstar_ticket`（ticket_category、ticket_group） |
 | 动态 / 评论 | `planstar_community.feed`、`feed_media`、`review` |
 | 消息 | `planstar_user.user_message` |
+| 客服会话 / 消息 | `planstar_user.chat_thread`、`chat_message` |
+| 支付单 / 退款单 | `planstar_payment.pay_order`、`order_refund` |
 | 订单 | `planstar_order.order_info` |
 | 用户资料 | `planstar_user.user_info`、`user_statistic` |
 | 地址 | `planstar_user.user_address` |
