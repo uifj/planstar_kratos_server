@@ -5,23 +5,35 @@ import (
 	"log/slog"
 )
 
-// OrderInput 下单入参（金额单位为分，落库时转元）。
+// OrderInput 下单入参（金额单位为分；PayAmount/TotalAmount 仅保留兼容，落库以服务端报价为准）。
 type OrderInput struct {
-	ActivityID      int64
-	ActivityEventID int64
-	OrderType       int
-	PayAmount       int64
-	TotalAmount     int64
-	Name            string
-	Phone           string
-	AddressID       int64
+	ActivityID       int64
+	ActivityEventID  int64
+	TicketCategoryID int64
+	OrderType        int
+	Quantity         int
+	// Amount 是客户端提交的应付金额（分），仅用于与服务端重算结果比对。
+	Amount      int64
+	PayAmount   int64
+	TotalAmount int64
+	// QuoteID / QuoteVersion 指向 confirm 接口下发的报价快照。
+	QuoteID      string
+	QuoteVersion int
+	// IdempotencyKey 来自请求头 Idempotency-Key，同 key 重复请求返回同一订单。
+	IdempotencyKey string
+	Name           string
+	Phone          string
+	AddressID      int64
 }
 
-// OrderRepo 是订单仓储端口。
+// OrderRepo 是订单仓储端口（同时提供报价快照存储与演出权威数据读取）。
 type OrderRepo interface {
 	Orders(ctx context.Context, userID int64, status, orderType, pageIndex, pageSize int) ([]*TicketOrder, error)
 	OrderByNumber(ctx context.Context, userID int64, orderNumber string) (*TicketOrder, error)
-	CreateOrder(ctx context.Context, userID int64, in *OrderInput) (*TicketOrder, error)
+	// CreateOrder 在单事务内完成幂等校验、库存扣减与订单写入；quote 为服务端权威报价。
+	CreateOrder(ctx context.Context, userID int64, in *OrderInput, quote *QuoteSnapshot) (*TicketOrder, error)
+	QuoteStore
+	CatalogReader
 }
 
 // OrderUsecase 订单用例。
@@ -65,14 +77,35 @@ func (uc *OrderUsecase) OrderByNumber(ctx context.Context, userID int64, orderNu
 	return uc.repo.OrderByNumber(ctx, userID, orderNumber)
 }
 
+// MakeOrder 服务端权威定价下单：解析报价快照 → 重算金额 → 事务内扣库存并落单。
 func (uc *OrderUsecase) MakeOrder(ctx context.Context, userID int64, in *OrderInput) (*TicketOrder, error) {
-	if in.ActivityID <= 0 {
+	if in == nil {
 		return nil, ErrBadRequest
+	}
+	if in.ActivityID <= 0 && in.QuoteID == "" {
+		return nil, ErrBadRequest
+	}
+	if in.Quantity > MaxQuantityPerOrder {
+		return nil, ErrLimitExceeded
 	}
 	if in.OrderType == 0 {
 		in.OrderType = 1
 	}
-	order, err := uc.repo.CreateOrder(ctx, userID, in)
+	quote, err := uc.resolveQuote(ctx, userID, in)
+	if err != nil {
+		return nil, err
+	}
+	// 以服务端报价覆盖客户端金额与演出维度，禁止信任客户端金额。
+	in.ActivityID = quote.ActivityID
+	if quote.ActivityEventID > 0 {
+		in.ActivityEventID = quote.ActivityEventID
+	}
+	in.TicketCategoryID = quote.TicketCategoryID
+	in.Quantity = quote.Quantity
+	in.PayAmount = quote.TotalAmount
+	in.TotalAmount = quote.TotalAmount
+
+	order, err := uc.repo.CreateOrder(ctx, userID, in, quote)
 	if err != nil {
 		return nil, err
 	}
