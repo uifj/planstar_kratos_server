@@ -4,8 +4,10 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"sort"
 
 	"planstar/internal/biz"
+	"planstar/internal/conf"
 	"planstar/internal/observability"
 	"planstar/internal/pkg/httpx"
 	"planstar/internal/pkg/session"
@@ -20,6 +22,10 @@ type Service struct {
 	order   *biz.OrderUsecase
 	user    *biz.UserUsecase
 	log     *slog.Logger
+	// authCfg 保存认证风控配置（由 conf.Loaded 注入，零值时使用安全默认值）。
+	authCfg conf.Auth
+	// limit 是发码/登录失败的进程内限流器。
+	limit *authLimiter
 }
 
 func New(
@@ -31,62 +37,71 @@ func New(
 	user *biz.UserUsecase,
 	log *slog.Logger,
 ) *Service {
+	cfg := conf.Loaded()
 	return &Service{
 		auth: auth, catalog: catalog, feed: feed, message: message, order: order, user: user,
-		log: log,
+		log: log, authCfg: cfg.Auth, limit: newAuthLimiter(),
+	}
+}
+
+// route 是注册表的一项：pattern 与 handler 一一对应。
+type route struct {
+	pattern string
+	handler http.HandlerFunc
+}
+
+// routes 返回全部端点注册表，Register 与 Routes 共用同一份数据。
+func (s *Service) routes() []route {
+	return []route{
+		{"GET /v1/user/captcha", s.captchaImage},
+		{"POST /v3/user/sendLoginCode", s.sendLoginCode},
+		{"POST /v1/user/login", s.login},
+
+		{"GET /v1/home/banners", s.banners},
+		{"GET /v1/activities/hot", s.hotActivities},
+		{"GET /v1/activities", s.activities},
+		{"GET /v3/activities/{id}", s.activityDetail},
+
+		{"GET /v4/feed/hot", s.hotFeeds},
+		{"GET /v1/feed", s.feeds},
+		{"GET /v1/tweets/{id}", s.feedDetail},
+		{"GET /v1/userReply", s.feedComments},
+
+		{"GET /v1/messages", s.messages},
+		{"GET /v1/messages/unreadCount", s.unreadCount},
+		{"POST /v1/messages/read", s.markRead},
+
+		{"GET /v1/order/list", s.orders},
+		{"GET /v1/order/detail", s.orderDetail},
+		{"POST /v1/unifiedOrder/confirm", s.confirmOrder},
+		{"POST /v3/unifiedOrder/makeOrder", s.makeOrder},
+
+		{"GET /v1/user", s.profile},
+		// 客户端历史上请求带尾斜杠，保留为 GET /v1/user 的别名。
+		{"GET /v1/user/", s.profile},
+		{"GET /v1/myaddress", s.addresses},
+		{"POST /v1/myaddress", s.addAddress},
+		{"DELETE /v1/myaddress/{id}", s.deleteAddress},
+		{"POST /v1/myaddress/default/{id}", s.setDefaultAddress},
 	}
 }
 
 // Register 注册全部端点。路径与客户端契约逐字一致（含 v1/v3/v4 版本错配）。
 func (s *Service) Register(mux *http.ServeMux) {
-	s.registerAuth(mux)
-	s.registerCatalog(mux)
-	s.registerFeed(mux)
-	s.registerMessage(mux)
-	s.registerOrder(mux)
-	s.registerUser(mux)
+	for _, rt := range s.routes() {
+		mux.HandleFunc(rt.pattern, rt.handler)
+	}
 }
 
-func (s *Service) registerAuth(mux *http.ServeMux) {
-	mux.HandleFunc("GET /v1/user/captcha", s.captchaImage)
-	mux.HandleFunc("POST /v3/user/sendLoginCode", s.sendLoginCode)
-	mux.HandleFunc("POST /v1/user/login", s.login)
-}
-
-func (s *Service) registerCatalog(mux *http.ServeMux) {
-	mux.HandleFunc("GET /v1/home/banners", s.banners)
-	mux.HandleFunc("GET /v1/activities/hot", s.hotActivities)
-	mux.HandleFunc("GET /v1/activities", s.activities)
-	mux.HandleFunc("GET /v3/activities/{id}", s.activityDetail)
-}
-
-func (s *Service) registerFeed(mux *http.ServeMux) {
-	mux.HandleFunc("GET /v4/feed/hot", s.hotFeeds)
-	mux.HandleFunc("GET /v1/feed", s.feeds)
-	mux.HandleFunc("GET /v1/tweets/{id}", s.feedDetail)
-	mux.HandleFunc("GET /v1/userReply", s.feedComments)
-}
-
-func (s *Service) registerMessage(mux *http.ServeMux) {
-	mux.HandleFunc("GET /v1/messages", s.messages)
-	mux.HandleFunc("GET /v1/messages/unreadCount", s.unreadCount)
-	mux.HandleFunc("POST /v1/messages/read", s.markRead)
-}
-
-func (s *Service) registerOrder(mux *http.ServeMux) {
-	mux.HandleFunc("GET /v1/order/list", s.orders)
-	mux.HandleFunc("GET /v1/order/detail", s.orderDetail)
-	mux.HandleFunc("POST /v1/unifiedOrder/confirm", s.confirmOrder)
-	mux.HandleFunc("POST /v3/unifiedOrder/makeOrder", s.makeOrder)
-}
-
-func (s *Service) registerUser(mux *http.ServeMux) {
-	mux.HandleFunc("GET /v1/user", s.profile)
-	mux.HandleFunc("GET /v1/user/", s.profile)
-	mux.HandleFunc("GET /v1/myaddress", s.addresses)
-	mux.HandleFunc("POST /v1/myaddress", s.addAddress)
-	mux.HandleFunc("DELETE /v1/myaddress/{id}", s.deleteAddress)
-	mux.HandleFunc("POST /v1/myaddress/default/{id}", s.setDefaultAddress)
+// Routes 返回已注册路由清单（"METHOD /path"），供契约一致性测试复用。
+func (s *Service) Routes() []string {
+	rs := s.routes()
+	out := make([]string, 0, len(rs))
+	for _, rt := range rs {
+		out = append(out, rt.pattern)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // currentUser 由 Cookie psSession 解析登录用户（Redis 缓存优先，回源 MySQL）。
@@ -97,27 +112,40 @@ func (s *Service) currentUser(r *http.Request) (int64, error) {
 func (s *Service) requireUser(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	userID, err := s.currentUser(r)
 	if err != nil {
-		if errors.Is(err, biz.ErrUnauthorized) {
-			httpx.Plain(w, http.StatusUnauthorized, "未登录")
-			return 0, false
-		}
 		s.fail(w, r, err)
 		return 0, false
 	}
 	return userID, true
 }
 
+// fail 把领域错误映射为统一 JSON 错误体；内部错误只落日志，不回显细节。
 func (s *Service) fail(w http.ResponseWriter, r *http.Request, err error) {
 	observability.RecordError(r.Context(), err)
 	switch {
 	case errors.Is(err, biz.ErrUnauthorized):
-		httpx.Plain(w, http.StatusUnauthorized, "未登录")
+		httpx.Error(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "未登录")
+	case errors.Is(err, biz.ErrForbidden):
+		httpx.Error(w, r, http.StatusForbidden, "FORBIDDEN", "无权限")
 	case errors.Is(err, biz.ErrBadRequest):
-		httpx.Plain(w, http.StatusBadRequest, "参数错误")
+		httpx.Error(w, r, http.StatusBadRequest, "BAD_REQUEST", "参数错误")
 	case errors.Is(err, biz.ErrNotFound):
-		httpx.Plain(w, http.StatusNotFound, "资源不存在")
+		httpx.Error(w, r, http.StatusNotFound, "NOT_FOUND", "资源不存在")
+	case errors.Is(err, biz.ErrPriceChanged):
+		httpx.Error(w, r, http.StatusConflict, "PRICE_CHANGED", "价格已变动，请重新确认")
+	case errors.Is(err, biz.ErrSoldOut):
+		httpx.Error(w, r, http.StatusConflict, "SOLD_OUT", "库存不足")
+	case errors.Is(err, biz.ErrLimitExceeded):
+		httpx.Error(w, r, http.StatusConflict, "LIMIT_EXCEEDED", "超过限购数量")
+	case errors.Is(err, biz.ErrQuoteExpired):
+		httpx.Error(w, r, http.StatusConflict, "QUOTE_EXPIRED", "报价已过期，请重新确认")
+	case errors.Is(err, biz.ErrConflict):
+		httpx.Error(w, r, http.StatusConflict, "CONFLICT", "资源冲突")
+	case errors.Is(err, biz.ErrRateLimited):
+		httpx.Error(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "请求过于频繁")
+	case errors.Is(err, httpx.ErrBodyTooLarge):
+		httpx.Error(w, r, http.StatusRequestEntityTooLarge, "PAYLOAD_TOO_LARGE", "请求体过大")
 	default:
 		s.log.ErrorContext(r.Context(), "request failed", "path", r.URL.Path, "err", err)
-		httpx.Plain(w, http.StatusInternalServerError, "服务异常")
+		httpx.Error(w, r, http.StatusInternalServerError, "INTERNAL", "服务异常")
 	}
 }

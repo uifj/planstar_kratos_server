@@ -66,8 +66,9 @@ func (m *Metrics) Handler() http.Handler {
 	return promhttp.HandlerFor(m.Registry, promhttp.HandlerOpts{})
 }
 
-// Middleware 为裸 net/http handler 补链路追踪与指标（kratos 中间件不覆盖 ServeMux）。
-func (m *Metrics) Middleware(next http.Handler) http.Handler {
+// Middleware 为裸 net/http handler 补链路追踪、指标与访问日志（kratos 中间件不覆盖 ServeMux）。
+// logger 为 nil 时只记录指标与 span。
+func (m *Metrics) Middleware(next http.Handler, logger *slog.Logger) http.Handler {
 	tracer := otel.Tracer("planstar/http")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
@@ -94,6 +95,17 @@ func (m *Metrics) Middleware(next http.Handler) http.Handler {
 		elapsed := time.Since(start).Seconds()
 		m.requests.WithLabelValues(r.Method, route, strconv.Itoa(sw.status)).Inc()
 		m.duration.WithLabelValues(r.Method, route).Observe(elapsed)
+
+		// 访问日志：单一入口记录方法、路由、状态码与耗时，字段与指标保持一致。
+		if logger != nil {
+			logger.InfoContext(ctx, "http request",
+				"method", r.Method,
+				"route", route,
+				"status", sw.status,
+				"duration_ms", float64(int(elapsed*1000*1000))/1000,
+				"remote_addr", r.RemoteAddr,
+			)
+		}
 
 		span.SetAttributes(
 			attribute.Int("http.status_code", sw.status),
