@@ -1,0 +1,14 @@
+apiVersion: 1
+
+providers:
+  - name: planstar
+    orgId: 1
+    folder: Planstar
+    folderUid: planstar
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false

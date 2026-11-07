@@ -1,18 +1,53 @@
+# =====================================================================
+# Planstar Alertmanager 配置模板
+#
+# 所有 SMTP 参数通过环境变量注入（compose 的 alertmanager.environment）。
+# 注意：Alertmanager 不支持 --config.expand-env（该参数属于 Prometheus），
+# 因此由 entrypoint.sh 在启动前把下文 AM_* 占位渲染到 /tmp 再启动。
+# 直接对模板运行 amtool 会因占位符报错，请先渲染后再校验。
+# 本文件不包含任何真实凭据，可安全入库。
+#
+# smtp_require_tls: true 要求 STARTTLS（587/25 常见）。
+# 本地用 MailHog / smtp4dev（纯明文 1025）调试时，可临时把
+# smtp_require_tls 与 email_configs.require_tls 改为 false，不要提交。
+# =====================================================================
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: "${AM_SMTP_SMARTHOST}"
+  smtp_from: "${AM_SMTP_FROM}"
+  smtp_auth_username: "${AM_SMTP_AUTH_USERNAME}"
+  smtp_auth_password: "${AM_SMTP_AUTH_PASSWORD}"
+  smtp_require_tls: true
+
 route:
-  receiver: default
-  group_by: ["alertname"]
+  receiver: email
+  group_by: ["alertname", "severity"]
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
+  routes:
+    # critical：快速重复提醒，1 小时一次
+    - matchers:
+        - severity="critical"
+      receiver: email
+      repeat_interval: 1h
+      continue: false
+    # warning：保持默认节奏，4 小时一次
+    - matchers:
+        - severity="warning"
+      receiver: email
+      repeat_interval: 4h
+      continue: false
 
 receivers:
-  - name: default
-    # 按需启用通知渠道，例如：
-    # webhook_configs:
-    #   - url: "https://example.com/hook"
-    # email_configs:
-    #   - to: "ops@example.com"
-    #     from: "alertmanager@example.com"
-    #     smarthost: "smtp.example.com:587"
-    #     auth_username: "alertmanager@example.com"
-    #     auth_password: "CHANGE_ME"
+  - name: email
+    email_configs:
+      - to: "${AM_ALERT_EMAIL_TO}"
+        from: "${AM_SMTP_FROM}"
+        smarthost: "${AM_SMTP_SMARTHOST}"
+        auth_username: "${AM_SMTP_AUTH_USERNAME}"
+        auth_password: "${AM_SMTP_AUTH_PASSWORD}"
+        send_resolved: true
+        require_tls: true
+        headers:
+          Subject: "[Planstar][{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} ({{ .CommonLabels.severity }})"
