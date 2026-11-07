@@ -2,7 +2,7 @@
 
 # 当前架构（planstar 单体）
 
-本文件描述**当前实际运行**的 `planstar/` 服务，不包含 kratos-shop 微服务模板。历史微服务描述见 [legacy/architecture-microservices.md](legacy/architecture-microservices.md)。
+本文件描述**当前实际运行**的 `planstar/` 服务，不包含 kratos-shop 微服务模板。历史微服务描述见 [legacy/architecture-microservices.md](legacy/architecture-microservices.md)。运营后台 `admin` 作为同实例部署的独立进程/容器，见第 11 节。
 
 ## 1. 进程与端口
 
@@ -162,3 +162,36 @@ Redis 不是数据源，只保存短期状态；未配置 `data.redis.addr` 时 
 **偏差原因**：现有 23 个端点与 Flutter 客户端已按裸 JSON + Cookie 会话契约稳定运行，直接切换到 protobuf HTTP binding 会改变请求/响应形状，属于破坏性变更。若后续需要 OpenAPI 与强类型客户端，可先「只生成 OpenAPI/客户端、不改 handler」，再评估迁移。
 
 详细指标与处置见 [operations.md](operations.md)。
+
+## 11. 运营后台（planstar/admin）
+
+`admin/` 是独立的 `planstar/admin` Go 模块（Kratos v3），与 `planstar/` 业务单体同实例部署、同 MySQL 数据源，但进程、端口、鉴权与 Cookie 完全隔离。控制台（Ant Design Pro / Umi Max）构建为静态资源，由独立 `admin-web`（nginx）容器托管。
+
+```mermaid
+flowchart LR
+    B["运营浏览器"] -->|HTTPS 443| T["Traefik<br/>admin.planstar.top"]
+    T -->|PathPrefix /v1| A["admin.api :9100"]
+    T -->|其余路径| W["admin-web :80"]
+    A -->|只读 / 受限更新| MY["MySQL 8<br/>planstar_* 库"]
+    A -->|JWT 撤销 / 登录限流| RD["Redis"]
+    A -->|Bearer PLANSTAR_OPS_TOKEN| OPS["planstar-api :9108<br/>/admin/* ops API"]
+    P["Prometheus"] -->|GET /metrics| AO["admin ops :9110"]
+```
+
+| 监听 | 地址 | 暴露方式 | 作用 |
+| --- | --- | --- | --- |
+| 管理 HTTP | 容器内 `0.0.0.0:9100` | 仅容器网络，经 Traefik `/v1/*` | `/v1/admins/*`、`/v1/planstar/*` |
+| 管理 gRPC | 容器内 `0.0.0.0:9101` | 不发布 | 内部 gRPC（当前控制台走 HTTP） |
+| 运维 HTTP | 容器内 `0.0.0.0:9110` | 宿主机 `127.0.0.1:9110` | `/metrics`、`/healthz`、`/readyz` |
+| 控制台静态站 | 容器内 `admin-web:80` | 仅容器网络，经 Traefik | SPA 静态资源与 fallback |
+
+**数据边界**：管理库 `planstar_admin`（`admins`、`admin_audit_log`）可读写；`planstar_user/catalog/order/payment/marketing/community/content/meta` 仅允许 `SELECT`，其中仅 `planstar_user.user_info` 额外允许受限 `UPDATE`（用户状态）。管理端禁止跨库 JOIN，查询字段使用白名单；企划审核与举报处置不复制黑名单规则，统一调用 `planstar-api` 的 `9108` ops API（`POST /admin/projects/{id}/review`、`POST /admin/reports/{id}/handle`），ops 不可用时返回 `503` 而不是静默放行。
+
+**鉴权与 Cookie 隔离**：
+
+- 管理员登录 `POST /v1/admins/login` 下发 `psAdminToken`（JWT，`HttpOnly`、生产 `Secure`、`SameSite=Strict`）；业务客户端仍使用 `psSession`，两者名称、Path 与域名不同，互不读取、互不覆盖。
+- 角色矩阵 `viewer < operator < admin`：`viewer` 只读控制台数据；`operator` 可改用户状态、审核企划、处置举报；`admin` 额外可管理管理员账号。服务端逐方法校验，越权返回 `403`。
+- 登录失败按「账号 + 来源 IP」在 Redis 计数并锁定，超限返回 `429`；非 GET 请求校验 `Origin` 白名单，失败返回 `403` 且不执行写操作。
+- 配置密钥仅通过 `ADMIN_*` 环境变量注入；生产环境空 JWT 密钥、`auto_migrate=true` 会在启动校验阶段失败。
+
+**可观测**：`admin` 独立 Prometheus job（`job="admin"`、`service="admin.api"`），指标为 `requests_total{method,path,code}` 与 `duration_seconds{method,path}`（见 `admin/internal/server/metrics.go`）；日志/链路的 `service.name` 规划为 `admin.api`（镜像需注入 `main.Name`，见 [admin-integration.md](admin-integration.md)），审计写入 `admin_audit_log` 并输出 `admin audit` 结构化日志。部署、告警与回滚见 [admin-integration.md](admin-integration.md)。

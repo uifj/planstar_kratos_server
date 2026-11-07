@@ -30,6 +30,16 @@ scrape_configs:
     static_configs:
       - targets: ["planstar-api:9108"]
 
+  # 管理后台运维端口 9110：/metrics 匿名暴露在本机回环/容器网络。
+  # 指标名由 admin/internal/server/metrics.go 定义：requests_total、
+  # duration_seconds；用 job/service 标签与 planstar-api 隔离。
+  - job_name: admin
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["admin:9110"]
+        labels:
+          service: admin.api
+
   # OTel Collector 的 Prometheus exporter（collector.yaml 中 prometheus exporter
   # 监听 0.0.0.0:8889）。用于确认 OTLP 接收与导出链路自身健康。
   - job_name: otel-collector

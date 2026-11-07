@@ -26,6 +26,54 @@ x-app-env: &app-env
   PLANSTAR_ES_SYNC_INTERVAL_SECONDS: ${PLANSTAR_ES_SYNC_INTERVAL_SECONDS:-300}
   # 9108 运维端点鉴权令牌（/metrics 需要 Bearer；为空则 /metrics 返回 401）
   PLANSTAR_OPS_TOKEN: ${PLANSTAR_OPS_TOKEN:-}
+  # 运维端点来源白名单（逗号分隔 CIDR；留空表示不限制）
+  PLANSTAR_OPS_ALLOWED_CIDRS: ${PLANSTAR_OPS_ALLOWED_CIDRS:-}
+
+# 管理后台（planstar/admin）环境变量。所有敏感值均来自 .env，配置文件中只留空占位。
+x-admin-env: &admin-env
+  TZ: Asia/Shanghai
+  # 与 planstar 共用 OTel Collector；未配置 endpoint 时 admin 的 tracing 为 no-op。
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+  ADMIN_SERVER_ENV: prod
+  ADMIN_SERVER_HTTP_ADDR: 0.0.0.0:9100
+  ADMIN_SERVER_GRPC_ADDR: 0.0.0.0:9101
+  ADMIN_SERVER_ADMIN_ADDR: 0.0.0.0:9110
+  ADMIN_DATA_DATABASE_DRIVER: mysql
+  # 本地默认 root/root；生产必须在 .env 显式设置为最小权限账号 DSN。
+  ADMIN_DATA_DATABASE_SOURCE: "${ADMIN_DATA_DATABASE_SOURCE:-root:root@tcp(mysql:3306)/planstar_admin?timeout=5s&parseTime=True&loc=Asia%2FShanghai&charset=utf8mb4}"
+  ADMIN_DATA_REDIS_ADDR: ${ADMIN_DATA_REDIS_ADDR:-redis:6379}
+  ADMIN_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
+  ADMIN_DATA_REDIS_DB: ${ADMIN_DATA_REDIS_DB:-0}
+  ADMIN_AUTH_JWT_SECRET: ${ADMIN_AUTH_JWT_SECRET:-}
+  ADMIN_AUTH_COOKIE_NAME: ${ADMIN_AUTH_COOKIE_NAME:-psAdminToken}
+  ADMIN_AUTH_COOKIE_DOMAIN: ${ADMIN_AUTH_COOKIE_DOMAIN:-}
+  ADMIN_AUTH_COOKIE_SECURE: ${ADMIN_AUTH_COOKIE_SECURE:-true}
+  ADMIN_PLANSTAR_OPS_BASE_URL: ${ADMIN_PLANSTAR_OPS_BASE_URL:-http://planstar:9108}
+  ADMIN_PLANSTAR_OPS_TOKEN: ${ADMIN_PLANSTAR_OPS_TOKEN:-}
+  # 外部服务默认关闭；供应商参数留空时服务使用 Noop/Log 实现。
+  ADMIN_NOTIFY_SMS_ENABLED: ${ADMIN_NOTIFY_SMS_ENABLED:-false}
+  ADMIN_NOTIFY_SMS_PROVIDER: ${ADMIN_NOTIFY_SMS_PROVIDER:-}
+  ADMIN_NOTIFY_SMS_ENDPOINT: ${ADMIN_NOTIFY_SMS_ENDPOINT:-}
+  ADMIN_NOTIFY_SMS_ACCESS_KEY: ${ADMIN_NOTIFY_SMS_ACCESS_KEY:-}
+  ADMIN_NOTIFY_SMS_ACCESS_SECRET: ${ADMIN_NOTIFY_SMS_ACCESS_SECRET:-}
+  ADMIN_NOTIFY_SMS_SIGN_NAME: ${ADMIN_NOTIFY_SMS_SIGN_NAME:-}
+  ADMIN_NOTIFY_SMS_TEMPLATE_CODE: ${ADMIN_NOTIFY_SMS_TEMPLATE_CODE:-}
+  ADMIN_NOTIFY_EMAIL_ENABLED: ${ADMIN_NOTIFY_EMAIL_ENABLED:-false}
+  ADMIN_NOTIFY_EMAIL_PROVIDER: ${ADMIN_NOTIFY_EMAIL_PROVIDER:-}
+  ADMIN_NOTIFY_EMAIL_SMTP_HOST: ${ADMIN_NOTIFY_EMAIL_SMTP_HOST:-}
+  ADMIN_NOTIFY_EMAIL_SMTP_PORT: ${ADMIN_NOTIFY_EMAIL_SMTP_PORT:-0}
+  ADMIN_NOTIFY_EMAIL_USERNAME: ${ADMIN_NOTIFY_EMAIL_USERNAME:-}
+  ADMIN_NOTIFY_EMAIL_PASSWORD: ${ADMIN_NOTIFY_EMAIL_PASSWORD:-}
+  ADMIN_NOTIFY_EMAIL_FROM: ${ADMIN_NOTIFY_EMAIL_FROM:-}
+  ADMIN_STORAGE_OSS_ENABLED: ${ADMIN_STORAGE_OSS_ENABLED:-false}
+  ADMIN_STORAGE_OSS_PROVIDER: ${ADMIN_STORAGE_OSS_PROVIDER:-}
+  ADMIN_STORAGE_OSS_ENDPOINT: ${ADMIN_STORAGE_OSS_ENDPOINT:-}
+  ADMIN_STORAGE_OSS_REGION: ${ADMIN_STORAGE_OSS_REGION:-}
+  ADMIN_STORAGE_OSS_BUCKET: ${ADMIN_STORAGE_OSS_BUCKET:-}
+  ADMIN_STORAGE_OSS_ACCESS_KEY: ${ADMIN_STORAGE_OSS_ACCESS_KEY:-}
+  ADMIN_STORAGE_OSS_ACCESS_SECRET: ${ADMIN_STORAGE_OSS_ACCESS_SECRET:-}
+  ADMIN_STORAGE_OSS_CDN_HOST: ${ADMIN_STORAGE_OSS_CDN_HOST:-}
+  ADMIN_STORAGE_OSS_PRESIGN_TTL_SECONDS: ${ADMIN_STORAGE_OSS_PRESIGN_TTL_SECONDS:-0}
 
 services:
   mysql:
@@ -47,6 +95,8 @@ services:
       - ./sql/15_auth_support.sql:/docker-entrypoint-initdb.d/15_auth_support.sql:ro
       - ./sql/16_production_hardening.sql:/docker-entrypoint-initdb.d/16_production_hardening.sql:ro
       - ./sql/17_pay_refund_chat.sql:/docker-entrypoint-initdb.d/17_pay_refund_chat.sql:ro
+      - ./sql/18_star_coin_shop.sql:/docker-entrypoint-initdb.d/18_star_coin_shop.sql:ro
+      - ./sql/19_admin_console.sql:/docker-entrypoint-initdb.d/19_admin_console.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
@@ -297,6 +347,8 @@ services:
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
     depends_on:
       - planstar-api
+      - admin
+      - admin-web
       - grafana
       - prometheus
       - jaeger
@@ -345,7 +397,73 @@ services:
       jaeger:
         condition: service_started
     logging: *default-logging
-    networks: [planstar]
+    networks:
+      planstar:
+        aliases:
+          # admin 的 ADMIN_PLANSTAR_OPS_BASE_URL 默认使用 http://planstar:9108
+          - planstar
+          - planstar-api
+
+  # -------------------------------------------------------------------
+  # 运营后台 API（HTTP 9100 / gRPC 9101 / 运维 9110）
+  # 9100、9101 不发布到宿主机；9110 仅绑定回环，Prometheus 通过容器网络抓取。
+  # -------------------------------------------------------------------
+  admin:
+    image: ${ADMIN_IMAGE:-planstar-admin}:${ADMIN_TAG:-latest}
+    build:
+      context: ../admin
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      <<: *admin-env
+    volumes:
+      - ../admin/configs/config.docker.yaml:/data/conf/config.yaml:ro
+    ports:
+      # 运维端点仅绑定宿主机回环；管理 API 只经 Traefik 的 443 暴露。
+      - "127.0.0.1:9110:9110"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9110/readyz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    logging: *default-logging
+    networks:
+      planstar:
+        aliases:
+          - admin
+
+  # 控制台静态站点：仅容器网络 80，由 Traefik 按 admin.planstar.top 分流。
+  admin-web:
+    image: ${ADMIN_WEB_IMAGE:-planstar-admin-web}:${ADMIN_WEB_TAG:-latest}
+    build:
+      context: ../admin/console
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    logging: *default-logging
+    networks:
+      planstar:
+        aliases:
+          - admin-web
 
 volumes:
   mysql_data:

@@ -174,6 +174,29 @@ collector 批处理后转发到 `jaeger:4317`：
 - `critical` 每 1h 重复，`warning` 每 4h；恢复通知开启。
 - 修改后重建容器：`docker compose up -d --force-recreate alertmanager`。
 
+### 2.6 运营后台（admin）
+
+`admin`（API）与 `admin-web`（控制台静态站）由 `planstar/docker-compose.yml` 一并构建，入口为
+`https://admin.planstar.top`；`/v1/*` 转发 `admin:9100`，其余转发 `admin-web:80`。
+
+```bash
+cd /opt/planstar/planstar
+cp .env.example .env
+# 必填：ADMIN_AUTH_JWT_SECRET（>=32 字节）、ADMIN_PLANSTAR_OPS_TOKEN（与 PLANSTAR_OPS_TOKEN 相同）
+# 生产建议：ADMIN_DATA_DATABASE_SOURCE 使用最小权限账号，并同步修改 MYSQL_ROOT_PASSWORD
+docker compose config -q
+docker compose build admin admin-web
+docker compose up -d admin admin-web
+docker compose ps admin admin-web
+curl -fsS http://127.0.0.1:9110/healthz
+curl -fsS http://127.0.0.1:9110/readyz   # 依赖 MySQL/Redis
+```
+
+- 首次启动前确认 `planstar/sql/19_admin_console.sql` 已执行（新库由 mysql 初始化挂载自动执行，已有库需手工执行）。
+- `admin.planstar.top` 需与 `planstar.top` 使用同一 Traefik ACME resolver；HTTP 自动 301 到 HTTPS。
+- CORS 白名单直接写在 `admin/configs/config.docker.yaml`，域名变更时同步修改。
+- 风险、验收清单、回滚与短信/邮件/OSS 启用见 [admin-integration.md](admin-integration.md)。
+
 ## 3. 回滚
 
 ### 3.1 应用回滚（推荐）

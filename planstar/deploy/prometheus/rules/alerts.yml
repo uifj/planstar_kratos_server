@@ -13,6 +13,10 @@
 #   DB 连接使用率  > 80% 持续 10m warning
 #   Ops 鉴权失败   > 1/s 持续 10m warning
 #   基础设施下线   up{job=~"mysql|redis|consul"} == 0 持续 2m critical
+#   admin 下线     up{job="admin"} == 0 持续 2m critical
+#   admin 就绪     admin_readyz_ready == 0 持续 2m critical
+#   admin 登录失败 4xx > 0.2/s 持续 10m warning
+#   admin 5xx 比例 > 5% 持续 10m warning / > 10% 持续 5m critical
 #
 # 排障入口：docs/operations.md（健康检查语义、关键指标、常见故障处置）。
 # =====================================================================
@@ -205,3 +209,78 @@ groups:
             9108 运维端点的鉴权失败持续 10 分钟超过 1/s。若刚轮换
             PLANSTAR_OPS_TOKEN，请确认 deploy/prometheus/ops_token 已同步更新；
             否则排查来源 IP 是否存在暴力探测，并检查 planstar_ops_audit_total。
+
+  # -------------------------------------------------------------------
+  # 运营后台（admin）：独立 job/service 标签，指标见 admin/internal/server/metrics.go
+  # 说明：admin 的 /readyz 结果导出为 admin_readyz_ready（1=ready，0=not ready），
+  # 容器 healthcheck 直接请求 /readyz；持续失败由 AdminReadinessFailing 告警。
+  # -------------------------------------------------------------------
+  - name: planstar-admin
+    rules:
+      - alert: AdminServiceDown
+        expr: up{job="admin"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "admin.api 已下线或 9110/metrics 抓取失败"
+          description: >-
+            Prometheus 连续 2 分钟无法抓取 job=admin（admin:9110/metrics）。
+            执行 docker compose ps admin 与 docker compose logs --tail=200 admin；
+            再检查 curl -fsS http://127.0.0.1:9110/healthz 与 /readyz（MySQL/Redis）。
+
+      - alert: AdminReadinessFailing
+        expr: admin_readyz_ready == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: admin.api
+        annotations:
+          summary: "admin /readyz 持续失败"
+          description: "admin.api 的 MySQL/Redis 依赖检查连续 2 分钟未通过，检查 /readyz 与容器日志。"
+
+      - alert: AdminLoginFailureSpike
+        expr: >-
+          sum(rate(requests_total{job="admin",path="/v1/admins/login",code=~"4.."}[5m]))
+          > 0.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "admin.api 登录失败速率超过 0.2/s"
+          description: >-
+            /v1/admins/login 的 4xx（含 401 凭证错误与 429 限流）持续 10 分钟
+            超过 0.2/s。检查 admin_audit_log、来源 IP 与 Redis 登录限流键；
+            若为暴力破解，启用 Traefik admin-ip-allowlist 或临时封禁来源。
+
+      - alert: AdminHighErrorRate5xx
+        expr: >-
+          sum(rate(requests_total{job="admin",code=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(requests_total{job="admin"}[5m])), 0.001)
+          > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "admin.api 5xx 比例超过 5%"
+          description: >-
+            admin 最近 5 分钟 5xx 占比高于 5%，已持续 10 分钟。优先检查
+            /readyz、MySQL 连接、Redis 鉴权与 planstar 9108 ops API（503 表示
+            上游不可用），并检索 Loki 中 service.name=admin.api 的错误日志。
+
+      - alert: AdminCriticalErrorRate5xx
+        expr: >-
+          sum(rate(requests_total{job="admin",code=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(requests_total{job="admin"}[5m])), 0.001)
+          > 0.10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "admin.api 5xx 比例超过 10%（critical）"
+          description: >-
+            admin 5xx 占比连续 5 分钟高于 10%，运营后台已不可用。检查
+            docker compose ps admin、/readyz、MySQL/Redis 以及 ops API 依赖；
+            必要时回滚上一 ADMIN_TAG（见 docs/admin-integration.md）。

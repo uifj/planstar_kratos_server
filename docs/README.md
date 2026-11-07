@@ -1,13 +1,15 @@
-> 适用版本：planstar 单体 · 最后核对：2026-11-07 · 维护：后端组
+> 适用版本：planstar 单体 + admin 运营后台 · 最后核对：2026-11-07 · 维护：后端组
 
 # Planstar 后端文档
 
-本仓库**唯一实际运行的服务**是 [`planstar/`](../planstar) 下的 Go 单体（Kratos v3）。
-业务 HTTP 监听 `8098`，运维端口监听 `9108`（`/metrics`、`/healthz`、`/readyz`）。
+本仓库实际运行两个服务：
 
-仓库根目录的 `admin/`、根 `openapi.yaml`、根 `go.mod`、根 `docker-compose.yml` 等属于历史 kratos-shop 模板遗留，**不参与构建、不参与部署、不是架构事实**。CI 只构建 `planstar/`。
+- [`planstar/`](../planstar) 业务 Go 单体（Kratos v3）：业务 HTTP `8098`，运维端口 `9108`（`/metrics`、`/healthz`、`/readyz`）。
+- [`admin/`](../admin) 运营后台 Go 模块 + `admin/console` 控制台：HTTP `9100`、gRPC `9101`、运维 `9110`，通过 `https://admin.planstar.top` 暴露。
 
-## 四条阅读路径
+仓库根目录的 `openapi.yaml`、根 `go.mod`、根 `docker-compose.yml` 等仍属于历史 kratos-shop 模板遗留，**不参与构建、不参与部署、不是架构事实**。CI 构建 `planstar/` 与 `admin/`。
+
+## 阅读路径
 
 | 路径 | 入口文档 | 适合场景 |
 | --- | --- | --- |
@@ -15,6 +17,7 @@
 | 接口 | [api/API_CONTRACT.md](api/API_CONTRACT.md) | 对接 Flutter 客户端，确认方法、路径、鉴权、字段、错误码、金额与分页 |
 | 部署 | [deployment.md](deployment.md) | 本地一键启动、生产部署、镜像发布、回滚、备份恢复、启动排障 |
 | 运维 | [operations.md](operations.md) | 健康检查语义、指标、告警阈值、日志/traceId 检索、故障处置、巡检 |
+| 运营后台 | [admin-integration.md](admin-integration.md) | admin 部署整合、17 项风险登记、上线检查单、回滚与外部服务启用 |
 
 ## 有效文档索引
 
@@ -23,7 +26,8 @@
 | [product/POSITIONING.md](product/POSITIONING.md) | 产品定位、品牌表达、用户分层、业务闭环与品类边界的唯一事实源 | 有效 |
 | [architecture.md](architecture.md) | 当前单体架构与技术事实 | 有效 |
 | [api/API_CONTRACT.md](api/API_CONTRACT.md) | 客户端接口契约（23 个已实现端点 + `GET /v1/user/` 尾斜杠别名；第 7.7 节为企划域契约定义，尚未实现） | 有效 |
-| [api/ADMIN_CONTRACT.md](api/ADMIN_CONTRACT.md) | 运营后台契约：举报处理台列表与处置（仅 `ADMIN_ADDR` 管理端口） | 有效 |
+| [api/ADMIN_CONTRACT.md](api/ADMIN_CONTRACT.md) | 运营后台契约：9108 管理端口举报处理，以及 `admin.planstar.top` 的 `/v1/admins/*`、`/v1/planstar/*` | 有效 |
+| [admin-integration.md](admin-integration.md) | admin 与 planstar 的部署整合、风险、上线、回滚与外部服务 | 有效 |
 | [deployment.md](deployment.md) | 部署与回滚手册 | 有效 |
 | [operations.md](operations.md) | 运维与故障处置手册 | 有效 |
 | [sql/README.md](sql/README.md) | 9 个 `planstar_*` 库建库脚本与演示数据说明 | 有效（数据基线） |

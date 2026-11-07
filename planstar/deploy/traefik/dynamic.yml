@@ -14,6 +14,37 @@ http:
     #   tls:
     #     certResolver: letsencrypt
 
+    # -----------------------------------------------------------------
+    # 运营后台：admin.planstar.top
+    #   /v1/*  -> admin:9100（HTTP API）
+    #   其余   -> admin-web:80（控制台静态资源 + SPA fallback）
+    # HTTP 入口统一 301 到 HTTPS；ACME HTTP-01 校验由 Traefik 内置路由优先处理。
+    # -----------------------------------------------------------------
+    admin-http:
+      rule: "Host(`admin.planstar.top`)"
+      entryPoints: [web]
+      middlewares: [admin-https-redirect]
+      service: admin-web
+
+    admin-api:
+      rule: "Host(`admin.planstar.top`) && PathPrefix(`/v1`)"
+      entryPoints: [websecure]
+      service: admin
+      priority: 100
+      # 可选：叠加来源 IP 白名单后取消注释。
+      # middlewares: [admin-ip-allowlist]
+      tls:
+        certResolver: letsencrypt
+
+    admin-console:
+      rule: "Host(`admin.planstar.top`)"
+      entryPoints: [websecure]
+      service: admin-web
+      priority: 10
+      # middlewares: [admin-ip-allowlist]
+      tls:
+        certResolver: letsencrypt
+
     # 可观测面板（子域名路由；也可直接端口访问）
     grafana:
       rule: "Host(`grafana.localhost`) || Host(`grafana.example.com`)"
@@ -28,11 +59,33 @@ http:
       entryPoints: [web]
       service: jaeger
 
+  middlewares:
+    # 后台域名全站强制 HTTPS（HTTP-01 challenge 由 Traefik 内置 ACME 路由优先匹配）。
+    admin-https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+    # 可选来源白名单：仅在运维出口固定时启用。
+    # admin-ip-allowlist:
+    #   ipAllowList:
+    #     sourceRange:
+    #       - "10.0.0.0/8"
+    #       - "192.168.0.0/16"
+
   services:
     planstar:
       loadBalancer:
         servers:
           - url: "http://planstar-api:8098"
+    admin:
+      loadBalancer:
+        servers:
+          - url: "http://admin:9100"
+    admin-web:
+      loadBalancer:
+        servers:
+          - url: "http://admin-web:80"
     grafana:
       loadBalancer:
         servers:
