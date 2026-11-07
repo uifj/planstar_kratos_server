@@ -8,6 +8,9 @@
 --  演示账号：13800000001 / 13800000002，密码 123456
 -- ========================================================================
 
+-- 显式声明客户端字符集：若历史导入时连接为 latin1，中文会被双重编码。
+SET NAMES utf8mb4;
+
 -- ---------------------------------------------------------------------
 -- 1. user_info.password_hash
 -- ---------------------------------------------------------------------
@@ -100,7 +103,7 @@ VALUES
    JSON_OBJECT('userId', 1, 'userName', '阿哲', 'avatar', ''), NOW(), NOW()),
   (3, 2, 5001, '投影区确实最好拍，建议穿浅色衣服，出片率高很多。', 4, '[]', '[]', 0, 6, 0, 1,
    JSON_OBJECT('userId', 2, 'userName', '小鹿看剧', 'avatar', ''), NOW(), NOW())
-ON DUPLICATE KEY UPDATE `content` = VALUES(`content`), `status` = 1;
+ON DUPLICATE KEY UPDATE `content` = VALUES(`content`), `user` = VALUES(`user`), `status` = 1;
 
 INSERT INTO `planstar_community`.`review_reply`
   (`reply_id`, `review_id`, `user_id`, `reply_to_user_id`, `reply_to_user_name`, `content`, `is_top`, `user`,
@@ -110,4 +113,5 @@ VALUES
    JSON_OBJECT('userId', 1, 'userName', '阿哲', 'avatar', ''), NOW(), NOW()),
   (2, 1, 2, 1, '阿哲', '你买的是池座还是楼座？', 0,
    JSON_OBJECT('userId', 2, 'userName', '小鹿看剧', 'avatar', ''), NOW(), NOW())
-ON DUPLICATE KEY UPDATE `content` = VALUES(`content`);
+ON DUPLICATE KEY UPDATE `content` = VALUES(`content`), `reply_to_user_name` = VALUES(`reply_to_user_name`),
+  `user` = VALUES(`user`), `is_top` = VALUES(`is_top`);
