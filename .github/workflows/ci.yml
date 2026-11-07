@@ -79,3 +79,69 @@ jobs:
 
       - name: Validate docker compose config
         run: docker compose -f planstar/docker-compose.yml config -q
+
+  observability-config:
+    name: Observability Config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Prometheus rules
+        run: |
+          docker run --rm --entrypoint promtool \
+            -v "$PWD/planstar/deploy/prometheus/rules:/rules" \
+            prom/prometheus:v2.53.0 \
+            check rules /rules/alerts.yml
+
+      - name: Validate Grafana dashboards JSON
+        run: |
+          python3 - <<'PY'
+          import glob
+          import json
+          import sys
+
+          files = sorted(glob.glob("planstar/deploy/grafana/dashboards/*.json"))
+          if not files:
+              sys.exit("no Grafana dashboard JSON found")
+          for path in files:
+              with open(path, encoding="utf-8") as fh:
+                  json.load(fh)
+              print(f"dashboard ok: {path}")
+          PY
+
+      - name: Render and check Alertmanager config
+        run: |
+          python3 - <<'PY'
+          import pathlib
+          import re
+          import sys
+
+          template = pathlib.Path(
+              "planstar/deploy/alertmanager/alertmanager.yml"
+          ).read_text(encoding="utf-8")
+          dummy = {
+              "AM_SMTP_SMARTHOST": "smtp.example.com:587",
+              "AM_SMTP_FROM": "planstar-alert@example.com",
+              "AM_SMTP_AUTH_USERNAME": "alert@example.com",
+              "AM_SMTP_AUTH_PASSWORD": "ci-dummy-password",
+              "AM_ALERT_EMAIL_TO": "ops@example.com",
+          }
+
+          def replace(match):
+              key = match.group(1)
+              if key not in dummy:
+                  sys.exit(f"alertmanager template references unknown env: {key}")
+              return dummy[key]
+
+          rendered = re.sub(r"\$\{([A-Z0-9_]+)\}", replace, template)
+          pathlib.Path("/tmp/alertmanager.yml").write_text(rendered, encoding="utf-8")
+          print("rendered alertmanager config")
+          PY
+          docker run --rm --entrypoint amtool \
+            -v "/tmp/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro" \
+            prom/alertmanager:v0.27.0 \
+            check-config /etc/alertmanager/alertmanager.yml
+
+      - name: Validate docker compose config
+        run: docker compose -f planstar/docker-compose.yml config -q
