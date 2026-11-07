@@ -1,0 +1,123 @@
+# ------------------------------------------------------------------
+# planstar 低配档位配置（4C8G / 2M 带宽单机）
+#   以 config.prod.yaml 为基线，仅关闭重组件，其余保持一致。
+#   低配档位：搜索降级为数据库、无异步事件、无服务注册、无 tracing。
+#   敏感项留空，由部署侧通过环境变量注入（见 conf.go 的 override）：
+#     PLANSTAR_MYSQL_PASSWORD / PLANSTAR_REDIS_PASSWORD / PLANSTAR_MQ_ADDR
+#   地址统一使用 compose 服务名，禁止写入真实口令。
+# ------------------------------------------------------------------
+
+server:
+  # 生产环境：Cookie 默认启用 Secure
+  env: prod
+  http:
+    addr: 0.0.0.0:8098
+    read_timeout_seconds: 10
+    write_timeout_seconds: 30
+    idle_timeout_seconds: 60
+    request_timeout_seconds: 15
+    max_body_bytes: 1048576
+    # 跨域白名单；为空时仅允许同源请求（按需填写 App/H5 域名）
+    cors_allow_origins: []
+  # 运维端口：/metrics（Prometheus）、/healthz、/readyz
+  admin:
+    addr: 0.0.0.0:9108
+
+data:
+  mysql:
+    addr: mysql:3306
+    user: root
+    password: ""
+    charset: utf8mb4
+  redis:
+    addr: redis:6379
+    password: ""
+    db: 0
+  elastic:
+    # 空地址：不创建 ES 客户端，搜索走数据库降级路径
+    addr: ""
+    index_prefix: planstar
+    sync_interval_seconds: 300
+    request_timeout_seconds: 3
+
+# 会话与登录风控
+auth:
+  # 会话有效期（天）
+  session_expire_days: 30
+  # 生产环境强制 Secure Cookie
+  cookie_secure: true
+  # 同一手机号发送验证码的冷却秒数
+  send_code_cooldown_seconds: 60
+  # 同一 IP 每分钟发送验证码的最大次数
+  send_code_ip_limit_per_minute: 10
+  # 连续登录失败达到该次数后要求图形验证码
+  login_fail_captcha_threshold: 3
+
+# OTLP 链路追踪：endpoint 留空且采样率为 0，关闭 tracing
+trace:
+  endpoint: ""
+  insecure: true
+  env: prod
+  sample_ratio: 0
+
+# RabbitMQ 异步事件：addr 留空则不发布/消费事件
+mq:
+  addr: ""
+  exchange: planstar.exchange
+  queue: planstar.api.events
+
+# Consul 服务注册：address 留空则不注册
+registry:
+  consul:
+    address: ""
+    scheme: http
+    # 注册到 Consul 的可达地址：compose 网络内用服务名
+    service_host: planstar-api
+
+# 运维探针与指标端点
+ops:
+  token: ""                    # 由 PLANSTAR_OPS_TOKEN 注入（生产必填）
+  allowed_cidrs: []            # 由 PLANSTAR_OPS_ALLOWED_CIDRS 逗号分隔注入
+  probe_cache_ttl_seconds: 2
+  probe_timeout_seconds: 2
+  probe_total_timeout_seconds: 3
+  metrics_max_inflight: 8
+  metrics_timeout_seconds: 5
+  readiness:
+    mysql: {critical: true, timeout_seconds: 2}
+    redis: {critical: true, timeout_seconds: 2}
+    elasticsearch: {critical: false, timeout_seconds: 2}
+    rabbitmq: {critical: false, timeout_seconds: 2}
+    consul: {critical: false, timeout_seconds: 2}
+
+# 短信 / 邮件通知（默认关闭；密钥仅由 PLANSTAR_NOTIFY_* 环境变量注入）
+notify:
+  sms:
+    enabled: false
+    provider: ""                # aliyun（兼容 aliyun-dypns）
+    endpoint: ""                # 默认 dypnsapi.aliyuncs.com
+    access_key: ""
+    access_secret: ""
+    sign_name: ""
+    template_code: ""           # 模板变量必须为 ${code}
+  email:
+    enabled: false
+    provider: ""
+    smtp_host: ""
+    smtp_port: 465
+    username: ""
+    password: ""
+    from: ""
+
+# 对象存储 OSS（默认关闭；密钥仅由 PLANSTAR_STORAGE_OSS_* 环境变量注入）
+storage:
+  oss:
+    enabled: false
+    provider: ""                # aliyun（兼容 oss）
+    endpoint: ""
+    region: ""
+    bucket: ""
+    access_key: ""
+    access_secret: ""
+    cdn_host: ""
+    presign_ttl_seconds: 3600   # 0 表示使用默认 900 秒

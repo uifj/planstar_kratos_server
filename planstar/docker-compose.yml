@@ -19,6 +19,8 @@ x-logging: &default-logging
     max-file: "5"
 
 x-app-env: &app-env
+  # 默认 root；生产建议在 .env 中改为最小权限账号
+  PLANSTAR_MYSQL_USER: ${PLANSTAR_MYSQL_USER:-root}
   PLANSTAR_MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
   PLANSTAR_REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
   PLANSTAR_MQ_ADDR: amqp://${RABBITMQ_USER:-root}:${RABBITMQ_PASS:-root}@rabbitmq:5672/
@@ -28,6 +30,30 @@ x-app-env: &app-env
   PLANSTAR_OPS_TOKEN: ${PLANSTAR_OPS_TOKEN:-}
   # 运维端点来源白名单（逗号分隔 CIDR；留空表示不限制）
   PLANSTAR_OPS_ALLOWED_CIDRS: ${PLANSTAR_OPS_ALLOWED_CIDRS:-}
+  # 外部服务默认关闭；供应商参数留空时服务使用 Noop/Log 实现。
+  PLANSTAR_NOTIFY_SMS_ENABLED: ${PLANSTAR_NOTIFY_SMS_ENABLED:-false}
+  PLANSTAR_NOTIFY_SMS_PROVIDER: ${PLANSTAR_NOTIFY_SMS_PROVIDER:-}
+  PLANSTAR_NOTIFY_SMS_ENDPOINT: ${PLANSTAR_NOTIFY_SMS_ENDPOINT:-}
+  PLANSTAR_NOTIFY_SMS_ACCESS_KEY: ${PLANSTAR_NOTIFY_SMS_ACCESS_KEY:-}
+  PLANSTAR_NOTIFY_SMS_ACCESS_SECRET: ${PLANSTAR_NOTIFY_SMS_ACCESS_SECRET:-}
+  PLANSTAR_NOTIFY_SMS_SIGN_NAME: ${PLANSTAR_NOTIFY_SMS_SIGN_NAME:-}
+  PLANSTAR_NOTIFY_SMS_TEMPLATE_CODE: ${PLANSTAR_NOTIFY_SMS_TEMPLATE_CODE:-}
+  PLANSTAR_NOTIFY_EMAIL_ENABLED: ${PLANSTAR_NOTIFY_EMAIL_ENABLED:-false}
+  PLANSTAR_NOTIFY_EMAIL_PROVIDER: ${PLANSTAR_NOTIFY_EMAIL_PROVIDER:-}
+  PLANSTAR_NOTIFY_EMAIL_SMTP_HOST: ${PLANSTAR_NOTIFY_EMAIL_SMTP_HOST:-}
+  PLANSTAR_NOTIFY_EMAIL_SMTP_PORT: ${PLANSTAR_NOTIFY_EMAIL_SMTP_PORT:-0}
+  PLANSTAR_NOTIFY_EMAIL_USERNAME: ${PLANSTAR_NOTIFY_EMAIL_USERNAME:-}
+  PLANSTAR_NOTIFY_EMAIL_PASSWORD: ${PLANSTAR_NOTIFY_EMAIL_PASSWORD:-}
+  PLANSTAR_NOTIFY_EMAIL_FROM: ${PLANSTAR_NOTIFY_EMAIL_FROM:-}
+  PLANSTAR_STORAGE_OSS_ENABLED: ${PLANSTAR_STORAGE_OSS_ENABLED:-false}
+  PLANSTAR_STORAGE_OSS_PROVIDER: ${PLANSTAR_STORAGE_OSS_PROVIDER:-}
+  PLANSTAR_STORAGE_OSS_ENDPOINT: ${PLANSTAR_STORAGE_OSS_ENDPOINT:-}
+  PLANSTAR_STORAGE_OSS_REGION: ${PLANSTAR_STORAGE_OSS_REGION:-}
+  PLANSTAR_STORAGE_OSS_BUCKET: ${PLANSTAR_STORAGE_OSS_BUCKET:-}
+  PLANSTAR_STORAGE_OSS_ACCESS_KEY: ${PLANSTAR_STORAGE_OSS_ACCESS_KEY:-}
+  PLANSTAR_STORAGE_OSS_ACCESS_SECRET: ${PLANSTAR_STORAGE_OSS_ACCESS_SECRET:-}
+  PLANSTAR_STORAGE_OSS_CDN_HOST: ${PLANSTAR_STORAGE_OSS_CDN_HOST:-}
+  PLANSTAR_STORAGE_OSS_PRESIGN_TTL_SECONDS: ${PLANSTAR_STORAGE_OSS_PRESIGN_TTL_SECONDS:-0}
 
 # 管理后台（planstar/admin）环境变量。所有敏感值均来自 .env，配置文件中只留空占位。
 x-admin-env: &admin-env
@@ -86,7 +112,8 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
     ports:
-      - "3306:3306"
+      # 内部服务仅绑定宿主机回环，公网只保留 Traefik 80/443
+      - "127.0.0.1:3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       # 首次初始化：建库建表 -> 演示数据 -> 认证支撑 -> 生产化补丁（按文件名字典序）
@@ -111,7 +138,7 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-root}"]
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -125,13 +152,15 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
+    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
+    profiles: ["full"]
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-root}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-root}
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
     volumes:
       - mq_data:/var/lib/rabbitmq
     healthcheck:
@@ -145,6 +174,8 @@ services:
 
   elasticsearch:
     image: elasticsearch:7.17.22
+    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
+    profiles: ["full"]
     restart: unless-stopped
     environment:
       discovery.type: single-node
@@ -155,7 +186,7 @@ services:
         soft: -1
         hard: -1
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
     volumes:
       - es_data:/usr/share/elasticsearch/data
     healthcheck:
@@ -169,11 +200,13 @@ services:
 
   consul:
     image: hashicorp/consul:1.19.1
+    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
+    profiles: ["full"]
     restart: unless-stopped
     command: ["agent", "-server", "-bootstrap-expect=1", "-ui", "-client=0.0.0.0", "-bind=0.0.0.0"]
     ports:
-      - "8500:8500"
-      - "8600:8600/udp"
+      - "127.0.0.1:8500:8500"
+      - "127.0.0.1:8600:8600/udp"
     volumes:
       - consul_data:/consul/data
     healthcheck:
@@ -187,17 +220,21 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one:1.57
+    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
+    profiles: ["full"]
     restart: unless-stopped
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
       # 仅暴露 UI；OTLP 接收统一由 otel-collector 承担，避免与 4317/4318 端口冲突
-      - "16686:16686"
+      - "127.0.0.1:16686:16686"
     logging: *default-logging
     networks: [planstar]
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.110.0
+    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
+    profiles: ["full"]
     restart: unless-stopped
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
     volumes:
@@ -215,7 +252,7 @@ services:
     image: prom/alertmanager:v0.27.0
     restart: unless-stopped
     ports:
-      - "9093:9093"
+      - "127.0.0.1:9093:9093"
     volumes:
       - ./deploy/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - ./deploy/alertmanager/entrypoint.sh:/etc/alertmanager/entrypoint.sh:ro
@@ -244,7 +281,7 @@ services:
       - --mysqld.address=mysql:3306
       - --mysqld.username=root
     ports:
-      - "9104:9104"
+      - "127.0.0.1:9104:9104"
     depends_on:
       mysql:
         condition: service_healthy
@@ -258,7 +295,7 @@ services:
       REDIS_ADDR: redis:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
     ports:
-      - "9121:9121"
+      - "127.0.0.1:9121:9121"
     depends_on:
       redis:
         condition: service_healthy
@@ -269,7 +306,7 @@ services:
     image: prom/prometheus:v2.53.0
     restart: unless-stopped
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     volumes:
       - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./deploy/prometheus/rules:/etc/prometheus/rules:ro
@@ -295,23 +332,29 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
       GF_USERS_ALLOW_SIGN_UP: "false"
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./deploy/grafana/dashboards:/etc/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     depends_on:
-      - prometheus
-      - loki
+      prometheus:
+        condition: service_started
+      # loki 属于 full profile，默认档位不启动
+      loki:
+        condition: service_started
+        required: false
     logging: *default-logging
     networks: [planstar]
 
   loki:
     image: grafana/loki:3.1.0
+    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
+    profiles: ["full"]
     restart: unless-stopped
     command: ["-config.file=/etc/loki/loki-config.yml"]
     ports:
-      - "3100:3100"
+      - "127.0.0.1:3100:3100"
     volumes:
       - ./deploy/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
       - loki_data:/loki
@@ -320,6 +363,8 @@ services:
 
   promtail:
     image: grafana/promtail:3.1.0
+    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
+    profiles: ["full"]
     restart: unless-stopped
     command: ["-config.file=/etc/promtail/promtail-config.yml"]
     volumes:
@@ -334,9 +379,10 @@ services:
     image: traefik:v3.1
     restart: unless-stopped
     ports:
+      # 公网仅保留 80/443；Dashboard 只绑定回环
       - "80:80"
       - "443:443"
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./deploy/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./deploy/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
@@ -346,12 +392,20 @@ services:
       - --certificatesresolvers.letsencrypt.acme.storage=/acme/acme.json
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
     depends_on:
-      - planstar-api
-      - admin
-      - admin-web
-      - grafana
-      - prometheus
-      - jaeger
+      planstar-api:
+        condition: service_started
+      admin:
+        condition: service_started
+      admin-web:
+        condition: service_started
+      grafana:
+        condition: service_started
+      prometheus:
+        condition: service_started
+      # jaeger 属于 full profile，默认档位不启动
+      jaeger:
+        condition: service_started
+        required: false
     logging: *default-logging
     networks: [planstar]
 
@@ -367,11 +421,13 @@ services:
       <<: *app-env
       TZ: Asia/Shanghai
     ports:
-      - "8098:8098"
+      # 8098 只绑定回环，公网统一经 Traefik 80/443 进入
+      - "127.0.0.1:8098:8098"
       # 运维端口仅绑定本机回环，生产通过内网/跳板机访问，不直接暴露公网
       - "127.0.0.1:9108:9108"
     volumes:
-      - ./configs/config.prod.yaml:/data/conf/config.yaml:ro
+      # 通过 PLANSTAR_CONFIG_FILE 切换 prod/lite 配置
+      - ./configs/${PLANSTAR_CONFIG_FILE:-config.prod.yaml}:/data/conf/config.yaml:ro
     read_only: true
     tmpfs:
       - /tmp
@@ -388,14 +444,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      # 以下重组件属于 full profile；required: false 保证默认档位组件不存在时仍可启动
       rabbitmq:
         condition: service_healthy
+        required: false
       elasticsearch:
         condition: service_healthy
+        required: false
       consul:
         condition: service_healthy
+        required: false
       jaeger:
         condition: service_started
+        required: false
     logging: *default-logging
     networks:
       planstar:
@@ -438,8 +499,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      # otel-collector 属于 full profile，默认档位不启动
       otel-collector:
         condition: service_started
+        required: false
     logging: *default-logging
     networks:
       planstar:

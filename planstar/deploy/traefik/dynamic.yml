@@ -4,15 +4,24 @@ http:
     planstar:
       rule: "Host(`localhost`) || Host(`127.0.0.1`)"
       entryPoints: [web]
+      middlewares: [compress]
       service: planstar
 
-    # 生产 HTTPS（取消注释并替换域名，同时确保 compose 已注入 ACME 邮箱）
-    # planstar-secure:
-    #   rule: "Host(`api.example.com`)"
-    #   entryPoints: [websecure]
-    #   service: planstar
-    #   tls:
-    #     certResolver: letsencrypt
+    # 生产 HTTPS：api.planstar.top -> planstar-api:8098
+    # 低配档位把 8098 收敛到回环后，外部访问统一经此路由；ACME HTTP-01 由内置路由处理。
+    planstar-http:
+      rule: "Host(`api.planstar.top`)"
+      entryPoints: [web]
+      middlewares: [https-redirect, compress]
+      service: planstar
+
+    planstar-secure:
+      rule: "Host(`api.planstar.top`)"
+      entryPoints: [websecure]
+      middlewares: [compress]
+      service: planstar
+      tls:
+        certResolver: letsencrypt
 
     # -----------------------------------------------------------------
     # 运营后台：admin.planstar.top
@@ -23,25 +32,27 @@ http:
     admin-http:
       rule: "Host(`admin.planstar.top`)"
       entryPoints: [web]
-      middlewares: [admin-https-redirect]
+      middlewares: [https-redirect, compress]
       service: admin-web
 
     admin-api:
       rule: "Host(`admin.planstar.top`) && PathPrefix(`/v1`)"
       entryPoints: [websecure]
+      middlewares: [compress]
       service: admin
       priority: 100
       # 可选：叠加来源 IP 白名单后取消注释。
-      # middlewares: [admin-ip-allowlist]
+      # middlewares: [compress, admin-ip-allowlist]
       tls:
         certResolver: letsencrypt
 
     admin-console:
       rule: "Host(`admin.planstar.top`)"
       entryPoints: [websecure]
+      middlewares: [compress]
       service: admin-web
       priority: 10
-      # middlewares: [admin-ip-allowlist]
+      # middlewares: [compress, admin-ip-allowlist]
       tls:
         certResolver: letsencrypt
 
@@ -60,8 +71,11 @@ http:
       service: jaeger
 
   middlewares:
-    # 后台域名全站强制 HTTPS（HTTP-01 challenge 由 Traefik 内置 ACME 路由优先匹配）。
-    admin-https-redirect:
+    # 响应压缩，降低 2M 带宽占用（planstar 与 admin 路由共用）。
+    compress: {}
+
+    # 业务与后台域名全站强制 HTTPS（HTTP-01 challenge 由 Traefik 内置 ACME 路由优先匹配）。
+    https-redirect:
       redirectScheme:
         scheme: https
         permanent: true

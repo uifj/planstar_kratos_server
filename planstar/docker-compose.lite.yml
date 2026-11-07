@@ -1,0 +1,36 @@
+# =====================================================================
+# Planstar 低配档位叠加文件（4C8G / 2M 带宽单机）
+#
+# 低配档位（默认）：仅 mysql/redis/planstar-api/admin/admin-web/traefik + 轻量监控，
+# 重组件（ES/MQ/Consul/Jaeger/OTel/Loki/Promtail）由 docker-compose.yml 的
+# "full" profile 隔离，不指定 profile 时不会启动。
+#
+# 用法:
+#   低配: PLANSTAR_CONFIG_FILE=config.lite.yaml \
+#         docker compose -f docker-compose.yml -f docker-compose.lite.yml up -d
+#   全量: COMPOSE_PROFILES=full \
+#         docker compose -f docker-compose.yml -f docker-compose.lite.yml up -d
+#         （全量档位无需 PLANSTAR_CONFIG_FILE，默认 config.prod.yaml）
+# =====================================================================
+
+name: planstar
+
+services:
+  mysql:
+    mem_limit: 2g
+    cpus: 1.5
+
+  redis:
+    mem_limit: 512m
+    cpus: 0.5
+
+  planstar-api:
+    mem_limit: 1g
+    cpus: 1.5
+    environment:
+      # 双保险：config.lite.yaml 中 mq.addr 已为空，此处再显式关闭 MQ
+      PLANSTAR_MQ_ADDR: ""
+
+  admin:
+    mem_limit: 512m
+    cpus: 0.5

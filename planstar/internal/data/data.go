@@ -94,25 +94,36 @@ func NewData(c conf.Data, log *slog.Logger) (*Data, error) {
 		}
 		d.rdb = rdb
 	}
-	if c.Elastic.Addr != "" {
-		es, err := elastic.NewClient(
-			elastic.SetURL(c.Elastic.Addr),
-			elastic.SetSniff(false),
-			elastic.SetHealthcheck(false),
-			elastic.SetMaxRetries(2),
-			elastic.SetHealthcheckTimeoutStartup(5*time.Second),
-		)
-		if err != nil {
-			return nil, fmt.Errorf("elasticsearch %s: %w", c.Elastic.Addr, err)
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if _, err := es.ClusterHealth().Do(ctx); err != nil {
-			return nil, fmt.Errorf("elasticsearch %s: %w", c.Elastic.Addr, err)
-		}
-		d.es = es
+	es, err := newElastic(&c)
+	if err != nil {
+		return nil, err
 	}
+	d.es = es
 	return d, nil
+}
+
+// newElastic 创建并连通 Elasticsearch 客户端。
+// 地址为空时返回 (nil, nil)：搜索降级为数据库，不建立任何连接。
+func newElastic(c *conf.Data) (*elastic.Client, error) {
+	if c.Elastic.Addr == "" {
+		return nil, nil
+	}
+	es, err := elastic.NewClient(
+		elastic.SetURL(c.Elastic.Addr),
+		elastic.SetSniff(false),
+		elastic.SetHealthcheck(false),
+		elastic.SetMaxRetries(2),
+		elastic.SetHealthcheckTimeoutStartup(5*time.Second),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("elasticsearch %s: %w", c.Elastic.Addr, err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, err := es.ClusterHealth().Do(ctx); err != nil {
+		return nil, fmt.Errorf("elasticsearch %s: %w", c.Elastic.Addr, err)
+	}
+	return es, nil
 }
 
 func (d *Data) DB(domain string) (*sql.DB, error) {

@@ -6,7 +6,11 @@
 # 用法:
 #   cp .env.example .env      # 填写 SERVER_HOST / PLANSTAR_IMAGE 等
 #   chmod +x deploy.sh
-#   ./deploy.sh
+#   ./deploy.sh               # 全量档位（默认，COMPOSE_PROFILES=full，
+#                             #   ES/MQ/Consul/Jaeger/OTel/Loki/Promtail 全部启动）
+#   PLANSTAR_LITE=1 ./deploy.sh
+#                             # 低配档位（4C8G/2M）：重组件不启动，使用
+#                             #   config.lite.yaml 并叠加 docker-compose.lite.yml
 #
 # 服务器一次性准备（首次手动执行）:
 #   1) 安装 Docker + Compose v2:
@@ -51,6 +55,20 @@ SERVER_USER="${SERVER_USER:-root}"
 SERVER_PORT="${SERVER_PORT:-22}"
 APP_DIR="${APP_DIR:-/opt/planstar}"
 
+# ---- 档位选择：PLANSTAR_LITE=1 为低配档位，默认全量档位 ----
+PLANSTAR_LITE="${PLANSTAR_LITE:-0}"
+if [ "${PLANSTAR_LITE}" = "1" ]; then
+  # 低配：不启用 full profile，切换 lite 配置并叠加 lite 资源限制
+  CONFIG_FILE="config.lite.yaml"
+  COMPOSE_PROFILES_ENV=""
+  COMPOSE_FILES="-f planstar/docker-compose.yml -f planstar/docker-compose.lite.yml"
+else
+  # 全量：启用 full profile，启动全部重组件
+  CONFIG_FILE="config.prod.yaml"
+  COMPOSE_PROFILES_ENV="COMPOSE_PROFILES=full"
+  COMPOSE_FILES="-f planstar/docker-compose.yml"
+fi
+
 echo "==> 构建镜像 ${IMAGE}"
 docker build --build-arg VERSION="${VERSION:-dev}" -t "${IMAGE}" .
 
@@ -66,10 +84,10 @@ echo "==> 同步运维令牌到服务器"
 printf '%s' "${PLANSTAR_OPS_TOKEN:-}" | ssh -p "${SERVER_PORT}" "${SERVER_USER}@${SERVER_HOST}" \
   "cd ${APP_DIR} && mkdir -p planstar/deploy/prometheus && (umask 077; cat > planstar/deploy/prometheus/ops_token) && chmod 600 planstar/deploy/prometheus/ops_token"
 
-echo "==> 远程拉取镜像并重启服务"
+echo "==> 远程拉取镜像并重启服务（PLANSTAR_LITE=${PLANSTAR_LITE}）"
 ssh -p "${SERVER_PORT}" "${SERVER_USER}@${SERVER_HOST}" "cd ${APP_DIR} && \
-  export PLANSTAR_IMAGE=${REGISTRY} PLANSTAR_TAG=${TAG} && \
-  docker compose -f planstar/docker-compose.yml pull && \
-  docker compose -f planstar/docker-compose.yml up -d --remove-orphans"
+  export PLANSTAR_IMAGE=${REGISTRY} PLANSTAR_TAG=${TAG} PLANSTAR_CONFIG_FILE=${CONFIG_FILE} && \
+  ${COMPOSE_PROFILES_ENV} docker compose ${COMPOSE_FILES} pull && \
+  ${COMPOSE_PROFILES_ENV} docker compose ${COMPOSE_FILES} up -d --remove-orphans"
 
 echo "==> 部署完成: http://${SERVER_HOST}:8098"
