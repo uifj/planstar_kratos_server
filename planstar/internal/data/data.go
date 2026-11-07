@@ -45,7 +45,7 @@ func mysqlDriver(log *slog.Logger) string {
 // domains 是 9 个服务库的域名，data 层按库连接。
 var domains = []string{
 	"user", "catalog", "ticket", "order", "payment",
-	"marketing", "community", "content", "meta",
+	"marketing", "community", "content", "meta", "shop",
 }
 
 // Data 持有 9 个 planstar_* 库的连接池，以及 Redis / Elasticsearch 长连接。

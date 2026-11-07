@@ -23,6 +23,8 @@ type Service struct {
 	user    *biz.UserUsecase
 	project *biz.ProjectUsecase
 	payment *biz.PaymentUsecase
+	wallet  *biz.WalletUsecase
+	shop    *biz.ShopUsecase
 	chat    *biz.ChatUsecase
 	log     *slog.Logger
 	// authCfg 保存认证风控配置（由 conf.Loaded 注入，零值时使用安全默认值）。
@@ -40,13 +42,16 @@ func New(
 	user *biz.UserUsecase,
 	project *biz.ProjectUsecase,
 	payment *biz.PaymentUsecase,
+	wallet *biz.WalletUsecase,
+	shop *biz.ShopUsecase,
 	chat *biz.ChatUsecase,
 	log *slog.Logger,
 ) *Service {
 	cfg := conf.Loaded()
 	return &Service{
 		auth: auth, catalog: catalog, feed: feed, message: message, order: order, user: user,
-		project: project, payment: payment, chat: chat, log: log, authCfg: cfg.Auth, limit: newAuthLimiter(),
+		project: project, payment: payment, wallet: wallet, shop: shop, chat: chat, log: log,
+		authCfg: cfg.Auth, limit: newAuthLimiter(),
 	}
 }
 
@@ -98,6 +103,17 @@ func (s *Service) routes() []route {
 		{"POST /v1/myaddress", s.addAddress},
 		{"DELETE /v1/myaddress/{id}", s.deleteAddress},
 		{"POST /v1/myaddress/default/{id}", s.setDefaultAddress},
+
+		// 星币钱包与每日签到（契约 7.8）。
+		{"GET /v1/user/signIn", s.signInStatus},
+		{"POST /v1/user/signIn", s.signIn},
+		{"GET /v1/moneyaccount", s.walletAccount},
+		{"GET /v1/moneyaccount/sequences", s.walletSequences},
+
+		// 星币商城（契约 7.9）。
+		{"GET /v1/shop/goods", s.shopGoods},
+		{"GET /v1/shop/goods/{id}", s.shopGoodsDetail},
+		{"POST /v1/shop/goods/{id}/skus/{skuId}/redeem", s.redeemGoods},
 
 		// 企划域（契约 7.7）。
 		{"GET /v1/projects/hot", s.hotProjects},
@@ -157,6 +173,8 @@ func (s *Service) fail(w http.ResponseWriter, r *http.Request, err error) {
 		httpx.Error(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "未登录")
 	case errors.Is(err, biz.ErrForbidden):
 		httpx.Error(w, r, http.StatusForbidden, "FORBIDDEN", "无权限")
+	case errors.Is(err, biz.ErrInsufficientCoins):
+		httpx.Error(w, r, http.StatusBadRequest, "INSUFFICIENT_COINS", "星币余额不足")
 	case errors.Is(err, biz.ErrBadRequest):
 		httpx.Error(w, r, http.StatusBadRequest, "BAD_REQUEST", "参数错误")
 	case errors.Is(err, biz.ErrNotFound):

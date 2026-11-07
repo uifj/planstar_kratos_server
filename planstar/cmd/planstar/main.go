@@ -141,6 +141,8 @@ func main() {
 	userUC := biz.NewUserUsecase(data.NewUserRepo(d))
 	projectUC := biz.NewProjectUsecase(data.NewProjectRepo(d))
 	paymentUC := biz.NewPaymentUsecase(data.NewPaymentRepo(d))
+	walletUC := biz.NewWalletUsecase(data.NewWalletRepo(d))
+	shopUC := biz.NewShopUsecase(data.NewShopRepo(d))
 	chatUC := biz.NewChatUsecase(data.NewChatRepo(d))
 
 	// ES 读模型：启动时建索引并做一次全量同步，之后周期刷新。
@@ -152,7 +154,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	service.New(authUC, catalogUC, feedUC, messageUC, orderUC, userUC, projectUC, paymentUC, chatUC, logger).Register(mux)
+	service.New(authUC, catalogUC, feedUC, messageUC, orderUC, userUC, projectUC, paymentUC, walletUC, shopUC, chatUC, logger).Register(mux)
 
 	// 连接池指标在抓取时读取快照，不在后台轮询。
 	metrics.RegisterDBStats(d.DBStatsSnapshot)
