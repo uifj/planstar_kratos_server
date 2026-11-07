@@ -156,3 +156,20 @@ PLANSTAR_IMAGE=ghcr.io/uifj/planstar-api PLANSTAR_TAG=v0.1.0 \
 - 本服务为手写 HTTP handler，不使用 protobuf / Wire 代码生成。
 - 金额：数据库存元（`DECIMAL`），API 输出分（×100）。
 - 鉴权：`Cookie: psSession=…`；登录失败 `5xx + text/plain`；发码恒 `200 + {success,needCaptcha,errorMsg}`。
+
+## 许可证
+
+本项目采用 **PolyForm Noncommercial License 1.0.0**（SPDX：`PolyForm-Noncommercial-1.0.0`），
+完整条款见 [LICENSE](LICENSE)。核心约定：
+
+- **允许**：任何非商业目的，包括个人学习、研究、实验、爱好项目，以及教育机构、
+  慈善组织、公共研究机构、政府机构等非商业主体的使用与修改
+- **禁止**：任何商业用途；商业使用需另行取得版权所有者授权（版权所有者 uifj 本人不受限制）
+- **义务**：分发时须附带本许可证或其链接，并保留 `Required Notice` 版权声明
+
+如需商业授权，请通过 GitHub（@uifj）联系。
+
+根目录 `admin/` 等历史 kratos 模板目录保留其原始许可证，不参与构建与部署，
+不受本项目许可证影响。
+
+Copyright (C) 2026 uifj
