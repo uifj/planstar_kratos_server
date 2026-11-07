@@ -1,0 +1,21 @@
+[Unit]
+Description=Planstar production stack (docker compose)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=planstar
+Group=planstar
+WorkingDirectory=/opt/planstar/planstar
+# 低配档位；全量档位改为 config.prod.yaml 并追加 Environment=COMPOSE_PROFILES=full
+Environment=PLANSTAR_CONFIG_FILE=config.lite.yaml
+ExecStart=/usr/bin/docker compose -f docker-compose.yml -f docker-compose.lite.yml up -d --remove-orphans
+ExecStop=/usr/bin/docker compose -f docker-compose.yml -f docker-compose.lite.yml stop
+TimeoutStartSec=600
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target
