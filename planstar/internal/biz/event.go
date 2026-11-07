@@ -9,8 +9,10 @@ import (
 
 // 领域事件类型（RabbitMQ routing key）。
 const (
-	EventUserRegistered = "user.registered"
-	EventOrderCreated   = "order.created"
+	EventUserRegistered         = "user.registered"
+	EventOrderCreated           = "order.created"
+	EventCatalogActivityChanged = "catalog.activity.changed"
+	EventCatalogActivityDeleted = "catalog.activity.deleted"
 )
 
 // DomainEvent 是异步链路传递的纯领域事件（不依赖任何传输实现）。

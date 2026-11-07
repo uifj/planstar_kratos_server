@@ -17,6 +17,22 @@ type CatalogRepo interface {
 	Activity(ctx context.Context, id int64) (*ShowSummary, error)
 }
 
+// ActivitySnapshot 是下单/报价所需的演出权威快照（价格单位为分）。
+type ActivitySnapshot struct {
+	ActivityID       int64
+	TicketCategoryID int64
+	Title            string
+	Poster           string
+	UnitPrice        int64
+	SoldOut          bool
+}
+
+// CatalogReader 是演出权威数据的只读端口，由 data 层用 catalog / ticket 库连接实现。
+// 订单链路不得在 order 库连接上跨库查询。
+type CatalogReader interface {
+	GetActivitySnapshot(ctx context.Context, activityID int64) (*ActivitySnapshot, error)
+}
+
 // CatalogUsecase 演出库用例。
 type CatalogUsecase struct {
 	repo CatalogRepo

@@ -7,13 +7,15 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"sync"
 
 	"planstar/internal/biz"
 )
 
 // CatalogRepo 实现 biz.CatalogRepo，跨 planstar_catalog / planstar_ticket / planstar_content 查询。
 type CatalogRepo struct {
-	d *Data
+	d      *Data
+	syncMu sync.Mutex
 }
 
 func NewCatalogRepo(d *Data) *CatalogRepo { return &CatalogRepo{d: d} }
@@ -225,8 +227,11 @@ func (r *CatalogRepo) Activities(ctx context.Context, q biz.ActivityQuery, hot b
 	if hot && q.CategoryID == 0 && q.City == "" {
 		if items, err := r.hotFromES(ctx, q); err == nil {
 			return items, nil
-		} else if !errors.Is(err, errNoElastic) {
-			r.d.log.WarnContext(ctx, "elasticsearch hot query failed, fallback to mysql", "err", err)
+		} else {
+			catalogESFallbackTotal.Inc()
+			if !errors.Is(err, errNoElastic) {
+				r.d.log.WarnContext(ctx, "elasticsearch hot query failed, fallback to mysql", "err", err)
+			}
 		}
 	}
 

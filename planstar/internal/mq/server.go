@@ -6,8 +6,17 @@ import (
 	"sync"
 	"time"
 
+	"planstar/internal/biz"
 	"planstar/internal/conf"
 )
+
+// routingKeys 是消费者订阅的全部领域事件，需与 service.EventHandler 支持的处理器保持一致。
+var routingKeys = []string{
+	biz.EventUserRegistered,
+	biz.EventOrderCreated,
+	biz.EventCatalogActivityChanged,
+	biz.EventCatalogActivityDeleted,
+}
 
 // Server 把 RabbitMQ 消费者接入 kratos.App 的生命周期（实现 transport.Server）。
 type Server struct {
@@ -63,7 +72,7 @@ func (s *Server) loop(ctx context.Context) {
 		default:
 		}
 		c, err := NewConsumer(s.conf.Addr, s.conf.Exchange, s.conf.Queue,
-			[]string{"user.registered", "order.created"}, s.handler)
+			routingKeys, s.handler)
 		if err != nil {
 			s.log.WarnContext(ctx, "rabbitmq consumer connect failed, retrying", "err", err)
 			select {

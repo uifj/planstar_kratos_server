@@ -113,7 +113,7 @@ func (d *Data) Redis() *redis.Client { return d.rdb }
 // Elastic 返回共享 Elasticsearch 客户端（未配置时为 nil）。
 func (d *Data) Elastic() *elastic.Client { return d.es }
 
-// ElasticIndex 是演出库读模型的索引名。
+// ElasticIndex 是演出库读模型的查询别名（具体索引由全量重建创建并原子切换）。
 func (d *Data) ElasticIndex() string { return d.esIndex }
 
 // ElasticTimeout ES 查询超时。
