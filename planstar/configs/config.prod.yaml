@@ -50,9 +50,10 @@ auth:
   # 连续登录失败达到该次数后要求图形验证码
   login_fail_captcha_threshold: 3
 
-# Jaeger 链路追踪（endpoint 留空则关闭 tracing）
+# OTLP 链路追踪（经 otel-collector 转发到 Jaeger；endpoint 留空则关闭 tracing）
 trace:
-  endpoint: http://jaeger:14268/api/traces
+  endpoint: otel-collector:4317
+  insecure: true
   env: prod
   # 生产采样率：默认 10%，避免海量 span 压垮存储
   sample_ratio: 0.1
@@ -70,3 +71,19 @@ registry:
     scheme: http
     # 注册到 Consul 的可达地址：compose 网络内用服务名
     service_host: planstar-api
+
+# 运维探针与指标端点
+ops:
+  token: ""                    # 由 PLANSTAR_OPS_TOKEN 注入（生产必填）
+  allowed_cidrs: []            # 由 PLANSTAR_OPS_ALLOWED_CIDRS 逗号分隔注入
+  probe_cache_ttl_seconds: 2
+  probe_timeout_seconds: 2
+  probe_total_timeout_seconds: 3
+  metrics_max_inflight: 8
+  metrics_timeout_seconds: 5
+  readiness:
+    mysql: {critical: true, timeout_seconds: 2}
+    redis: {critical: true, timeout_seconds: 2}
+    elasticsearch: {critical: false, timeout_seconds: 2}
+    rabbitmq: {critical: false, timeout_seconds: 2}
+    consul: {critical: false, timeout_seconds: 2}

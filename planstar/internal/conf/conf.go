@@ -19,6 +19,7 @@ type Config struct {
 	Trace    Trace    `yaml:"trace"`
 	MQ       MQ       `yaml:"mq"`
 	Registry Registry `yaml:"registry"`
+	Ops      Ops      `yaml:"ops"`
 }
 
 type Server struct {
@@ -86,9 +87,16 @@ func (a Auth) CookieSecureEnabled() bool {
 }
 
 type Trace struct {
-	Endpoint    string  `yaml:"endpoint"`
+	Endpoint string `yaml:"endpoint"`
+	// Insecure 控制 OTLP/gRPC 是否走明文连接；未配置时默认 true（内网 collector）。
+	Insecure    *bool   `yaml:"insecure"`
 	Env         string  `yaml:"env"`
 	SampleRatio float64 `yaml:"sample_ratio"`
+}
+
+// InsecureEnabled 返回是否使用明文 gRPC（默认开启，适用内网 collector）。
+func (t Trace) InsecureEnabled() bool {
+	return t.Insecure == nil || *t.Insecure
 }
 
 type MQ struct {
@@ -106,6 +114,43 @@ type Consul struct {
 	Scheme  string `yaml:"scheme"`
 	// ServiceHost 是注册到 Consul 的可达地址（默认 127.0.0.1，容器内按需配置主机名）。
 	ServiceHost string `yaml:"service_host"`
+}
+
+// Ops 是运维探针与指标端点配置。
+type Ops struct {
+	// Token 由 PLANSTAR_OPS_TOKEN 注入，供后续运维端点鉴权使用。
+	Token string `yaml:"token"`
+	// AllowedCIDRs 由 PLANSTAR_OPS_ALLOWED_CIDRS 逗号分隔注入。
+	AllowedCIDRs             []string  `yaml:"allowed_cidrs"`
+	ProbeCacheTTLSeconds     int       `yaml:"probe_cache_ttl_seconds"`
+	ProbeTimeoutSeconds      int       `yaml:"probe_timeout_seconds"`
+	ProbeTotalTimeoutSeconds int       `yaml:"probe_total_timeout_seconds"`
+	MetricsMaxInflight       int       `yaml:"metrics_max_inflight"`
+	MetricsTimeoutSeconds    int       `yaml:"metrics_timeout_seconds"`
+	Readiness                Readiness `yaml:"readiness"`
+}
+
+// Readiness 描述各依赖的就绪探测参数。
+type Readiness struct {
+	MySQL         ProbeConfig `yaml:"mysql"`
+	Redis         ProbeConfig `yaml:"redis"`
+	Elasticsearch ProbeConfig `yaml:"elasticsearch"`
+	RabbitMQ      ProbeConfig `yaml:"rabbitmq"`
+	Consul        ProbeConfig `yaml:"consul"`
+}
+
+// ProbeConfig 是单个依赖探测项；Critical 用指针区分「未配置」与「显式 false」。
+type ProbeConfig struct {
+	Critical       *bool `yaml:"critical"`
+	TimeoutSeconds int   `yaml:"timeout_seconds"`
+}
+
+// IsCritical 返回是否关键依赖；未配置时使用调用方给的默认值。
+func (p ProbeConfig) IsCritical(fallback bool) bool {
+	if p.Critical != nil {
+		return *p.Critical
+	}
+	return fallback
 }
 
 // loaded 保存最近一次 Load 的配置，供不便接收 conf 的适配层读取。
@@ -133,7 +178,24 @@ func Load(path string) (*Config, error) {
 	override(&c.Data.Elastic.Addr, "PLANSTAR_ES_ADDR")
 	override(&c.MQ.Addr, "PLANSTAR_MQ_ADDR")
 	override(&c.Trace.Endpoint, "PLANSTAR_TRACE_ENDPOINT")
+	if v := os.Getenv("PLANSTAR_TRACE_INSECURE"); v != "" {
+		insecure, err := strconv.ParseBool(strings.TrimSpace(v))
+		if err != nil {
+			return nil, fmt.Errorf("PLANSTAR_TRACE_INSECURE 必须是 true/false/1/0: %q", v)
+		}
+		c.Trace.Insecure = &insecure
+	}
 	override(&c.Registry.Consul.Address, "PLANSTAR_CONSUL_ADDRESS")
+	override(&c.Ops.Token, "PLANSTAR_OPS_TOKEN")
+	if v := os.Getenv("PLANSTAR_OPS_ALLOWED_CIDRS"); v != "" {
+		cidrs := make([]string, 0, 4)
+		for _, item := range strings.Split(v, ",") {
+			if item = strings.TrimSpace(item); item != "" {
+				cidrs = append(cidrs, item)
+			}
+		}
+		c.Ops.AllowedCIDRs = cidrs
+	}
 	if err := c.Validate(); err != nil {
 		return nil, err
 	}
@@ -178,11 +240,8 @@ func (c *Config) Validate() error {
 			return err
 		}
 	}
-	if c.Trace.Endpoint != "" {
-		u, err := url.Parse(c.Trace.Endpoint)
-		if err != nil || u.Scheme == "" || u.Host == "" {
-			return fmt.Errorf("trace.endpoint 必须是带 scheme 的 URL: %q", c.Trace.Endpoint)
-		}
+	if c.Trace.Endpoint != "" && !validTraceEndpoint(c.Trace.Endpoint) {
+		return fmt.Errorf("trace.endpoint 必须是 host:port 或带 scheme 的 URL: %q", c.Trace.Endpoint)
 	}
 	// 请求超时不小于连接写超时时，504 可能来不及写回客户端。
 	if c.Server.HTTP.RequestTimeoutSeconds > 0 && c.Server.HTTP.WriteTimeoutSeconds > 0 &&
@@ -191,6 +250,19 @@ func (c *Config) Validate() error {
 			c.Server.HTTP.RequestTimeoutSeconds, c.Server.HTTP.WriteTimeoutSeconds)
 	}
 	return nil
+}
+
+// validTraceEndpoint 接受带 scheme 的 URL，或 gRPC 使用的 host:port。
+func validTraceEndpoint(endpoint string) bool {
+	if u, err := url.Parse(endpoint); err == nil && u.Scheme != "" && u.Host != "" {
+		return true
+	}
+	host, port, err := net.SplitHostPort(endpoint)
+	if err != nil || host == "" {
+		return false
+	}
+	n, err := strconv.Atoi(port)
+	return err == nil && n >= 1 && n <= 65535
 }
 
 // validateHostPort 校验监听/连接地址格式，不做 DNS 解析（容器启动早期域名可能尚未就绪）。
@@ -264,6 +336,10 @@ func applyDefaults(c *Config) {
 	if c.Trace.Env == "" {
 		c.Trace.Env = "dev"
 	}
+	if c.Trace.Insecure == nil {
+		insecure := true
+		c.Trace.Insecure = &insecure
+	}
 	if c.Data.Elastic.IndexPrefix == "" {
 		c.Data.Elastic.IndexPrefix = "planstar"
 	}
@@ -287,6 +363,33 @@ func applyDefaults(c *Config) {
 	}
 	if c.Registry.Consul.ServiceHost == "" {
 		c.Registry.Consul.ServiceHost = "127.0.0.1"
+	}
+	// 运维探针默认值：整体缓存 2s、单检查 2s、总超时 3s。
+	if c.Ops.ProbeCacheTTLSeconds <= 0 {
+		c.Ops.ProbeCacheTTLSeconds = 2
+	}
+	if c.Ops.ProbeTimeoutSeconds <= 0 {
+		c.Ops.ProbeTimeoutSeconds = 2
+	}
+	if c.Ops.ProbeTotalTimeoutSeconds <= 0 {
+		c.Ops.ProbeTotalTimeoutSeconds = 3
+	}
+	if c.Ops.MetricsMaxInflight <= 0 {
+		c.Ops.MetricsMaxInflight = 8
+	}
+	if c.Ops.MetricsTimeoutSeconds <= 0 {
+		c.Ops.MetricsTimeoutSeconds = 5
+	}
+	for _, probe := range []*ProbeConfig{
+		&c.Ops.Readiness.MySQL,
+		&c.Ops.Readiness.Redis,
+		&c.Ops.Readiness.Elasticsearch,
+		&c.Ops.Readiness.RabbitMQ,
+		&c.Ops.Readiness.Consul,
+	} {
+		if probe.TimeoutSeconds <= 0 {
+			probe.TimeoutSeconds = c.Ops.ProbeTimeoutSeconds
+		}
 	}
 }
 

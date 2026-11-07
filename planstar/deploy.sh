@@ -25,6 +25,23 @@ if [ -f .env ]; then
   set -a; . ./.env; set +a
 fi
 
+# ---- 运维令牌落盘（Prometheus 抓取 9108/metrics 的 Bearer 令牌）----
+# Prometheus 无法在配置中展开环境变量，故把 $PLANSTAR_OPS_TOKEN 写入
+# deploy/prometheus/ops_token（bind mount 到容器，已加入 .gitignore）。
+OPS_TOKEN_FILE="deploy/prometheus/ops_token"
+mkdir -p deploy/prometheus
+if [ -n "${PLANSTAR_OPS_TOKEN:-}" ]; then
+  ( umask 077; printf '%s' "${PLANSTAR_OPS_TOKEN}" > "${OPS_TOKEN_FILE}" )
+  chmod 600 "${OPS_TOKEN_FILE}" 2>/dev/null || true
+  # 尽力归属当前用户；容器只读挂载由 root 读取，chown 失败不影响启动
+  chown "$(id -u):$(id -g)" "${OPS_TOKEN_FILE}" 2>/dev/null || true
+  echo "==> 已写入 ${OPS_TOKEN_FILE}（Prometheus Bearer 鉴权）"
+else
+  echo "WARN: PLANSTAR_OPS_TOKEN 为空，写入空 ${OPS_TOKEN_FILE}；Prometheus 抓取 /metrics 将返回 401。" >&2
+  ( umask 077; : > "${OPS_TOKEN_FILE}" )
+  chmod 600 "${OPS_TOKEN_FILE}" 2>/dev/null || true
+fi
+
 REGISTRY="${PLANSTAR_IMAGE:-ghcr.io/uifj/planstar-api}"
 TAG="${PLANSTAR_TAG:-latest}"
 IMAGE="${REGISTRY}:${TAG}"
@@ -43,6 +60,11 @@ docker push "${IMAGE}"
 echo "==> 同步代码到 ${SERVER_USER}@${SERVER_HOST}:${APP_DIR}"
 ssh -p "${SERVER_PORT}" "${SERVER_USER}@${SERVER_HOST}" \
   "cd ${APP_DIR} && git pull --ff-only"
+
+# 令牌文件被 git 忽略，需单独同步到服务器（走 stdin，避免出现在进程列表）
+echo "==> 同步运维令牌到服务器"
+printf '%s' "${PLANSTAR_OPS_TOKEN:-}" | ssh -p "${SERVER_PORT}" "${SERVER_USER}@${SERVER_HOST}" \
+  "cd ${APP_DIR} && mkdir -p planstar/deploy/prometheus && (umask 077; cat > planstar/deploy/prometheus/ops_token) && chmod 600 planstar/deploy/prometheus/ops_token"
 
 echo "==> 远程拉取镜像并重启服务"
 ssh -p "${SERVER_PORT}" "${SERVER_USER}@${SERVER_HOST}" "cd ${APP_DIR} && \

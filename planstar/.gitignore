@@ -18,3 +18,5 @@ bin/
 .idea/
 *.swp
 .env
+# 由 deploy.sh 从 $PLANSTAR_OPS_TOKEN 生成，禁止入库
+deploy/prometheus/ops_token

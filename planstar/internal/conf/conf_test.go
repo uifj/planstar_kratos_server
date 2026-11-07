@@ -23,6 +23,18 @@ func TestValidateOK(t *testing.T) {
 	}
 }
 
+func TestValidateAcceptsTraceHostPort(t *testing.T) {
+	c := baseConfig()
+	c.Trace.Endpoint = "otel-collector:4317"
+	if err := c.Validate(); err != nil {
+		t.Fatalf("host:port trace endpoint should be valid, got %v", err)
+	}
+	c.Trace.Endpoint = "http://otel-collector:4317"
+	if err := c.Validate(); err != nil {
+		t.Fatalf("URL trace endpoint should be valid, got %v", err)
+	}
+}
+
 func TestValidateRejectsInvalid(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -36,7 +48,7 @@ func TestValidateRejectsInvalid(t *testing.T) {
 		{"elastic url", func(c *Config) { c.Data.Elastic.Addr = "elasticsearch:9200" }, "data.elastic.addr"},
 		{"mq url", func(c *Config) { c.MQ.Addr = "rabbitmq:5672" }, "mq.addr"},
 		{"consul addr", func(c *Config) { c.Registry.Consul.Address = "consul" }, "registry.consul.address"},
-		{"trace url", func(c *Config) { c.Trace.Endpoint = "jaeger:14268" }, "trace.endpoint"},
+		{"trace endpoint", func(c *Config) { c.Trace.Endpoint = "jaeger:notport" }, "trace.endpoint"},
 		{"timeout order", func(c *Config) { c.Server.HTTP.RequestTimeoutSeconds = 30 }, "必须小于"},
 	}
 	for _, tc := range cases {

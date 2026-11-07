@@ -24,6 +24,8 @@ x-app-env: &app-env
   PLANSTAR_MQ_ADDR: amqp://${RABBITMQ_USER:-root}:${RABBITMQ_PASS:-root}@rabbitmq:5672/
   # 目录读模型周期全量重建间隔；0 表示只保留启动时一次同步
   PLANSTAR_ES_SYNC_INTERVAL_SECONDS: ${PLANSTAR_ES_SYNC_INTERVAL_SECONDS:-300}
+  # 9108 运维端点鉴权令牌（/metrics 需要 Bearer；为空则 /metrics 返回 401）
+  PLANSTAR_OPS_TOKEN: ${PLANSTAR_OPS_TOKEN:-}
 
 services:
   mysql:
@@ -44,6 +46,7 @@ services:
       - ../docs/sql/14_mock_seed.sql:/docker-entrypoint-initdb.d/14_mock_seed.sql:ro
       - ./sql/15_auth_support.sql:/docker-entrypoint-initdb.d/15_auth_support.sql:ro
       - ./sql/16_production_hardening.sql:/docker-entrypoint-initdb.d/16_production_hardening.sql:ro
+      - ./sql/17_pay_refund_chat.sql:/docker-entrypoint-initdb.d/17_pay_refund_chat.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
@@ -138,10 +141,23 @@ services:
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
-      - "14268:14268"
+      # 仅暴露 UI；OTLP 接收统一由 otel-collector 承担，避免与 4317/4318 端口冲突
       - "16686:16686"
-      - "4317:4317"
-      - "4318:4318"
+    logging: *default-logging
+    networks: [planstar]
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.110.0
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./deploy/otel/collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      # OTLP 接收端只在宿主机回环暴露，供本机调试；容器间走 planstar 网络
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+    depends_on:
+      - jaeger
     logging: *default-logging
     networks: [planstar]
 
@@ -152,8 +168,19 @@ services:
       - "9093:9093"
     volumes:
       - ./deploy/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./deploy/alertmanager/entrypoint.sh:/etc/alertmanager/entrypoint.sh:ro
+    environment:
+      # 通知渠道凭据全部由 .env 注入，配置文件中只保留 AM_* 占位
+      AM_SMTP_SMARTHOST: ${AM_SMTP_SMARTHOST:-}
+      AM_SMTP_FROM: ${AM_SMTP_FROM:-}
+      AM_SMTP_AUTH_USERNAME: ${AM_SMTP_AUTH_USERNAME:-}
+      AM_SMTP_AUTH_PASSWORD: ${AM_SMTP_AUTH_PASSWORD:-}
+      AM_ALERT_EMAIL_TO: ${AM_ALERT_EMAIL_TO:-}
+    # Alertmanager 不支持 --config.expand-env（那是 Prometheus 的参数），
+    # 由 entrypoint.sh 把模板中的 AM_* 占位渲染到 /tmp 后再启动。
+    entrypoint: ["/bin/sh", "/etc/alertmanager/entrypoint.sh"]
     command:
-      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
     logging: *default-logging
     networks: [planstar]
 
@@ -196,6 +223,8 @@ services:
     volumes:
       - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./deploy/prometheus/rules:/etc/prometheus/rules:ro
+      # 抓取 9108/metrics 的 Bearer 令牌；deploy.sh 从 $PLANSTAR_OPS_TOKEN 写入
+      - ./deploy/prometheus/ops_token:/etc/prometheus/ops_token:ro
       - prometheus_data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -219,6 +248,7 @@ services:
       - "3000:3000"
     volumes:
       - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/etc/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
@@ -286,7 +316,8 @@ services:
       TZ: Asia/Shanghai
     ports:
       - "8098:8098"
-      - "9108:9108"
+      # 运维端口仅绑定本机回环，生产通过内网/跳板机访问，不直接暴露公网
+      - "127.0.0.1:9108:9108"
     volumes:
       - ./configs/config.prod.yaml:/data/conf/config.yaml:ro
     read_only: true

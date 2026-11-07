@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-kratos/kratos/contrib/registry/consul/v3"
@@ -21,6 +22,7 @@ import (
 	"planstar/internal/data"
 	"planstar/internal/mq"
 	"planstar/internal/observability"
+	"planstar/internal/ops"
 	"planstar/internal/server"
 	"planstar/internal/service"
 )
@@ -60,8 +62,27 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 指标与运维鉴权在装配早期构建：鉴权配置错误直接失败关闭。
+	metrics := observability.NewMetrics(Version, c.Server.Env)
+	metrics.SetScrapeLimits(
+		c.Ops.MetricsMaxInflight,
+		time.Duration(c.Ops.MetricsTimeoutSeconds)*time.Second,
+	)
+	opsAuth, err := server.NewOpsAuth(c.Ops, logger, metrics)
+	if err != nil {
+		logger.Error("init ops auth failed", "err", err)
+		os.Exit(1)
+	}
+	if err := opsAuth.Validate(c.Server.Env); err != nil {
+		logger.Error("invalid ops auth config", "err", err)
+		os.Exit(1)
+	}
+	if !opsAuth.Enabled() {
+		logger.Warn("ops auth disabled: PLANSTAR_OPS_TOKEN 未配置")
+	}
+
 	// 链路追踪：endpoint 为空时自动降级为 no-op。
-	shutdownTrace, err := observability.InitTracer(c.Trace.Endpoint, c.Trace.Env, c.Trace.SampleRatio, Name, logger)
+	shutdownTrace, err := observability.InitTracer(c.Trace.Endpoint, c.Trace.InsecureEnabled(), c.Trace.Env, c.Trace.SampleRatio, Name, Version, logger)
 	if err != nil {
 		logger.Error("init tracer failed", "err", err)
 	} else {
@@ -87,6 +108,20 @@ func main() {
 	}
 	defer mqPublisher.Close()
 
+	// Consul 客户端同时用于服务注册与 consul 探针，只创建一次。
+	var consulCli *api.Client
+	if c.Registry.Consul.Address != "" {
+		cli, err := api.NewClient(&api.Config{
+			Address: c.Registry.Consul.Address,
+			Scheme:  c.Registry.Consul.Scheme,
+		})
+		if err != nil {
+			logger.Warn("init consul client failed", "err", err)
+		} else {
+			consulCli = cli
+		}
+	}
+
 	authUC := biz.NewAuthUsecase(
 		data.NewAuthRepo(d),
 		data.NewAuthCache(d),
@@ -100,6 +135,9 @@ func main() {
 	messageUC := biz.NewMessageUsecase(data.NewMessageRepo(d))
 	orderUC := biz.NewOrderUsecase(data.NewOrderRepo(d), publisher, logger)
 	userUC := biz.NewUserUsecase(data.NewUserRepo(d))
+	projectUC := biz.NewProjectUsecase(data.NewProjectRepo(d))
+	paymentUC := biz.NewPaymentUsecase(data.NewPaymentRepo(d))
+	chatUC := biz.NewChatUsecase(data.NewChatRepo(d))
 
 	// ES 读模型：启动时建索引并做一次全量同步，之后周期刷新。
 	if d.Elastic() != nil {
@@ -110,15 +148,43 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	service.New(authUC, catalogUC, feedUC, messageUC, orderUC, userUC, logger).Register(mux)
+	service.New(authUC, catalogUC, feedUC, messageUC, orderUC, userUC, projectUC, paymentUC, chatUC, logger).Register(mux)
 
-	metrics := observability.NewMetrics()
+	// 连接池指标在抓取时读取快照，不在后台轮询。
+	metrics.RegisterDBStats(d.DBStatsSnapshot)
 	// 目录降级计数注册到 /metrics 使用的独立 Registry。
 	data.RegisterCatalogMetrics(metrics.Registry)
 	// 业务指标（登录、报价、下单）同样注册到 /metrics。
 	service.RegisterBizMetrics(metrics.Registry)
+
+	// 就绪探针：未配置的依赖 Probe 为 nil，会被标记为 skipped。
+	// 聚合状态变化时写一条审计日志，便于与告警时间线对齐。
+	var probeStatus atomic.Value
+	readiness := ops.NewReadiness(buildOpsChecks(c, d, mqPublisher, consulCli), ops.Options{
+		Service:      Name,
+		Version:      Version,
+		TTL:          time.Duration(c.Ops.ProbeCacheTTLSeconds) * time.Second,
+		TotalTimeout: time.Duration(c.Ops.ProbeTotalTimeoutSeconds) * time.Second,
+		OnResult: func(results []ops.CheckResult) {
+			metrics.ObserveProbe("readiness", results, false)
+			status := aggregateProbeStatus(results)
+			if prev, _ := probeStatus.Load().(string); prev == status {
+				return
+			}
+			probeStatus.Store(status)
+			logger.InfoContext(context.Background(), "ops audit",
+				"audit", true,
+				"actor", "system",
+				"action", "ops.probe.state",
+				"target", "readyz",
+				"result", status,
+			)
+			metrics.IncOpsAudit("ops.probe.state", status)
+		},
+	})
+
 	hs := server.NewHTTPServer(c.Server, mux, metrics, logger)
-	adminSrv := server.NewAdminServer(c.Server, metrics.Handler(), d.Health, logger)
+	adminSrv := server.NewAdminServer(c.Server, metrics, readiness, Version, opsAuth, biz.NewReportUsecase(data.NewReportRepo(d)), projectUC, logger)
 
 	// 异步事件消费者：随 kratos.App 一起启停。
 	eventHandler := service.NewEventHandler(messageUC, catalogRepo, logger)
@@ -140,10 +206,13 @@ func main() {
 			return nil
 		}),
 		kratos.AfterStart(func(ctx context.Context) error {
+			readiness.MarkStarted()
 			logger.InfoContext(ctx, "application started", "service", Name, "version", Version)
 			return nil
 		}),
 		kratos.BeforeStop(func(ctx context.Context) error {
+			// 先关闭就绪闸门，让负载均衡把流量摘走，再执行优雅停机。
+			readiness.MarkStopping()
 			logger.InfoContext(ctx, "application stopping", "service", Name)
 			return nil
 		}),
@@ -160,14 +229,8 @@ func main() {
 			apiURL := &url.URL{Scheme: "http", Host: net.JoinHostPort(host, port)}
 			opts = append(opts, kratos.Endpoint(apiURL))
 		}
-		cli, err := api.NewClient(&api.Config{
-			Address: c.Registry.Consul.Address,
-			Scheme:  c.Registry.Consul.Scheme,
-		})
-		if err != nil {
-			logger.Warn("init consul client failed", "err", err)
-		} else {
-			opts = append(opts, kratos.Registrar(consul.New(cli, consul.WithHealthCheck(true))))
+		if consulCli != nil {
+			opts = append(opts, kratos.Registrar(consul.New(consulCli, consul.WithHealthCheck(true))))
 			logger.Info("consul registry enabled", "address", c.Registry.Consul.Address)
 		}
 	}
@@ -176,5 +239,57 @@ func main() {
 	if err := app.Run(); err != nil {
 		logger.Error("application exited with error", "err", err)
 		exitCode = 1
+	}
+}
+
+// aggregateProbeStatus 汇总探针结果：任一关键依赖失败为 fail，非关键失败为 degraded。
+func aggregateProbeStatus(results []ops.CheckResult) string {
+	status := ops.StatusOK
+	for _, res := range results {
+		if res.Status != ops.StatusFail {
+			continue
+		}
+		if res.Critical {
+			return ops.StatusFail
+		}
+		status = ops.StatusDegraded
+	}
+	return status
+}
+
+// buildOpsChecks 按实际配置构造依赖探针；未配置的依赖 Probe 保持 nil，就绪引擎会标记为 skipped。
+func buildOpsChecks(c *conf.Config, d *data.Data, pub *mq.Publisher, consulCli *api.Client) []ops.Check {
+	timeout := func(sec int) time.Duration {
+		if sec <= 0 {
+			sec = c.Ops.ProbeTimeoutSeconds
+		}
+		return time.Duration(sec) * time.Second
+	}
+
+	var redisProbe, elasticProbe, rabbitProbe, consulProbe func(context.Context) error
+	if d.HasRedis() {
+		redisProbe = d.PingRedis
+	}
+	if d.HasElastic() {
+		elasticProbe = d.PingElastic
+	}
+	if c.MQ.Addr != "" {
+		rabbitProbe = pub.Health
+	}
+	if consulCli != nil {
+		consulProbe = func(ctx context.Context) error {
+			ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+			defer cancel()
+			_, err := consulCli.Status().Leader()
+			return err
+		}
+	}
+
+	return []ops.Check{
+		{Name: "mysql", Critical: c.Ops.Readiness.MySQL.IsCritical(true), Timeout: timeout(c.Ops.Readiness.MySQL.TimeoutSeconds), Probe: d.PingDatabases},
+		{Name: "redis", Critical: c.Ops.Readiness.Redis.IsCritical(true), Timeout: timeout(c.Ops.Readiness.Redis.TimeoutSeconds), Probe: redisProbe},
+		{Name: "elasticsearch", Critical: c.Ops.Readiness.Elasticsearch.IsCritical(false), Timeout: timeout(c.Ops.Readiness.Elasticsearch.TimeoutSeconds), Probe: elasticProbe},
+		{Name: "rabbitmq", Critical: c.Ops.Readiness.RabbitMQ.IsCritical(false), Timeout: timeout(c.Ops.Readiness.RabbitMQ.TimeoutSeconds), Probe: rabbitProbe},
+		{Name: "consul", Critical: c.Ops.Readiness.Consul.IsCritical(false), Timeout: timeout(c.Ops.Readiness.Consul.TimeoutSeconds), Probe: consulProbe},
 	}
 }

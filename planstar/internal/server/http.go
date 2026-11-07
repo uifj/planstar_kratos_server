@@ -38,6 +38,8 @@ func NewHTTPServer(c conf.Server, handler http.Handler, metrics *observability.M
 	srv.Server.ReadTimeout = seconds(c.HTTP.ReadTimeoutSeconds)
 	srv.Server.WriteTimeout = seconds(c.HTTP.WriteTimeoutSeconds)
 	srv.Server.IdleTimeout = seconds(c.HTTP.IdleTimeoutSeconds)
+	// 连接级指标：按 New/Closed 事件维护活跃连接数。
+	srv.Server.ConnState = metrics.ConnState
 
 	// 由内到外：recoverer → 请求超时 → 请求体限制 → trace 头 → 指标（最外层记录真实状态码）。
 	h := recoverer(logger, handler)

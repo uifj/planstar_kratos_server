@@ -12,4 +12,6 @@ var (
 	ErrLimitExceeded = errors.New("limit exceeded")
 	// ErrQuoteExpired 报价快照不存在或已过期（409 QUOTE_EXPIRED）。
 	ErrQuoteExpired = errors.New("quote expired")
+	// ErrRefundNotAllowed 订单当前状态不可退款（409 REFUND_NOT_ALLOWED）。
+	ErrRefundNotAllowed = errors.New("refund not allowed")
 )

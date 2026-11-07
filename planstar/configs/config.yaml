@@ -43,9 +43,10 @@ auth:
   # 连续登录失败达到该次数后要求图形验证码
   login_fail_captcha_threshold: 3
 
-# Jaeger 链路追踪（留空则关闭 tracing）
+# OTLP 链路追踪（endpoint 留空则关闭 tracing；本地可填 127.0.0.1:4317）
 trace:
-  endpoint: http://127.0.0.1:14268/api/traces
+  endpoint: ""
+  insecure: true
   env: dev
   sample_ratio: 1.0
 
@@ -62,3 +63,20 @@ registry:
     scheme: http
     # Consul 在容器内时，用它可解析到宿主机的地址（健康检查与调用方都走这里）
     service_host: host.docker.internal
+
+# 运维探针与指标端点
+ops:
+  token: ""                    # 由 PLANSTAR_OPS_TOKEN 注入（生产必填）
+  allowed_cidrs: []            # 由 PLANSTAR_OPS_ALLOWED_CIDRS 逗号分隔注入
+  probe_cache_ttl_seconds: 2
+  probe_timeout_seconds: 2
+  probe_total_timeout_seconds: 3
+  metrics_max_inflight: 8
+  metrics_timeout_seconds: 5
+  readiness:
+    mysql: {critical: true, timeout_seconds: 2}
+    redis: {critical: true, timeout_seconds: 2}
+    elasticsearch: {critical: false, timeout_seconds: 2}
+    rabbitmq: {critical: false, timeout_seconds: 2}
+    consul: {critical: false, timeout_seconds: 2}
+
