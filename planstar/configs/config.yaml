@@ -1,6 +1,15 @@
 server:
+  # 运行环境：dev/prod；prod 且未显式配置 cookie_secure 时自动启用 Secure
+  env: dev
   http:
     addr: 0.0.0.0:8098
+    read_timeout_seconds: 10
+    write_timeout_seconds: 30
+    idle_timeout_seconds: 60
+    request_timeout_seconds: 15
+    max_body_bytes: 1048576
+    # 跨域白名单；为空时仅允许同源请求
+    cors_allow_origins: []
   # 运维端口：/metrics（Prometheus）、/healthz、/readyz
   admin:
     addr: 0.0.0.0:9108
@@ -21,9 +30,18 @@ data:
     sync_interval_seconds: 300
     request_timeout_seconds: 3
 
-# 会话有效期（天）
+# 会话与登录风控
 auth:
+  # 会话有效期（天）
   session_expire_days: 30
+  # psSession 的 Secure 属性；prod 环境建议 true
+  cookie_secure: false
+  # 同一手机号发送验证码的冷却秒数
+  send_code_cooldown_seconds: 60
+  # 同一 IP 每分钟发送验证码的最大次数
+  send_code_ip_limit_per_minute: 10
+  # 连续登录失败达到该次数后要求图形验证码
+  login_fail_captcha_threshold: 3
 
 # Jaeger 链路追踪（留空则关闭 tracing）
 trace:

@@ -45,9 +45,19 @@ func main() {
 		With(slog.String("service.id", id), slog.String("service.name", Name), slog.String("service.version", Version))
 	klog.SetDefault(logger)
 
+	// Kratos 文档约定：Run 返回错误视为进程级失败，返回非零退出码；
+	// 该 defer 最先注册，保证已注册的清理函数（关闭 MySQL/MQ/tracing）先执行。
+	exitCode := 0
+	defer func() {
+		if exitCode != 0 {
+			os.Exit(exitCode)
+		}
+	}()
+
 	c, err := conf.Load(flagconf)
 	if err != nil {
-		panic(err)
+		logger.Error("load config failed", "path", flagconf, "err", err)
+		os.Exit(1)
 	}
 
 	// 链路追踪：endpoint 为空时自动降级为 no-op。
@@ -64,7 +74,8 @@ func main() {
 
 	d, err := data.NewData(c.Data, logger)
 	if err != nil {
-		panic(err)
+		logger.Error("init data clients failed", "err", err)
+		os.Exit(1)
 	}
 	defer d.Close()
 
@@ -102,11 +113,15 @@ func main() {
 	service.New(authUC, catalogUC, feedUC, messageUC, orderUC, userUC, logger).Register(mux)
 
 	metrics := observability.NewMetrics()
+	// 目录降级计数注册到 /metrics 使用的独立 Registry。
+	data.RegisterCatalogMetrics(metrics.Registry)
+	// 业务指标（登录、报价、下单）同样注册到 /metrics。
+	service.RegisterBizMetrics(metrics.Registry)
 	hs := server.NewHTTPServer(c.Server, mux, metrics, logger)
 	adminSrv := server.NewAdminServer(c.Server, metrics.Handler(), d.Health, logger)
 
 	// 异步事件消费者：随 kratos.App 一起启停。
-	eventHandler := service.NewEventHandler(messageUC, logger)
+	eventHandler := service.NewEventHandler(messageUC, catalogRepo, logger)
 	mqSrv := mq.NewServer(c.MQ, eventHandler.Handle, logger)
 
 	opts := []kratos.Option{
@@ -116,6 +131,26 @@ func main() {
 		kratos.Metadata(map[string]string{"env": c.Trace.Env}),
 		kratos.Logger(logger),
 		kratos.Server(hs, adminSrv, mqSrv),
+		// 优雅停机：给在途请求与 MQ 消费者留出收尾时间，并限制注册中心注销耗时。
+		kratos.StopTimeout(15 * time.Second),
+		kratos.RegistrarTimeout(5 * time.Second),
+		kratos.BeforeStart(func(ctx context.Context) error {
+			logger.InfoContext(ctx, "application starting",
+				"http_addr", c.Server.HTTP.Addr, "admin_addr", c.Server.Admin.Addr)
+			return nil
+		}),
+		kratos.AfterStart(func(ctx context.Context) error {
+			logger.InfoContext(ctx, "application started", "service", Name, "version", Version)
+			return nil
+		}),
+		kratos.BeforeStop(func(ctx context.Context) error {
+			logger.InfoContext(ctx, "application stopping", "service", Name)
+			return nil
+		}),
+		kratos.AfterStop(func(ctx context.Context) error {
+			logger.InfoContext(ctx, "application stopped", "service", Name)
+			return nil
+		}),
 	}
 
 	// Consul 服务注册：仅注册业务端口，运维端口不进服务发现。
@@ -139,6 +174,7 @@ func main() {
 
 	app := kratos.New(opts...)
 	if err := app.Run(); err != nil {
-		panic(err)
+		logger.Error("application exited with error", "err", err)
+		exitCode = 1
 	}
 }

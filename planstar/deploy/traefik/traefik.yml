@@ -3,9 +3,9 @@ entryPoints:
     address: ":80"
   websecure:
     address: ":443"
-  dashboard:
-    address: ":8080"
 
+# 注意：api.insecure=true 已由 Traefik 内置的 `traefik` entryPoint 占用 :8080，
+# 不要再额外声明 address 为 :8080 的 entryPoint，否则端口冲突导致容器反复重启。
 api:
   dashboard: true
   insecure: true

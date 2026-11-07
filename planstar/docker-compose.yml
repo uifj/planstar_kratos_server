@@ -22,6 +22,8 @@ x-app-env: &app-env
   PLANSTAR_MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
   PLANSTAR_REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
   PLANSTAR_MQ_ADDR: amqp://${RABBITMQ_USER:-root}:${RABBITMQ_PASS:-root}@rabbitmq:5672/
+  # 目录读模型周期全量重建间隔；0 表示只保留启动时一次同步
+  PLANSTAR_ES_SYNC_INTERVAL_SECONDS: ${PLANSTAR_ES_SYNC_INTERVAL_SECONDS:-300}
 
 services:
   mysql:
@@ -33,15 +35,15 @@ services:
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
-      - --default-authentication-plugin=mysql_native_password
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      # 首次初始化：建库建表 -> 演示数据 -> 认证支撑（按文件名字典序）
+      # 首次初始化：建库建表 -> 演示数据 -> 认证支撑 -> 生产化补丁（按文件名字典序）
       - ../docs/sql/00_all.sql:/docker-entrypoint-initdb.d/00_all.sql:ro
       - ../docs/sql/14_mock_seed.sql:/docker-entrypoint-initdb.d/14_mock_seed.sql:ro
       - ./sql/15_auth_support.sql:/docker-entrypoint-initdb.d/15_auth_support.sql:ro
+      - ./sql/16_production_hardening.sql:/docker-entrypoint-initdb.d/16_production_hardening.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
@@ -159,7 +161,11 @@ services:
     image: prom/mysqld-exporter:v0.15.1
     restart: unless-stopped
     environment:
-      DATA_SOURCE_NAME: "root:${MYSQL_ROOT_PASSWORD:-root}@tcp(mysql:3306)/"
+      # v0.15 起不再读取 DATA_SOURCE_NAME，改用 --mysqld.* 参数 + 该环境变量传口令
+      MYSQLD_EXPORTER_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    command:
+      - --mysqld.address=mysql:3306
+      - --mysqld.username=root
     ports:
       - "9104:9104"
     depends_on:
