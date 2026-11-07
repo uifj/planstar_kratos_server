@@ -1,4 +1,4 @@
-# CI：push / PR 时构建、静态检查与单测
+# CI：push / PR 时覆盖后端 Go、接口契约、Flutter 前端与 compose 配置校验
 name: CI
 
 on:
@@ -6,21 +6,24 @@ on:
     branches: [main]
     paths:
       - "planstar/**"
+      - "docs/api/**"
+      - "scripts/**"
       - ".github/workflows/ci.yml"
   pull_request:
     branches: [main]
     paths:
       - "planstar/**"
+      - "docs/api/**"
+      - "scripts/**"
       - ".github/workflows/ci.yml"
 
-defaults:
-  run:
-    working-directory: planstar
-
 jobs:
-  build:
-    name: Build & Test
+  go:
+    name: Go Build & Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: planstar
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,5 +44,38 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      - name: gofmt
+        run: test -z "$(gofmt -l .)"
+
       - name: Test
-        run: go test ./...
+        run: go test -race ./...
+
+  contract:
+    name: API Contract
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: planstar
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+          cache-dependency-path: planstar/go.sum
+
+      - name: Contract test
+        run: go test ./internal/server -run 'TestContract|TestRoutesMatchContract' -count=1 -v
+
+  compose:
+    name: Compose Config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate docker compose config
+        run: docker compose -f planstar/docker-compose.yml config -q
