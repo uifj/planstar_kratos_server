@@ -6,14 +6,16 @@ on:
     branches: [main]
     paths:
       - "planstar/**"
-      - "docs/api/**"
+      - "admin/**"
+      - "docs/**"
       - "scripts/**"
       - ".github/workflows/ci.yml"
   pull_request:
     branches: [main]
     paths:
       - "planstar/**"
-      - "docs/api/**"
+      - "admin/**"
+      - "docs/**"
       - "scripts/**"
       - ".github/workflows/ci.yml"
 
@@ -49,6 +51,63 @@ jobs:
 
       - name: Test
         run: go test -race ./...
+
+  admin-go:
+    name: Admin Go Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    env:
+      GOPROXY: https://goproxy.cn,direct
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+          cache-dependency-path: admin/go.sum
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+  admin-console:
+    name: Admin Console Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin/console
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: admin/console/package-lock.json
+
+      - name: Configure npm registry
+        run: npm config set registry https://repo.huaweicloud.com/repository/npm/
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
 
   contract:
     name: API Contract
