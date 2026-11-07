@@ -139,6 +139,9 @@ jobs:
       - name: Validate docker compose config
         run: docker compose -f planstar/docker-compose.yml config -q
 
+      - name: Validate lite compose overlay
+        run: PLANSTAR_CONFIG_FILE=config.lite.yaml docker compose -f planstar/docker-compose.yml -f planstar/docker-compose.lite.yml config -q
+
   observability-config:
     name: Observability Config
     runs-on: ubuntu-latest

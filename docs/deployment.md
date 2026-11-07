@@ -197,6 +197,165 @@ curl -fsS http://127.0.0.1:9110/readyz   # 依赖 MySQL/Redis
 - CORS 白名单直接写在 `admin/configs/config.docker.yaml`，域名变更时同步修改。
 - 风险、验收清单、回滚与短信/邮件/OSS 启用见 [admin-integration.md](admin-integration.md)。
 
+### 2.7 4 核 8G / 2M 带宽低配部署
+
+适用于单机 4 vCPU / 8 GiB / 2 Mbps 的起步生产环境。重组件通过 Compose profile 隔离，低配档位使用 `configs/config.lite.yaml` + `docker-compose.lite.yml` 资源上限。
+
+#### 2.7.1 服务取舍
+
+| 档位 | 启动的服务 | 说明 |
+| --- | --- | --- |
+| 默认（不指定 profile） | `mysql`、`redis`、`traefik`、`planstar-api`、`admin`、`admin-web`、`prometheus`、`alertmanager`、`grafana`、`mysqld-exporter`、`redis-exporter` | 低配可跑；监控保留轻量四件套 |
+| `COMPOSE_PROFILES=full` | 上述全部 + `elasticsearch`、`rabbitmq`、`consul`、`jaeger`、`otel-collector`、`loki`、`promtail` | 全量档位；8G 机器需额外内存或停掉部分监控 |
+
+低配档位下 `config.lite.yaml` 已把 `data.elastic.addr`、`mq.addr`、`registry.consul.address`、`trace.endpoint` 置空，搜索、异步事件、服务注册、链路追踪全部关闭。
+
+#### 2.7.2 部署命令
+
+```bash
+cd /opt/planstar/planstar
+
+# 全量档位（默认，14+ 容器）
+COMPOSE_PROFILES=full PLANSTAR_CONFIG_FILE=config.prod.yaml \
+  docker compose -f docker-compose.yml up -d --remove-orphans
+
+# 低配档位（8G / 2M）：不启用 full profile，叠加资源上限
+COMPOSE_PROFILES= PLANSTAR_CONFIG_FILE=config.lite.yaml \
+  docker compose -f docker-compose.yml -f docker-compose.lite.yml up -d --remove-orphans
+```
+
+`deploy.sh` 对应开关：
+
+```bash
+PLANSTAR_LITE=1 ./deploy.sh   # 低配：config.lite.yaml + docker-compose.lite.yml
+PLANSTAR_LITE=0 ./deploy.sh   # 全量：COMPOSE_PROFILES=full + config.prod.yaml
+```
+
+也可以把 `PLANSTAR_LITE`、`PLANSTAR_CONFIG_FILE`、`COMPOSE_PROFILES` 写入 `.env`；**同名 shell 环境变量优先于 `.env`**，切档时以命令行为准。
+
+配置自检与启动后验证：
+
+```bash
+COMPOSE_PROFILES= PLANSTAR_CONFIG_FILE=config.lite.yaml \
+  docker compose -f docker-compose.yml -f docker-compose.lite.yml config -q
+docker compose -f docker-compose.yml -f docker-compose.lite.yml ps
+for i in $(seq 1 30); do
+  curl -fsS http://127.0.0.1:9108/readyz && break
+  sleep 2
+done
+```
+
+#### 2.7.3 内存预算（8 GiB）
+
+| 项目 | 目标上限 | 落地手段 |
+| --- | --- | --- |
+| 系统 / 内核 / 页缓存 | 2000 MiB | 不设容器 limit，保留给内核与文件缓存 |
+| MySQL | 2048 MiB | `mem_limit=2g`；`innodb_buffer_pool_size=1G`、`max_connections=100` |
+| Redis | 512 MiB | `mem_limit=512m`；`maxmemory 384mb`、`maxmemory-policy allkeys-lru` |
+| planstar-api | 1024 MiB | `mem_limit=1g`（Go 堆 + 连接池） |
+| admin | 512 MiB | `mem_limit=512m` |
+| admin-web + traefik | 256 MiB | 静态站与反向代理，无大流量时应远低于此值 |
+| Prometheus / Alertmanager / Grafana / exporters | 约 700 MiB | Prometheus 保留 7 天并限制抓取目标 |
+| 缓冲 | 约 1000 MiB | 发布构建、突发流量与缓存 |
+
+`docker-compose.lite.yml` 已包含 mysql/redis/planstar-api/admin 的 `mem_limit` 与 `cpus`；若再收紧，直接改该叠加文件。
+
+Swap 建议 2 GiB（云主机默认常为 0，OOM 会直接杀 MySQL）：
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+free -h
+```
+
+MySQL 运行期调整（先加载 `.env`；`SET PERSIST` 写入数据卷，重启仍生效；命令行的 `--xxx` 参数优先级更高）：
+
+```bash
+set -a; . ./.env; set +a
+docker compose -f docker-compose.yml -f docker-compose.lite.yml exec mysql \
+  mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "
+    SET PERSIST innodb_buffer_pool_size = 1073741824;
+    SET PERSIST max_connections = 100;"
+docker compose -f docker-compose.yml -f docker-compose.lite.yml exec mysql \
+  mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "
+    SHOW VARIABLES LIKE 'innodb_buffer_pool_size';
+    SHOW VARIABLES LIKE 'max_connections';"
+```
+
+Redis 以命令行参数启动、没有配置文件，`CONFIG REWRITE` 会失败。临时生效用 `CONFIG SET`，持久化需把参数追加到 compose 的 `redis.command`：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.lite.yml exec redis \
+  redis-cli -a "$REDIS_PASSWORD" CONFIG SET maxmemory 384mb
+docker compose -f docker-compose.yml -f docker-compose.lite.yml exec redis \
+  redis-cli -a "$REDIS_PASSWORD" CONFIG SET maxmemory-policy allkeys-lru
+docker compose -f docker-compose.yml -f docker-compose.lite.yml exec redis \
+  redis-cli -a "$REDIS_PASSWORD" INFO memory | grep -E 'maxmemory|used_memory'
+```
+
+```yaml
+# docker-compose.lite.yml 中 redis 覆盖示例（保留原有 appendonly/requirepass）
+redis:
+  command:
+    - redis-server
+    - --appendonly
+    - "yes"
+    - --requirepass
+    - "${REDIS_PASSWORD:-root}"
+    - --maxmemory
+    - 384mb
+    - --maxmemory-policy
+    - allkeys-lru
+```
+
+#### 2.7.4 2M 带宽策略
+
+- 镜像在 CI 构建并推 GHCR（`Release` 工作流），服务器只 `pull` 指定 tag；不要用 `latest`，也不要在服务器 `docker build`。
+- 更省流量的方式是在构建机 `docker save | gzip` 后 `scp` 到服务器 `docker load`：
+
+```bash
+docker save ghcr.io/uifj/planstar-api:v1.2.3 | gzip -9 > planstar-api-v1.2.3.tar.gz
+scp planstar-api-v1.2.3.tar.gz root@<SERVER_HOST>:/tmp/
+ssh root@<SERVER_HOST> 'gunzip -c /tmp/planstar-api-v1.2.3.tar.gz | docker load'
+```
+
+- Traefik 已在 `deploy/traefik/dynamic.yml` 为 planstar/admin 路由启用 `compress`；`admin-web` 的 nginx 已开启 gzip，静态资源 `immutable` 缓存 1 年、普通资源 30 天、`index.html` 不缓存。
+- 大文件（图片、附件）走 OSS + CDN，不占服务器出口带宽；API 请求体默认 1 MiB，`/v1/upload` 前缀保留 20 MiB 但目前没有上传端点。
+- 发布窗口选 02:00–05:00（Asia/Shanghai）；单副本重启有 30~60 秒不可用，先 `pull` 再 `up -d`，并用上面的 `/readyz` 循环确认。低配档位只拉业务镜像：`docker compose ... pull planstar-api admin admin-web`。
+
+#### 2.7.5 关闭重组件后的行为
+
+| 配置 | 行为 | 影响与观测 |
+| --- | --- | --- |
+| `data.elastic.addr=""` | 不创建 ES 客户端；`HotIDs` 返回 `errNoElastic`，调用方回退 MySQL 排序 | 搜索可用性不变、热门榜走 DB；`planstar_catalog_es_fallback_total` 增长；`/readyz` 的 `elasticsearch` 为 skipped |
+| `mq.addr=""` | `NopEventPublisher`，不创建 consumer；启动日志无 MQ 连接 | 领域事件直接丢弃、没有异步扇出；`/readyz` 的 `rabbitmq` 为 skipped；下游依赖事件的功能需人工补偿 |
+| `registry.consul.address=""` | 不注册 Consul | 无服务发现；`/readyz` 的 `consul` 为 skipped；Traefik 仍按容器名转发 |
+| `trace.endpoint=""` + `sample_ratio=0` | 不发送 OTLP | 无 trace；日志仍有 `trace_id`（本地生成） |
+
+低配档位不会自动补发 MQ 事件，也不会在恢复 full 档位后回放历史事件；需要异步通知/索引的功能应确认是否可接受。
+
+#### 2.7.6 回滚到全量档位
+
+```bash
+cd /opt/planstar/planstar
+unset PLANSTAR_CONFIG_FILE
+export COMPOSE_PROFILES=full
+export PLANSTAR_CONFIG_FILE=config.prod.yaml
+
+# 关键：不要叠加 docker-compose.lite.yml，否则 MQ 会被强制置空且资源上限仍生效
+docker compose -f docker-compose.yml up -d --remove-orphans
+docker compose -f docker-compose.yml ps
+
+curl -fsS http://127.0.0.1:9108/readyz
+docker compose -f docker-compose.yml logs -f planstar-api | grep -Ei 'elasticsearch|rabbitmq|consul'
+```
+
+回滚前确认内存余量：全量档位额外需要 ES（堆 512m）、RabbitMQ、Consul、Jaeger、OTel Collector、Loki/Promtail，8G 机器建议先停掉 Grafana/Loki 或把 swap 提到 4G；回滚后 ES 需要全量重建索引（`data.elastic.sync_interval_seconds`，默认 300s）。
+
 ## 3. 回滚
 
 ### 3.1 应用回滚（推荐）

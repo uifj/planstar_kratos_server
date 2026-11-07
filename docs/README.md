@@ -28,7 +28,8 @@
 | [api/API_CONTRACT.md](api/API_CONTRACT.md) | 客户端接口契约（23 个已实现端点 + `GET /v1/user/` 尾斜杠别名；第 7.7 节为企划域契约定义，尚未实现） | 有效 |
 | [api/ADMIN_CONTRACT.md](api/ADMIN_CONTRACT.md) | 运营后台契约：9108 管理端口举报处理，以及 `admin.planstar.top` 的 `/v1/admins/*`、`/v1/planstar/*` | 有效 |
 | [admin-integration.md](admin-integration.md) | admin 与 planstar 的部署整合、风险、上线、回滚与外部服务 | 有效 |
-| [deployment.md](deployment.md) | 部署与回滚手册 | 有效 |
+| [aliyun-sms-oss.md](aliyun-sms-oss.md) | 阿里云号码认证短信（Dypnsapi）开通、RAM 最小权限、签名模板、错误码与 OSS/CDN 接入 | 有效 |
+| [deployment.md](deployment.md) | 部署与回滚手册（含 4C8G/2M 低配档位） | 有效 |
 | [operations.md](operations.md) | 运维与故障处置手册 | 有效 |
 | [sql/README.md](sql/README.md) | 9 个 `planstar_*` 库建库脚本与演示数据说明 | 有效（数据基线） |
 
