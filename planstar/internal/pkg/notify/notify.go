@@ -1,5 +1,5 @@
 // Package notify 提供短信与邮件的发送抽象。
-// 当前仅内置 Noop 与日志实现，真实服务商客户端可在 NewSMS / NewEmail 中按 provider 接入。
+// 短信支持 Noop、日志与阿里云号码认证（Dypnsapi），邮件暂只内置 Noop 与日志实现。
 package notify
 
 import (
@@ -73,22 +73,37 @@ func (e *logEmail) Send(ctx context.Context, email Email) error {
 	return nil
 }
 
-// NewSMS 按配置构造短信发送器：生产环境一律返回 Noop（不输出验证码明文），
-// 开发环境返回日志实现便于本地调试。provider 客户端尚未接入时同样降级为日志输出。
-func NewSMS(cfg conf.SMS, env string, log *slog.Logger) SMSSender {
+// NewSMS 按配置构造短信发送器：未启用时保持原有降级行为（生产 Noop、开发日志）；
+// 启用 aliyun/aliyun-dypns 时构造真实客户端，其余 provider 仍是未知 provider 处理。
+func NewSMS(cfg conf.SMS, env string, log *slog.Logger) (SMSSender, error) {
 	if log == nil {
 		log = slog.Default()
 	}
-	if isProduction(env) {
-		if cfg.Enabled {
-			log.Warn("sms provider not implemented, messages are dropped", "provider", cfg.Provider)
+	if !cfg.Enabled {
+		if isProduction(env) {
+			return NoopSMS{}, nil
 		}
-		return NoopSMS{}
+		return &logSMS{log: log}, nil
 	}
-	if cfg.Enabled {
+	switch strings.ToLower(strings.TrimSpace(cfg.Provider)) {
+	case "aliyun", "aliyun-dypns":
+		if err := validateSMSConfig(cfg); err != nil {
+			return nil, err
+		}
+		api, err := newDypnsClient(cfg)
+		if err != nil {
+			return nil, err
+		}
+		log.Info("aliyun sms provider enabled", "endpoint", dypnsEndpoint(cfg))
+		return &aliyunSMS{api: api, signName: cfg.SignName, templateCode: cfg.TemplateCode}, nil
+	default:
+		if isProduction(env) {
+			log.Warn("sms provider not implemented, messages are dropped", "provider", cfg.Provider)
+			return NoopSMS{}, nil
+		}
 		log.Warn("sms provider not implemented, falling back to log sender", "provider", cfg.Provider)
+		return &logSMS{log: log}, nil
 	}
-	return &logSMS{log: log}
 }
 
 // NewEmail 按配置构造邮件发送器：生产环境返回 Noop，开发环境返回日志实现。

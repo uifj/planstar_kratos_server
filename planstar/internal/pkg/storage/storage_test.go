@@ -10,19 +10,22 @@ import (
 	"planstar/internal/conf"
 )
 
-func TestNewObjectStorageAlwaysNoop(t *testing.T) {
+func TestNewObjectStorageNoopFallback(t *testing.T) {
 	cases := []struct {
 		name string
 		cfg  conf.OSS
 	}{
 		{name: "disabled", cfg: conf.OSS{}},
-		{name: "enabled unsupported provider", cfg: conf.OSS{Enabled: true, Provider: "oss"}},
+		{name: "enabled unsupported provider", cfg: conf.OSS{Enabled: true, Provider: "s3"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			var buf bytes.Buffer
 			logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
-			store := NewObjectStorage(tc.cfg, logger)
+			store, err := NewObjectStorage(tc.cfg, logger)
+			if err != nil {
+				t.Fatalf("NewObjectStorage() error = %v", err)
+			}
 			if _, ok := store.(Noop); !ok {
 				t.Fatalf("NewObjectStorage() = %T, want Noop", store)
 			}
@@ -53,7 +56,11 @@ func TestNewObjectStorageAlwaysNoop(t *testing.T) {
 }
 
 func TestNewObjectStorageNilLogger(t *testing.T) {
-	if got := NewObjectStorage(conf.OSS{Enabled: true}, nil); got == nil {
-		t.Fatal("NewObjectStorage() = nil, want Noop")
+	got, err := NewObjectStorage(conf.OSS{}, nil)
+	if err != nil {
+		t.Fatalf("NewObjectStorage() error = %v", err)
+	}
+	if _, ok := got.(Noop); !ok {
+		t.Fatalf("NewObjectStorage() = %T, want Noop", got)
 	}
 }

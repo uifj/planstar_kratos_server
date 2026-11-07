@@ -123,8 +123,13 @@ func main() {
 		}
 	}
 
-	// 短信默认关闭：开发环境走日志实现（可看到验证码），生产环境为 Noop。
-	smsSender := notify.NewSMS(c.Notify.SMS, c.Server.Env, logger)
+	// 短信默认关闭：开发环境走日志实现（可看到验证码），生产环境为 Noop；
+	// 显式启用 aliyun 时使用真实客户端，配置缺失直接失败关闭。
+	smsSender, err := notify.NewSMS(c.Notify.SMS, c.Server.Env, logger)
+	if err != nil {
+		logger.Error("init sms sender failed", "err", err)
+		os.Exit(1)
+	}
 	authUC := biz.NewAuthUsecase(
 		data.NewAuthRepo(d),
 		data.NewAuthCache(d),

@@ -28,7 +28,10 @@ func TestNewSMSProductionReturnsNoop(t *testing.T) {
 	for _, env := range []string{"prod", "production", " PROD "} {
 		for _, enabled := range []bool{false, true} {
 			var buf bytes.Buffer
-			sender := NewSMS(conf.SMS{Enabled: enabled}, env, newBufferLogger(&buf))
+			sender, err := NewSMS(conf.SMS{Enabled: enabled}, env, newBufferLogger(&buf))
+			if err != nil {
+				t.Fatalf("NewSMS(env=%q, enabled=%v) error = %v", env, enabled, err)
+			}
 			if !isNoopSMS(sender) {
 				t.Fatalf("NewSMS(env=%q, enabled=%v) = %T, want NoopSMS", env, enabled, sender)
 			}
@@ -48,7 +51,10 @@ func TestNewSMSProductionReturnsNoop(t *testing.T) {
 func TestNewSMSDevUsesLogSender(t *testing.T) {
 	for _, enabled := range []bool{false, true} {
 		var buf bytes.Buffer
-		sender := NewSMS(conf.SMS{Enabled: enabled}, "dev", newBufferLogger(&buf))
+		sender, err := NewSMS(conf.SMS{Enabled: enabled}, "dev", newBufferLogger(&buf))
+		if err != nil {
+			t.Fatalf("NewSMS(enabled=%v) error = %v", enabled, err)
+		}
 		if !isLogSMS(sender) {
 			t.Fatalf("NewSMS(enabled=%v) = %T, want *logSMS", enabled, sender)
 		}

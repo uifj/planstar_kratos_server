@@ -84,12 +84,12 @@ ops:
 notify:
   sms:
     enabled: false
-    provider: ""
-    endpoint: ""
+    provider: ""                # aliyun（兼容 aliyun-dypns）
+    endpoint: ""                # 默认 dypnsapi.aliyuncs.com
     access_key: ""
     access_secret: ""
     sign_name: ""
-    template_code: ""
+    template_code: ""           # 模板变量必须为 ${code}
   email:
     enabled: false
     provider: ""
@@ -103,12 +103,12 @@ notify:
 storage:
   oss:
     enabled: false
-    provider: ""
+    provider: ""                # aliyun（兼容 oss）
     endpoint: ""
     region: ""
     bucket: ""
     access_key: ""
     access_secret: ""
     cdn_host: ""
-    presign_ttl_seconds: 3600
+    presign_ttl_seconds: 3600   # 0 表示使用默认 900 秒
 

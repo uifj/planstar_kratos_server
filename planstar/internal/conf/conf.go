@@ -479,7 +479,7 @@ func applyDefaults(c *Config) {
 		c.Notify.Email.SMTPPort = 465
 	}
 	if c.Storage.OSS.PresignTTLSeconds <= 0 {
-		c.Storage.OSS.PresignTTLSeconds = 3600
+		c.Storage.OSS.PresignTTLSeconds = 900
 	}
 }
 
