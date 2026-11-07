@@ -78,13 +78,12 @@ func (s *Service) sendLoginCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code, err := s.auth.SendLoginCode(r.Context(), mobile)
-	if err != nil {
+	// 验证码由 notify 层下发：开发环境的日志实现会打印明文，生产环境不落明文。
+	if _, err := s.auth.SendLoginCode(r.Context(), mobile); err != nil {
 		s.log.ErrorContext(r.Context(), "send login code", "mobile", maskMobile(mobile), "err", err)
 		httpx.JSON(w, http.StatusOK, &biz.SendCodeResp{Success: false, ErrorMsg: "发送失败"})
 		return
 	}
-	s.log.InfoContext(r.Context(), "sms login code (dev)", "mobile", maskMobile(mobile), "code", code)
 	httpx.JSON(w, http.StatusOK, &biz.SendCodeResp{Success: true})
 }
 

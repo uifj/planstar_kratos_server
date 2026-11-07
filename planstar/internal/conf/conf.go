@@ -20,6 +20,54 @@ type Config struct {
 	MQ       MQ       `yaml:"mq"`
 	Registry Registry `yaml:"registry"`
 	Ops      Ops      `yaml:"ops"`
+	Notify   Notify   `yaml:"notify"`
+	Storage  Storage  `yaml:"storage"`
+}
+
+// Notify 是短信与邮件通知配置；默认关闭，真实服务商客户端按 provider 接入。
+type Notify struct {
+	SMS   SMS   `yaml:"sms"`
+	Email Email `yaml:"email"`
+}
+
+// SMS 是短信服务商配置。
+type SMS struct {
+	Enabled      bool   `yaml:"enabled"`
+	Provider     string `yaml:"provider"`
+	Endpoint     string `yaml:"endpoint"`
+	AccessKey    string `yaml:"access_key"`
+	AccessSecret string `yaml:"access_secret"`
+	SignName     string `yaml:"sign_name"`
+	TemplateCode string `yaml:"template_code"`
+}
+
+// Email 是 SMTP 邮件配置。
+type Email struct {
+	Enabled  bool   `yaml:"enabled"`
+	Provider string `yaml:"provider"`
+	SMTPHost string `yaml:"smtp_host"`
+	SMTPPort int    `yaml:"smtp_port"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	From     string `yaml:"from"`
+}
+
+// Storage 是对象存储配置。
+type Storage struct {
+	OSS OSS `yaml:"oss"`
+}
+
+// OSS 是对象存储（阿里云 OSS / S3 等）配置。
+type OSS struct {
+	Enabled           bool   `yaml:"enabled"`
+	Provider          string `yaml:"provider"`
+	Endpoint          string `yaml:"endpoint"`
+	Region            string `yaml:"region"`
+	Bucket            string `yaml:"bucket"`
+	AccessKey         string `yaml:"access_key"`
+	AccessSecret      string `yaml:"access_secret"`
+	CDNHost           string `yaml:"cdn_host"`
+	PresignTTLSeconds int    `yaml:"presign_ttl_seconds"`
 }
 
 type Server struct {
@@ -166,6 +214,8 @@ func Load(path string) (*Config, error) {
 	if err := yaml.Unmarshal(b, &c); err != nil {
 		return nil, err
 	}
+	// PLANSTAR_ENV 需在 applyDefaults 之前生效，保证 Cookie Secure 等安全默认值按真实环境推导。
+	override(&c.Server.Env, "PLANSTAR_ENV")
 	applyDefaults(&c)
 	// 敏感信息与部署相关地址优先由环境变量注入，避免把真实口令写进配置文件。
 	override(&c.Server.HTTP.Addr, "PLANSTAR_HTTP_ADDR")
@@ -187,6 +237,40 @@ func Load(path string) (*Config, error) {
 	}
 	override(&c.Registry.Consul.Address, "PLANSTAR_CONSUL_ADDRESS")
 	override(&c.Ops.Token, "PLANSTAR_OPS_TOKEN")
+	// 通知与对象存储默认关闭，密钥仅通过环境变量注入。
+	if err := overrideBool(&c.Notify.SMS.Enabled, "PLANSTAR_NOTIFY_SMS_ENABLED"); err != nil {
+		return nil, err
+	}
+	override(&c.Notify.SMS.Provider, "PLANSTAR_NOTIFY_SMS_PROVIDER")
+	override(&c.Notify.SMS.Endpoint, "PLANSTAR_NOTIFY_SMS_ENDPOINT")
+	override(&c.Notify.SMS.AccessKey, "PLANSTAR_NOTIFY_SMS_ACCESS_KEY")
+	override(&c.Notify.SMS.AccessSecret, "PLANSTAR_NOTIFY_SMS_ACCESS_SECRET")
+	override(&c.Notify.SMS.SignName, "PLANSTAR_NOTIFY_SMS_SIGN_NAME")
+	override(&c.Notify.SMS.TemplateCode, "PLANSTAR_NOTIFY_SMS_TEMPLATE_CODE")
+	if err := overrideBool(&c.Notify.Email.Enabled, "PLANSTAR_NOTIFY_EMAIL_ENABLED"); err != nil {
+		return nil, err
+	}
+	override(&c.Notify.Email.Provider, "PLANSTAR_NOTIFY_EMAIL_PROVIDER")
+	override(&c.Notify.Email.SMTPHost, "PLANSTAR_NOTIFY_EMAIL_SMTP_HOST")
+	if err := overrideInt(&c.Notify.Email.SMTPPort, "PLANSTAR_NOTIFY_EMAIL_SMTP_PORT"); err != nil {
+		return nil, err
+	}
+	override(&c.Notify.Email.Username, "PLANSTAR_NOTIFY_EMAIL_USERNAME")
+	override(&c.Notify.Email.Password, "PLANSTAR_NOTIFY_EMAIL_PASSWORD")
+	override(&c.Notify.Email.From, "PLANSTAR_NOTIFY_EMAIL_FROM")
+	if err := overrideBool(&c.Storage.OSS.Enabled, "PLANSTAR_STORAGE_OSS_ENABLED"); err != nil {
+		return nil, err
+	}
+	override(&c.Storage.OSS.Provider, "PLANSTAR_STORAGE_OSS_PROVIDER")
+	override(&c.Storage.OSS.Endpoint, "PLANSTAR_STORAGE_OSS_ENDPOINT")
+	override(&c.Storage.OSS.Region, "PLANSTAR_STORAGE_OSS_REGION")
+	override(&c.Storage.OSS.Bucket, "PLANSTAR_STORAGE_OSS_BUCKET")
+	override(&c.Storage.OSS.AccessKey, "PLANSTAR_STORAGE_OSS_ACCESS_KEY")
+	override(&c.Storage.OSS.AccessSecret, "PLANSTAR_STORAGE_OSS_ACCESS_SECRET")
+	override(&c.Storage.OSS.CDNHost, "PLANSTAR_STORAGE_OSS_CDN_HOST")
+	if err := overrideInt(&c.Storage.OSS.PresignTTLSeconds, "PLANSTAR_STORAGE_OSS_PRESIGN_TTL_SECONDS"); err != nil {
+		return nil, err
+	}
 	if v := os.Getenv("PLANSTAR_OPS_ALLOWED_CIDRS"); v != "" {
 		cidrs := make([]string, 0, 4)
 		for _, item := range strings.Split(v, ",") {
@@ -391,10 +475,42 @@ func applyDefaults(c *Config) {
 			probe.TimeoutSeconds = c.Ops.ProbeTimeoutSeconds
 		}
 	}
+	if c.Notify.Email.SMTPPort <= 0 {
+		c.Notify.Email.SMTPPort = 465
+	}
+	if c.Storage.OSS.PresignTTLSeconds <= 0 {
+		c.Storage.OSS.PresignTTLSeconds = 3600
+	}
 }
 
 func override(dst *string, env string) {
 	if v := os.Getenv(env); v != "" {
 		*dst = v
 	}
+}
+
+func overrideBool(dst *bool, env string) error {
+	v := os.Getenv(env)
+	if v == "" {
+		return nil
+	}
+	b, err := strconv.ParseBool(strings.TrimSpace(v))
+	if err != nil {
+		return fmt.Errorf("%s 必须是 true/false/1/0: %q", env, v)
+	}
+	*dst = b
+	return nil
+}
+
+func overrideInt(dst *int, env string) error {
+	v := os.Getenv(env)
+	if v == "" {
+		return nil
+	}
+	n, err := strconv.Atoi(strings.TrimSpace(v))
+	if err != nil {
+		return fmt.Errorf("%s 必须是整数: %q", env, v)
+	}
+	*dst = n
+	return nil
 }

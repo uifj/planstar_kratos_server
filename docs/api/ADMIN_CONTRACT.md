@@ -197,3 +197,86 @@ curl -fsS -H "Authorization: Bearer $PLANSTAR_OPS_TOKEN" \
   `planstar/deploy/prometheus/ops_token`；否则 Prometheus 抓取失败并触发
   `PlanstarOpsAuthFailureSpike`。
 - 后续接入运营账号体系时，在 `OpsAuth` 之后增加 RBAC 中间件，不改动业务契约。
+
+## 7. 运营后台 API（admin.planstar.top）
+
+本节描述 `planstar/admin` 模块的新控制台契约，与第 0–6 节的 `planstar-api` 9108 ops API 是两套独立入口。
+
+### 7.1 访问方式与路由
+
+| 项目 | 约定 |
+| --- | --- |
+| 域名 | `https://admin.planstar.top`（Traefik 终止 TLS） |
+| API 前缀 | `Host(admin.planstar.top) && PathPrefix(/v1)` → `admin:9100` |
+| 控制台 | 其余路径 → `admin-web:80`（nginx 静态资源 + SPA fallback） |
+| HTTP | `http://admin.planstar.top/*` 301 跳转 HTTPS |
+| Cookie | `psAdminToken`（JWT，`HttpOnly`、`Secure`、`SameSite=Strict`；与业务 `psSession` 隔离） |
+| 未认证 | `401 {"code":401,"reason":"UNAUTHENTICATED","message":"...","metadata":{}}`（Kratos 默认错误体） |
+| Origin | 非 GET 请求校验 `Origin` 白名单，不匹配返回 `403` |
+
+说明：运营后台不经过 `PLANSTAR_OPS_TOKEN`；该令牌仅由 `admin` 服务向 `planstar-api:9108` 发起 `POST /admin/*` 时使用。
+
+### 7.2 `/v1/admins/*`（账号与登录）
+
+| 方法 | 路径 | 说明 | 最低角色 |
+| --- | --- | --- | --- |
+| POST | `/v1/admins/login` | 账号密码登录，下发 `psAdminToken`；失败计数与锁定 | 匿名 |
+| POST | `/v1/admins/logout` | 撤销当前 JWT 并清除 Cookie | viewer |
+| GET | `/v1/admins/current` | 当前管理员信息与角色 | viewer |
+| PUT | `/v1/admins/password` | 修改自己的密码（需旧密码） | viewer |
+| GET | `/v1/admins/list` | 管理员列表（分页/关键字） | admin |
+| POST | `/v1/admins/create` | 创建管理员（用户名、密码、角色） | admin |
+| PUT | `/v1/admins/update` | 更新管理员角色/状态 | admin |
+| GET | `/v1/admins/{id}` | 管理员详情 | admin |
+| DELETE | `/v1/admins/{id}` | 删除管理员（软删除，更新状态） | admin |
+
+登录请求示例：
+
+```bash
+curl -i -c cookie.txt \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"ops","password":"<password>"}' \
+  https://admin.planstar.top/v1/admins/login
+
+curl -fsS -b cookie.txt https://admin.planstar.top/v1/admins/current
+```
+
+### 7.3 `/v1/planstar/*`（控制台数据）
+
+| 方法 | 路径 | 说明 | 最低角色 |
+| --- | --- | --- | --- |
+| GET | `/v1/planstar/users` | 用户列表（分页/状态/关键字） | viewer |
+| PUT | `/v1/planstar/users/{id}/status` | 更新 `planstar_user.user_info` 用户状态 | operator |
+| GET | `/v1/planstar/projects` | 企划列表（分页/审核状态） | viewer |
+| POST | `/v1/planstar/projects/{id}/review` | 企划审核：通过/驳回，转调 9108 ops API | operator |
+| GET | `/v1/planstar/orders` | 订单列表（分页/状态） | viewer |
+| GET | `/v1/planstar/reports` | 举报列表（分页/状态） | viewer |
+| POST | `/v1/planstar/reports/{id}/handle` | 举报处置，转调 9108 ops API | operator |
+
+### 7.4 角色矩阵
+
+角色按 `viewer < operator < admin` 单向包含，服务端逐方法校验；角色来自 `admins.access`，无法通过请求参数提升。
+
+| 能力 | viewer | operator | admin |
+| --- | --- | --- | --- |
+| 登录、登出、查看本人信息、改本人密码 | ✅ | ✅ | ✅ |
+| 查询用户/企划/订单/举报 | ✅ | ✅ | ✅ |
+| 改用户状态、审核企划、处理举报 | ❌ | ✅ | ✅ |
+| 管理员列表/创建/更新/详情/删除 | ❌ | ❌ | ✅ |
+
+### 7.5 错误码
+
+统一响应体（Kratos v3 默认错误编码器，无自定义包装）：
+
+```json
+{"code": 401, "reason": "UNAUTHENTICATED", "message": "unauthorized", "metadata": {}}
+```
+
+| HTTP | reason（示例） | 语义与前端处理 |
+| --- | --- | --- |
+| `401` | `UNAUTHENTICATED` / `INVALID_CREDENTIALS` | 未登录、Cookie 缺失/过期、JWT 被撤销，或登录凭证错误。前端清 Cookie 并跳登录页 |
+| `403` | `PERMISSION_DENIED` / `FORBIDDEN` | 角色不足、Origin 校验失败、账号被禁用；不得自动重试，提示无权限 |
+| `429` | `TOO_MANY_ATTEMPTS` | 同一账号或来源 IP 登录失败次数超限；提示稍后再试，禁止自动重试 |
+| `503` | `OPS_UNAVAILABLE` | `planstar-api:9108` 不可达或返回非 2xx（审核/举报处置）；保持表单，提示稍后重试并上报 |
+
+补充：业务校验失败返回 `400`（如非法状态/decision），资源不存在返回 `404`（`USER_NOT_FOUND`/`PROJECT_NOT_FOUND`/`REPORT_NOT_FOUND`/`ADMIN_NOT_FOUND`），未预期错误返回 `500`。错误体本身不含 `traceId`；通过 OTel trace 与 `service.name`（规划为 `admin.api`）在日志/链路系统中关联请求。

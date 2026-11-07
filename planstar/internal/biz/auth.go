@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"planstar/internal/pkg/captcha"
+	"planstar/internal/pkg/notify"
 	"planstar/internal/pkg/secret"
 	"planstar/internal/pkg/session"
 )
@@ -97,21 +98,25 @@ type AuthUsecase struct {
 	repo   AuthRepo
 	cache  AuthCache
 	events EventPublisher
+	sms    notify.SMSSender
 	log    *slog.Logger
 	ttl    time.Duration
 }
 
-func NewAuthUsecase(repo AuthRepo, cache AuthCache, events EventPublisher, log *slog.Logger, ttl time.Duration) *AuthUsecase {
+func NewAuthUsecase(repo AuthRepo, cache AuthCache, events EventPublisher, sms notify.SMSSender, log *slog.Logger, ttl time.Duration) *AuthUsecase {
 	if ttl <= 0 {
 		ttl = session.SessionTTL
 	}
 	if events == nil {
 		events = NopEventPublisher{}
 	}
+	if sms == nil {
+		sms = notify.NoopSMS{}
+	}
 	if log == nil {
 		log = slog.Default()
 	}
-	return &AuthUsecase{repo: repo, cache: cache, events: events, log: log, ttl: ttl}
+	return &AuthUsecase{repo: repo, cache: cache, events: events, sms: sms, log: log, ttl: ttl}
 }
 
 // Login 校验凭证并签发会话，返回登录体与 psSession 令牌。
@@ -163,13 +168,17 @@ func (uc *AuthUsecase) Login(ctx context.Context, mobile, password, code string)
 	return &LoginBean{NeedCaptcha: false, NewUser: newUser, User: user.ToAuthUser()}, token, nil
 }
 
-// SendLoginCode 生成并保存短信验证码（返回明文供开发环境日志打印）。
+// SendLoginCode 生成并保存短信验证码，再通过 SMSSender 下发（返回明文仅供内部调用方使用）。
 func (uc *AuthUsecase) SendLoginCode(ctx context.Context, mobile string) (string, error) {
 	if mobile == "" {
 		return "", ErrBadRequest
 	}
 	code := loginCode()
 	if err := uc.repo.SaveLoginCode(ctx, mobile, code, time.Now().Add(captchaTTL)); err != nil {
+		return "", err
+	}
+	if err := uc.sms.SendCode(ctx, mobile, code); err != nil {
+		uc.log.WarnContext(ctx, "send sms code failed", "mobile", notify.MaskMobile(mobile), "err", err)
 		return "", err
 	}
 	return code, nil

@@ -23,6 +23,7 @@ import (
 	"planstar/internal/mq"
 	"planstar/internal/observability"
 	"planstar/internal/ops"
+	"planstar/internal/pkg/notify"
 	"planstar/internal/server"
 	"planstar/internal/service"
 )
@@ -122,10 +123,13 @@ func main() {
 		}
 	}
 
+	// 短信默认关闭：开发环境走日志实现（可看到验证码），生产环境为 Noop。
+	smsSender := notify.NewSMS(c.Notify.SMS, c.Server.Env, logger)
 	authUC := biz.NewAuthUsecase(
 		data.NewAuthRepo(d),
 		data.NewAuthCache(d),
 		publisher,
+		smsSender,
 		logger,
 		time.Duration(c.Auth.SessionExpireDays)*24*time.Hour,
 	)

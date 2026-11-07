@@ -6,7 +6,7 @@
 
 - **唯一事实源**：`planstar/internal/service/service.go` 的 `Register` 路由表，以及同目录各 handler。
 - 服务监听 `8098`；所有路径区分大小写，使用 `METHOD /path` 精确匹配。
-- 当前注册 46 条路由，对应 **45 个唯一端点**：`GET /v1/user/` 是 `GET /v1/user` 的尾斜杠别名，复用同一 handler，本契约只记录一次。
+- 当前注册 53 条路由，对应 **52 个唯一端点**：`GET /v1/user/` 是 `GET /v1/user` 的尾斜杠别名，复用同一 handler，本契约只记录一次。
 - 成功响应为裸 JSON（无 `{code,message,data}` 信封），`Content-Type: application/json; charset=utf-8`；图片端点返回 `image/png`。
 - 请求体字段大小写敏感，允许的字段别名已在各端点列出；未列出的字段当前被忽略。
 
@@ -45,6 +45,10 @@
 | HTTP 请求（`payAmount` / `totalAmount`） | **分** | 下单入参，整数 |
 | HTTP 响应（`payAmount`、`priceFrom`、`minPrice`、`listPriceFrom`、`originalPrice`、`price`、`walletBalance`、`balance`） | **分** | 整数 |
 | MySQL `order_info.pay_amount` / `total_amount` | **元** | `DECIMAL(12,2)`；biz 层 `Fen` 转分输出，下单时 `fenToYuan` 落库 |
+| 星币账户 `walletBalance` / `balance` / 钱包流水 `amount` / `balanceAfter` | **分** | 1 星币 = 100 分；客户端 `Money.fromMinorUnits` 渲染为「星币」 |
+| 商品规格 `priceCoins` | **星币个数** | 1000 表示 1000 星币；客户端展示时乘以 100 转最小单位，不参与下单金额计算 |
+
+星币是本项目唯一的前台货币口径：展示层统一为「星币」，不存在人民币符号；接口内部仍沿用整数最小单位以避免浮点误差。
 
 不得在契约中混用元与分；`priceFrom`、`walletBalance` 等字段的客户端解析均按分处理。
 
@@ -370,6 +374,36 @@ GET /v1/user
 - 别名：`GET /v1/user/`（尾斜杠）复用同一 handler，响应完全一致
 - 错误：`401 UNAUTHORIZED`、`404 NOT_FOUND`、`500 INTERNAL`
 
+GET /v1/user/signIn
+
+- 鉴权：是
+- 请求：无参数
+- 响应：`SignInStatus`，字段见第 8.13 节；`signed=true` 表示当天已签到，`balance` 为当前星币余额（分）
+- 说明：只读，不产生签到记录
+- 错误：`401 UNAUTHORIZED`、`500 INTERNAL`
+
+POST /v1/user/signIn
+
+- 鉴权：是
+- 请求：无参数
+- 响应：`SignInStatus`；当天首签返回 `alreadySigned=false`，重复签到返回 `alreadySigned=true`
+- 说明：每个自然日最多入账一次；首签在单事务内写入 `planstar_marketing.daily_sign_in`、`wallet_account.balance += 100` 并写一条「每日签到」流水；重复签到不改变余额
+- 错误：`401 UNAUTHORIZED`、`500 INTERNAL`
+
+GET /v1/moneyaccount
+
+- 鉴权：是
+- 请求：无参数
+- 响应：`WalletAccount`，字段见第 8.13 节；账户不存在时按 `user_statistic.balance` 初始化后返回
+- 错误：`401 UNAUTHORIZED`、`500 INTERNAL`
+
+GET /v1/moneyaccount/sequences
+
+- 鉴权：是
+- 请求：无参数（固定返回最近 50 条）
+- 响应：`{"items":[WalletTransaction],"total":int}`；按时间倒序
+- 错误：`401 UNAUTHORIZED`、`500 INTERNAL`
+
 GET /v1/myaddress
 
 - 鉴权：是
@@ -550,6 +584,30 @@ GET /v1/rankings
 - 说明：`hot` 按支持人数与 `rank_weight`，`achievement` 按达成率，`ending` 按剩余天数升序；仅统计 `funding_status in (ongoing, achieved)`
 - 错误：`400 BAD_REQUEST`、`500 INTERNAL`
 
+## 7.8 星币商城
+
+GET /v1/shop/goods
+
+- 鉴权：否
+- 请求：无参数
+- 响应：`{"items":[Goods],"total":int}`，`Goods` / `GoodsSKU` 字段见第 8.13 节；仅返回 `status=1` 的商品与规格，按 `sort`、`goods_id` 升序
+- 错误：`500 INTERNAL`
+
+GET /v1/shop/goods/{id}
+
+- 鉴权：否
+- 请求：路径参数 `id`（int64，商品 ID）
+- 响应：单个 `Goods`（含全部 `status=1` 的规格）
+- 错误：`400 BAD_REQUEST`、`404 NOT_FOUND`、`500 INTERNAL`
+
+POST /v1/shop/goods/{id}/skus/{skuId}/redeem
+
+- 鉴权：是
+- 请求：路径参数 `id`（商品 ID）、`skuId`（规格 ID）；无请求体
+- 响应：`RedeemResult`，字段见第 8.13 节
+- 说明：单事务内校验库存与星币余额，扣星币、写「兑换「商品·规格」」支出流水、`stock-1` / `sold+1`、生成 `goods_order`
+- 错误：`401 UNAUTHORIZED`、`400 INSUFFICIENT_COINS`（星币余额不足）、`409 SOLD_OUT`（库存不足）、`404 NOT_FOUND`、`500 INTERNAL`
+
 ## 8. 响应模型
 
 字段名以 `internal/biz` 包内的模型文件为准；同义字段为兼容客户端而重复输出。
@@ -603,7 +661,7 @@ GET /v1/rankings
 ### 8.10 企划域
 
 > 以下模型对应第 7.7 节，已在 `internal/biz/project.go` 落地，属于第 1 节所述
-> 45 个唯一端点。金额字段与第 3 节一致，均为**分**。
+> 52 个唯一端点。金额字段与第 3 节一致，均为**分**。
 
 `ProjectSummary`：
 `projectId(int64)`、`projectNo(string)`、`title(string)`、`subtitle(string,omitempty)`、`cover(string)`、`categoryId(int64)`、`categoryName(string)`、`projectType(string)`、`creatorId(int64)`、`creatorName(string)`、`goalAmount(int64)`、`raisedAmount(int64)`、`supporterCount(int)`、`deadline(毫秒时间戳)`、`remainingDays(int)`、`fundingStatus(string)`、`achievementRate(int, 千分比)`、`minSupportAmount(int64)`、`tags(string[])`、`isFeatured(bool)`
@@ -647,6 +705,20 @@ GET /v1/rankings
 
 `Refund`：`refundNo(string)`、`orderId(int64)`、`refundableAmount(int64, 分)`、`status(string, applied/processing/success/rejected)`、`expectedArrivalDays(int)`
 
+### 8.13 星币钱包与商城（WalletAccount / WalletTransaction / SignInStatus / Goods / RedeemResult）
+
+`WalletAccount`：`accountId(int64)`、`balance(int64, 分)`、`currency(string, 固定 star_coin)`、`status(int32)`
+
+`WalletTransaction`：`id(int64)`、`title(string)`、`amount(int64, 分，收入为正、支出为负)`、`balanceAfter(int64, 分)`、`type(string, income/expense)`、`happenTime(string, RFC3339)`
+
+`SignInStatus`：`signed(bool)`、`alreadySigned(bool)`、`todayReward(int64, 星币个数)`、`balance(int64, 分)`、`signedAt(string, RFC3339, 未签到省略)`
+
+`Goods`：`goodsId(int64)`、`name(string)`、`brief(string)`、`description(string)`、`cover(string)`、`skus(GoodsSKU[])`
+
+`GoodsSKU`：`skuId(int64)`、`name(string)`、`priceCoins(int64, 星币个数)`、`stock(int64)`、`sold(int64)`
+
+`RedeemResult`：`orderNo(string)`、`balance(int64, 分)`、`stock(int64)`、`sold(int64)`
+
 ## 9. 端点与数据表映射
 
 | 端点域 | 主要表 |
@@ -663,6 +735,9 @@ GET /v1/rankings
 | 消息 | `planstar_user.user_message` |
 | 客服会话 / 消息 | `planstar_user.chat_thread`、`chat_message` |
 | 支付单 / 退款单 | `planstar_payment.pay_order`、`order_refund` |
+| 星币钱包 / 钱包流水 | `planstar_payment.wallet_account`、`wallet_sequence` |
+| 每日签到 | `planstar_marketing.daily_sign_in` |
+| 星币商城 / 兑换单 | `planstar_shop.goods`、`goods_sku`、`goods_order` |
 | 订单 | `planstar_order.order_info` |
 | 用户资料 | `planstar_user.user_info`、`user_statistic` |
 | 地址 | `planstar_user.user_address` |

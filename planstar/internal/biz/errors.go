@@ -14,4 +14,6 @@ var (
 	ErrQuoteExpired = errors.New("quote expired")
 	// ErrRefundNotAllowed 订单当前状态不可退款（409 REFUND_NOT_ALLOWED）。
 	ErrRefundNotAllowed = errors.New("refund not allowed")
+	// ErrInsufficientCoins 星币余额不足（400 INSUFFICIENT_COINS）。
+	ErrInsufficientCoins = errors.New("insufficient coins")
 )

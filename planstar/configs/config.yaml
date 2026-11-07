@@ -80,3 +80,35 @@ ops:
     rabbitmq: {critical: false, timeout_seconds: 2}
     consul: {critical: false, timeout_seconds: 2}
 
+# 短信 / 邮件通知（默认关闭；启用前请通过 PLANSTAR_NOTIFY_* 环境变量注入密钥）
+notify:
+  sms:
+    enabled: false
+    provider: ""
+    endpoint: ""
+    access_key: ""
+    access_secret: ""
+    sign_name: ""
+    template_code: ""
+  email:
+    enabled: false
+    provider: ""
+    smtp_host: ""
+    smtp_port: 465
+    username: ""
+    password: ""
+    from: ""
+
+# 对象存储 OSS（默认关闭；启用前请通过 PLANSTAR_STORAGE_OSS_* 环境变量注入密钥）
+storage:
+  oss:
+    enabled: false
+    provider: ""
+    endpoint: ""
+    region: ""
+    bucket: ""
+    access_key: ""
+    access_secret: ""
+    cdn_host: ""
+    presign_ttl_seconds: 3600
+

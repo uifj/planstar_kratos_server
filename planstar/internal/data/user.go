@@ -49,6 +49,21 @@ func (r *UserRepo) Profile(ctx context.Context, userID int64) (*biz.UserProfile,
 		wantWatch, follower, following = statWantWatch, statFollower, statFollowing
 	}
 
+	// 钱包余额优先读 payment.wallet_account；无账户时沿用 user_statistic.balance。
+	payDB, err := r.d.DB("payment")
+	if err != nil {
+		return nil, err
+	}
+	var walletBalance float64
+	err = payDB.QueryRowContext(ctx,
+		`SELECT COALESCE(balance,0) FROM wallet_account WHERE user_id = ? LIMIT 1`, userID).
+		Scan(&walletBalance)
+	if err == nil {
+		balance = walletBalance
+	} else if err != sql.ErrNoRows {
+		return nil, err
+	}
+
 	p.UserID = userID
 	p.ID = userID
 	p.Nickname = userName
