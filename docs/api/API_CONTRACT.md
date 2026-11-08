@@ -608,6 +608,59 @@ POST /v1/shop/goods/{id}/skus/{skuId}/redeem
 - 说明：单事务内校验库存与星币余额，扣星币、写「兑换「商品·规格」」支出流水、`stock-1` / `sold+1`、生成 `goods_order`
 - 错误：`401 UNAUTHORIZED`、`400 INSUFFICIENT_COINS`（星币余额不足）、`409 SOLD_OUT`（库存不足）、`404 NOT_FOUND`、`500 INTERNAL`
 
+## 7.9 企划创意
+
+企划创意是「立项前的态度征集」，只做支持/不支持统计，**不扣减星币、不产生钱包流水与订单**。
+
+GET /v1/projectIdeas/feed
+
+- 鉴权：否（携带 `psSession` 时回填 `myVote`）
+- 请求：
+  | 参数 | 类型 | 必填 | 说明 |
+  | --- | --- | --- | --- |
+  | `cursor` | string | 否 | 游标，格式 `hotScore_ideaId`；首页留空，非法游标回退首页 |
+  | `size` | int | 否 | 默认 10，上限 20 |
+- 响应：`{"items": ProjectIdea[], "nextCursor": string, "hasMore": bool}`
+- 说明：仅返回 `publish_status=1 AND status=1`，按 `hot_score DESC, idea_id DESC` 排序；`description` 不在列表返回
+- 错误：`500 INTERNAL`
+
+GET /v1/projectIdeas/{ideaId}
+
+- 鉴权：否（携带 `psSession` 时返回 `myVote`）
+- 请求：路径参数 `ideaId`（int64，创意 ID）
+- 响应：单个 `ProjectIdea`，含 `description`、`tierDistribution`、`reasonCounts`、`myVote`（游客无 `myVote`）
+- 说明：`tierDistribution` 由 `project_idea_vote` 实时聚合，键为 `"5"` / `"10"` / `"20"`；`reasonCounts` 为不支持理由的标准 `reasonCode` 计数聚合（不含理由原文）；`supportRate` 保留三位小数
+- 错误：`404 IDEA_NOT_FOUND`、`500 INTERNAL`
+
+POST /v1/projectIdeas/{ideaId}/vote
+
+- 鉴权：是（`psSession`）
+- 请求体：
+  | 字段 | 类型 | 必填 | 说明 |
+  | --- | --- | --- | --- |
+  | `voteType` | int | 是 | `1` 支持 / `2` 不支持 |
+  | `coinTier` | int | 支持时必填 | `5` / `10` / `20`（仅意愿，不扣费） |
+  | `reasonCode` | string | 不支持时必填 | `not_interested` / `too_many_similar` / `not_enough_info` / `not_executable` / `unreasonable_pricing` / `other` |
+  | `reasonText` | string | `other` 时必填 | 支持 ≤60 字；不支持 ≤100 字；不计入公开返回 |
+- 响应：`IdeaVoteResult`，字段见第 8.14 节；成功响应为裸 JSON（与其余端点一致，错误体见第 2 节）
+  ```json
+  {
+    "ideaId": 1001,
+    "supportCount": 128,
+    "opposeCount": 12,
+    "supportRate": 0.914,
+    "coinIntentSum": 1360,
+    "tierDistribution": {"5": 60, "10": 48, "20": 20},
+    "myVote": {"voteType": 1, "coinTier": 10},
+    "alreadyVoted": false
+  }
+  ```
+- 说明：
+  - 一人一卡一票（唯一键 `uk_idea_user`）；重复提交返回 `200` 且 `alreadyVoted=true`，计数不重复增加
+  - 作者自投返回 `403`；支持写 `vote_type=1, coin_tier=tier`、`support_count+1`、`coin_intent_sum+tier`；不支持写 `vote_type=2, reason_code=code`、`oppose_count+1`
+  - `hot_score` 由定时任务刷新，投票事务内不更新
+- 错误：`400 BAD_REQUEST`（`voteType` 非法或文本超长）、`400 INVALID_COIN_TIER`（档位不在 5/10/20）、`400 REASON_REQUIRED`（缺少 `reasonCode`，或 `other` 未填 `reasonText`）、`400 INVALID_REASON_CODE`（理由不在字典）、`401 UNAUTHORIZED`、`403 IDEA_SELF_VOTE_FORBIDDEN`、`404 IDEA_NOT_FOUND`、`429 RATE_LIMITED`（频控：单用户 60 次/小时、单 IP 300 次/小时）、`500 INTERNAL`
+
 ## 8. 响应模型
 
 字段名以 `internal/biz` 包内的模型文件为准；同义字段为兼容客户端而重复输出。
@@ -719,6 +772,17 @@ POST /v1/shop/goods/{id}/skus/{skuId}/redeem
 
 `RedeemResult`：`orderNo(string)`、`balance(int64, 分)`、`stock(int64)`、`sold(int64)`
 
+### 8.14 企划创意（ProjectIdea / IdeaVote / IdeaVoteResult / IdeaFeedPage）
+
+`ProjectIdea`：
+`ideaId(int64)`、`userId(int64)`、`userName(string)`、`userAvatar(string,omitempty)`、`title(string)`、`summary(string)`、`cover(string,omitempty)`、`categoryId(int64)`、`categoryName(string)`、`stage(int)`、`description(string,omitempty, 仅详情)`、`supportCount(int)`、`opposeCount(int)`、`coinIntentSum(int, 意向档位求和，不扣费)`、`supportRate(float64, 保留三位小数)`、`hotScore(float64)`、`tierDistribution(object, 仅详情/投票结果，键 "5"/"10"/"20")`、`reasonCounts(object, 仅详情，不支持理由标准 code 计数聚合，不含原文)`、`myVote(IdeaVote, 有会话且已表态时返回)`、`gmtCreate(毫秒时间戳)`
+
+`IdeaVote`：`voteType(int, 1 支持 / 2 不支持)`、`coinTier(int, 0/5/10/20)`、`reasonCode(string, omitempty)`
+
+`IdeaVoteResult`：`ideaId(int64)`、`supportCount(int)`、`opposeCount(int)`、`supportRate(float64)`、`coinIntentSum(int)`、`tierDistribution(object)`、`myVote(IdeaVote)`、`alreadyVoted(bool)`
+
+`IdeaFeedPage`：`items(ProjectIdea[])`、`nextCursor(string, 首页/无下一页为空)`、`hasMore(bool)`
+
 ## 9. 端点与数据表映射
 
 | 端点域 | 主要表 |
@@ -728,6 +792,7 @@ POST /v1/shop/goods/{id}/skus/{skuId}/redeem
 | 企划列表 / 详情 / 档位 / 进度 | `planstar_catalog`（project、reward_tier、project_update、stretch_goal、project_faq、project_category、project_sub_tag、creator_profile） |
 | 评价晒单 / 举报风控 | `planstar_catalog.project_review`、`project_report` |
 | 榜单 | `planstar_catalog.project`（`funding_status` + `rank_weight` 索引） |
+| 企划创意 / 表态 | `planstar_catalog.project_idea`、`project_idea_vote` |
 | 支持记录 / 支持下单 | `planstar_order.pledge` |
 | 组队支持 | `planstar_catalog.support_team`、`support_team_member` |
 | 演出列表 / 热门 / 详情（legacy） | `planstar_catalog`（activity、activity_event、activity_category、city、venue、activity_lineup、activity_detail）+ `planstar_ticket`（ticket_category、ticket_group） |
