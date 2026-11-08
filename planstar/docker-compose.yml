@@ -124,6 +124,7 @@ services:
       - ./sql/17_pay_refund_chat.sql:/docker-entrypoint-initdb.d/17_pay_refund_chat.sql:ro
       - ./sql/18_star_coin_shop.sql:/docker-entrypoint-initdb.d/18_star_coin_shop.sql:ro
       - ./sql/19_admin_console.sql:/docker-entrypoint-initdb.d/19_admin_console.sql:ro
+      - ./sql/20_project_idea.sql:/docker-entrypoint-initdb.d/20_project_idea.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s

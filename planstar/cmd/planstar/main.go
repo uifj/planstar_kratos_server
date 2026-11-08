@@ -145,6 +145,7 @@ func main() {
 	orderUC := biz.NewOrderUsecase(data.NewOrderRepo(d), publisher, logger)
 	userUC := biz.NewUserUsecase(data.NewUserRepo(d))
 	projectUC := biz.NewProjectUsecase(data.NewProjectRepo(d))
+	projectIdeaUC := biz.NewProjectIdeaUsecase(data.NewProjectIdeaRepo(d))
 	paymentUC := biz.NewPaymentUsecase(data.NewPaymentRepo(d))
 	walletUC := biz.NewWalletUsecase(data.NewWalletRepo(d))
 	shopUC := biz.NewShopUsecase(data.NewShopRepo(d))
@@ -159,7 +160,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	service.New(authUC, catalogUC, feedUC, messageUC, orderUC, userUC, projectUC, paymentUC, walletUC, shopUC, chatUC, logger).Register(mux)
+	service.New(authUC, catalogUC, feedUC, messageUC, orderUC, userUC, projectUC, projectIdeaUC, paymentUC, walletUC, shopUC, chatUC, logger).Register(mux)
 
 	// 连接池指标在抓取时读取快照，不在后台轮询。
 	metrics.RegisterDBStats(d.DBStatsSnapshot)

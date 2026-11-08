@@ -22,15 +22,19 @@ type Service struct {
 	order   *biz.OrderUsecase
 	user    *biz.UserUsecase
 	project *biz.ProjectUsecase
-	payment *biz.PaymentUsecase
-	wallet  *biz.WalletUsecase
-	shop    *biz.ShopUsecase
-	chat    *biz.ChatUsecase
-	log     *slog.Logger
+	// projectIdea 是「企划创意」叠卡流用例（契约 7.9）。
+	projectIdea *biz.ProjectIdeaUsecase
+	payment     *biz.PaymentUsecase
+	wallet      *biz.WalletUsecase
+	shop        *biz.ShopUsecase
+	chat        *biz.ChatUsecase
+	log         *slog.Logger
 	// authCfg 保存认证风控配置（由 conf.Loaded 注入，零值时使用安全默认值）。
 	authCfg conf.Auth
 	// limit 是发码/登录失败的进程内限流器。
 	limit *authLimiter
+	// ideaVoteLimit 是企划创意投票的进程内频控（单用户 60 次/小时、单 IP 300 次/小时）。
+	ideaVoteLimit *ideaVoteLimiter
 }
 
 func New(
@@ -41,6 +45,7 @@ func New(
 	order *biz.OrderUsecase,
 	user *biz.UserUsecase,
 	project *biz.ProjectUsecase,
+	projectIdea *biz.ProjectIdeaUsecase,
 	payment *biz.PaymentUsecase,
 	wallet *biz.WalletUsecase,
 	shop *biz.ShopUsecase,
@@ -50,8 +55,9 @@ func New(
 	cfg := conf.Loaded()
 	return &Service{
 		auth: auth, catalog: catalog, feed: feed, message: message, order: order, user: user,
-		project: project, payment: payment, wallet: wallet, shop: shop, chat: chat, log: log,
-		authCfg: cfg.Auth, limit: newAuthLimiter(),
+		project: project, projectIdea: projectIdea,
+		payment: payment, wallet: wallet, shop: shop, chat: chat, log: log,
+		authCfg: cfg.Auth, limit: newAuthLimiter(), ideaVoteLimit: newIdeaVoteLimiter(),
 	}
 }
 
@@ -130,6 +136,11 @@ func (s *Service) routes() []route {
 		{"POST /v1/projects/{id}/reviews", s.createReview},
 		{"POST /v1/projects/{id}/reports", s.createReport},
 		{"GET /v1/rankings", s.rankings},
+
+		// 企划创意叠卡流（契约 7.9）。
+		{"GET /v1/projectIdeas/feed", s.projectIdeaFeed},
+		{"GET /v1/projectIdeas/{ideaId}", s.projectIdeaDetail},
+		{"POST /v1/projectIdeas/{ideaId}/vote", s.projectIdeaVote},
 	}
 }
 
@@ -193,6 +204,16 @@ func (s *Service) fail(w http.ResponseWriter, r *http.Request, err error) {
 		httpx.Error(w, r, http.StatusConflict, "CONFLICT", "资源冲突")
 	case errors.Is(err, biz.ErrRateLimited):
 		httpx.Error(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "请求过于频繁")
+	case errors.Is(err, biz.ErrIdeaNotFound):
+		httpx.Error(w, r, http.StatusNotFound, "IDEA_NOT_FOUND", "创意不存在")
+	case errors.Is(err, biz.ErrIdeaSelfVote):
+		httpx.Error(w, r, http.StatusForbidden, "IDEA_SELF_VOTE_FORBIDDEN", "不能给自己的企划投票")
+	case errors.Is(err, biz.ErrIdeaInvalidTier):
+		httpx.Error(w, r, http.StatusBadRequest, "INVALID_COIN_TIER", "意愿档位不合法")
+	case errors.Is(err, biz.ErrIdeaReasonRequired):
+		httpx.Error(w, r, http.StatusBadRequest, "REASON_REQUIRED", "请选择不支持理由")
+	case errors.Is(err, biz.ErrIdeaInvalidReason):
+		httpx.Error(w, r, http.StatusBadRequest, "INVALID_REASON_CODE", "不支持理由不合法")
 	case errors.Is(err, httpx.ErrBodyTooLarge):
 		httpx.Error(w, r, http.StatusRequestEntityTooLarge, "PAYLOAD_TOO_LARGE", "请求体过大")
 	default:
