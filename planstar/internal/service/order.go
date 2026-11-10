@@ -1,7 +1,10 @@
 package service
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -95,6 +98,12 @@ func (s *Service) makeOrder(w http.ResponseWriter, r *http.Request) {
 		Phone:            httpx.StrAny(body, "phone", "mobile"),
 		AddressID:        httpx.Int64Any(body, "userAddressId", "user_address_id", "addressId"),
 	}
+	// 幂等键是服务端约束，不能依赖客户端自觉携带。
+	// 客户端未带时按「用户 + 报价快照 + 订单要素」派生稳定键，
+	// 双击 / 网关重试 / 504 重放都会命中同一订单，不会重复扣库存。
+	if in.IdempotencyKey == "" {
+		in.IdempotencyKey = deriveIdempotencyKey(userID, in)
+	}
 	item, err := s.order.MakeOrder(r.Context(), userID, in)
 	if err != nil {
 		orderCreatedTotal.WithLabelValues(orderResultLabel(err)).Inc()
@@ -103,6 +112,17 @@ func (s *Service) makeOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	orderCreatedTotal.WithLabelValues("success").Inc()
 	httpx.JSON(w, http.StatusOK, item)
+}
+
+// deriveIdempotencyKey 生成服务端兜底幂等键（auto: + 16 字节摘要，长度 37 < VARCHAR(128)）。
+// 只包含影响订单实质的字段，避免把无关请求头变化算成新订单。
+func deriveIdempotencyKey(userID int64, in *biz.OrderInput) string {
+	raw := fmt.Sprintf("%d|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s|%s|%d",
+		userID, in.QuoteID, in.QuoteVersion, in.ActivityID, in.ActivityEventID,
+		in.TicketCategoryID, in.OrderType, in.Quantity, in.Amount, in.PayAmount,
+		in.TotalAmount, in.Name, in.Phone, in.AddressID)
+	sum := sha256.Sum256([]byte(raw))
+	return "auto:" + hex.EncodeToString(sum[:16])
 }
 
 // orderResultLabel 把下单错误归类为稳定的指标标签，避免标签基数膨胀。

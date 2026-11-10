@@ -24,31 +24,25 @@ func isLogSMS(sender SMSSender) bool {
 	return ok
 }
 
-func TestNewSMSProductionReturnsNoop(t *testing.T) {
-	for _, env := range []string{"prod", "production", " PROD "} {
+// 生产级环境必须 fail-closed：未启用短信或未指定 aliyun provider 一律启动失败，
+// 不允许静默丢弃验证码（Noop）导致线上用户收不到登录码。
+func TestNewSMSProductionFailsClosed(t *testing.T) {
+	for _, env := range []string{"prod", "production", " PROD ", "staging", "docker", ""} {
 		for _, enabled := range []bool{false, true} {
 			var buf bytes.Buffer
 			sender, err := NewSMS(conf.SMS{Enabled: enabled}, env, newBufferLogger(&buf))
-			if err != nil {
-				t.Fatalf("NewSMS(env=%q, enabled=%v) error = %v", env, enabled, err)
+			if err == nil {
+				t.Fatalf("NewSMS(env=%q, enabled=%v) = %T, want error", env, enabled, sender)
 			}
-			if !isNoopSMS(sender) {
-				t.Fatalf("NewSMS(env=%q, enabled=%v) = %T, want NoopSMS", env, enabled, sender)
-			}
-			if err := sender.SendCode(context.Background(), "13812345678", "246810"); err != nil {
-				t.Fatalf("SendCode() error = %v, want nil", err)
-			}
-			if strings.Contains(buf.String(), "246810") {
-				t.Errorf("production log leaked plaintext code: %q", buf.String())
+			if sender != nil {
+				t.Fatalf("NewSMS(env=%q) returned non-nil sender on error", env)
 			}
 		}
 	}
 }
 
-// TestNewSMSDevUsesLogSender documents the current development fallback: both
-// enabled and disabled SMS use the log sender, so local login codes stay
-// visible in logs (see cmd/planstar/main.go).
-func TestNewSMSDevUsesLogSender(t *testing.T) {
+// 本地版本保留 log sender，但不再打印验证码明文（阿里手册日志脱敏规约）。
+func TestNewSMSDevUsesLogSenderWithoutPlaintextCode(t *testing.T) {
 	for _, enabled := range []bool{false, true} {
 		var buf bytes.Buffer
 		sender, err := NewSMS(conf.SMS{Enabled: enabled}, "dev", newBufferLogger(&buf))
@@ -62,8 +56,11 @@ func TestNewSMSDevUsesLogSender(t *testing.T) {
 			t.Fatalf("SendCode() error = %v, want nil", err)
 		}
 		out := buf.String()
-		if !strings.Contains(out, "123456") {
-			t.Errorf("dev log missing plaintext code: %q", out)
+		if strings.Contains(out, "123456") {
+			t.Errorf("log leaked plaintext code: %q", out)
+		}
+		if !strings.Contains(out, "code_fingerprint=") {
+			t.Errorf("log missing code fingerprint: %q", out)
 		}
 		if !strings.Contains(out, "138****5678") {
 			t.Errorf("dev log missing masked mobile: %q", out)
@@ -185,8 +182,11 @@ func TestIsProduction(t *testing.T) {
 		{env: " PROD ", want: true},
 		{env: "Production", want: true},
 		{env: "dev", want: false},
-		{env: "", want: false},
-		{env: "staging", want: false},
+		{env: "local", want: false},
+		{env: "test", want: false},
+		{env: "", want: true},        // 默认拒绝：未声明环境按生产处理
+		{env: "staging", want: true}, // 类生产环境同样受生产约束
+		{env: "docker", want: true},
 	}
 	for _, tc := range cases {
 		if got := isProduction(tc.env); got != tc.want {

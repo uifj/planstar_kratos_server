@@ -49,6 +49,12 @@ auth:
   send_code_ip_limit_per_minute: 10
   # 连续登录失败达到该次数后要求图形验证码
   login_fail_captcha_threshold: 3
+  # 【生产强制】禁止测试口令；conf.Validate() 会在启动阶段复核，
+  # 且 main.go 会扫描启用账号，命中弱口令直接拒绝启动。
+  allow_test_credentials: false
+  test_credential_password: ""
+  # 短信验证码入库摘要密钥，仅由 PLANSTAR_AUTH_CODE_HMAC_KEY 注入
+  code_hmac_key: ""
 
 # OTLP 链路追踪（经 otel-collector 转发到 Jaeger；endpoint 留空则关闭 tracing）
 trace:

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -38,6 +39,9 @@ func NewHTTPServer(c conf.Server, handler http.Handler, metrics *observability.M
 	srv.Server.ReadTimeout = seconds(c.HTTP.ReadTimeoutSeconds)
 	srv.Server.WriteTimeout = seconds(c.HTTP.WriteTimeoutSeconds)
 	srv.Server.IdleTimeout = seconds(c.HTTP.IdleTimeoutSeconds)
+	// 显式设置请求头读取超时与最大头长度，避免 Slowloris 与超大头消耗连接。
+	srv.Server.ReadHeaderTimeout = 5 * time.Second
+	srv.Server.MaxHeaderBytes = 1 << 20
 	// 连接级指标：按 New/Closed 事件维护活跃连接数。
 	srv.Server.ConnState = metrics.ConnState
 
@@ -64,8 +68,10 @@ func recoverer(logger *slog.Logger, next http.Handler) http.Handler {
 		defer func() {
 			if rec := recover(); rec != nil {
 				if logger != nil {
+					// 堆栈只进服务端日志，绝不回显给客户端（阿里手册异常日志规约）。
 					logger.ErrorContext(r.Context(), "panic recovered",
-						"path", r.URL.Path, "method", r.Method, "panic", rec)
+						"path", r.URL.Path, "method", r.Method, "panic", rec,
+						"stack", string(debug.Stack()))
 				}
 				httpx.Error(w, r, http.StatusInternalServerError, "INTERNAL", "服务异常")
 			}
@@ -211,7 +217,8 @@ func corsFilter(allowOrigins []string) khttp.FilterFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, dvid, X-Longitude, X-Latitude")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, HEAD, OPTIONS")
-			w.Header().Set("Access-Control-Expose-Headers", "X-Trace-Id, psSession, dvid")
+			// 会话令牌只能通过 HttpOnly Cookie 传递，禁止暴露给 JS 可读的响应头。
+			w.Header().Set("Access-Control-Expose-Headers", "X-Trace-Id, dvid")
 			w.Header().Add("Vary", "Origin")
 
 			if origin := r.Header.Get("Origin"); origin != "" && originAllowed(origin, r, allowOrigins) {
@@ -245,11 +252,11 @@ func originAllowed(origin string, r *http.Request, allowOrigins []string) bool {
 	if !strings.EqualFold(u.Host, r.Host) {
 		return false
 	}
+	// 不信任客户端可控的 X-Forwarded-Proto：TLS 在网关终止时，
+	// 跨域一律走 cors_allow_origins 精确白名单，避免反射 Allow-Credentials。
 	scheme := "http"
 	if r.TLS != nil {
 		scheme = "https"
-	} else if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
-		scheme = strings.Split(proto, ",")[0]
 	}
-	return strings.EqualFold(u.Scheme, strings.TrimSpace(scheme))
+	return strings.EqualFold(u.Scheme, scheme)
 }

@@ -38,8 +38,10 @@ func (s *Service) captchaImage(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
+	_, _, _, cookieSecure := s.authSettings()
 	http.SetCookie(w, &http.Cookie{
-		Name: "psCaptcha", Value: id, Path: "/", HttpOnly: true, MaxAge: 300, SameSite: http.SameSiteLaxMode,
+		Name: "psCaptcha", Value: id, Path: "/", HttpOnly: true, Secure: cookieSecure,
+		MaxAge: 300, SameSite: http.SameSiteLaxMode,
 	})
 	w.Header().Set("Content-Type", "image/png")
 	w.Header().Set("Cache-Control", "no-store")
@@ -75,6 +77,15 @@ func (s *Service) sendLoginCode(w http.ResponseWriter, r *http.Request) {
 			"mobile", maskMobile(mobile), "ip", clientIP(r), "dimension", reason, "retry_after_seconds", retryAfter)
 		httpx.Error(w, r, http.StatusTooManyRequests, "RATE_LIMITED",
 			"发送过于频繁，请"+strconv.Itoa(retryAfter)+"秒后再试")
+		return
+	}
+	// 分布式限流（Redis SETNX）：进程内计数器在多实例部署时会把阈值放大 N 倍。
+	// 两道闸门同时生效，Redis 不可用时按 fail-closed 拒绝，避免短信轰炸。
+	if s.auth != nil && !s.auth.AllowSendCode(r.Context(), mobile) {
+		s.log.WarnContext(r.Context(), "send code rate limited (distributed)",
+			"mobile", maskMobile(mobile), "cooldown_seconds", int(cooldown.Seconds()))
+		httpx.Error(w, r, http.StatusTooManyRequests, "RATE_LIMITED",
+			"发送过于频繁，请"+strconv.Itoa(int(cooldown.Seconds()))+"秒后再试")
 		return
 	}
 
@@ -115,6 +126,9 @@ func (s *Service) login(w http.ResponseWriter, r *http.Request) {
 		observability.RecordError(r.Context(), err)
 		s.log.WarnContext(r.Context(), "login failed", "mobile", maskMobile(mobile), "err", err)
 		s.limit.bumpFail(mobile, loginFailWindow)
+		if s.auth != nil {
+			s.auth.BumpLoginFail(r.Context(), mobile)
+		}
 		if errors.Is(err, biz.ErrBadRequest) {
 			httpx.Error(w, r, http.StatusBadRequest, "BAD_REQUEST", "参数错误")
 			return
@@ -123,10 +137,13 @@ func (s *Service) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.limit.resetFail(mobile)
+	if s.auth != nil {
+		s.auth.ResetLoginFail(r.Context(), mobile)
+	}
 	loginTotal.WithLabelValues("success").Inc()
 
 	_, _, _, cookieSecure := s.authSettings()
-	session.DeviceID(w, r)
+	session.DeviceIDWithOptions(w, r, cookieSecure)
 	session.SetCookie(w, token, cookieSecure)
 	var userID int64
 	if bean.User != nil {
@@ -142,7 +159,11 @@ func (s *Service) needCaptcha(r *http.Request, mobile, code string) bool {
 		return !s.verifyCaptcha(r, code)
 	}
 	_, _, threshold, _ := s.authSettings()
-	return s.limit.failCount(mobile, loginFailWindow) >= threshold
+	if s.limit.failCount(mobile, loginFailWindow) >= threshold {
+		return true
+	}
+	// 全局失败计数：多实例部署时任一实例达到阈值也要求图形验证码。
+	return s.auth != nil && s.auth.NeedsCaptcha(r.Context(), mobile)
 }
 
 func (s *Service) verifyCaptcha(r *http.Request, code string) bool {

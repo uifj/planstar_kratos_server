@@ -4,7 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"log/slog"
+	"math/big"
+	"sync"
 	"time"
 
 	"planstar/internal/pkg/captcha"
@@ -142,7 +145,14 @@ func (uc *AuthUsecase) Login(ctx context.Context, mobile, password, code string)
 			newUser = true
 		}
 	} else {
-		if user == nil || user.PasswordHash == "" || !secret.VerifyPassword(password, user.PasswordHash) {
+		// 用户不存在时仍执行一次等价的口令哈希运算，消除「已注册/未注册」的
+		// 响应时序侧信道（避免手机号枚举）。
+		hash := dummyPasswordHash()
+		if user != nil && user.PasswordHash != "" {
+			hash = user.PasswordHash
+		}
+		valid := secret.VerifyPassword(password, hash)
+		if user == nil || user.PasswordHash == "" || !valid {
 			return nil, "", ErrLoginFailed
 		}
 	}
@@ -150,7 +160,10 @@ func (uc *AuthUsecase) Login(ctx context.Context, mobile, password, code string)
 		return nil, "", ErrLoginFailed
 	}
 
-	token := session.NewToken()
+	token, err := session.NewToken()
+	if err != nil {
+		return nil, "", err
+	}
 	if err := uc.repo.CreateSession(ctx, user.UserID, 11, token, time.Now().Add(uc.ttl), newUser); err != nil {
 		return nil, "", err
 	}
@@ -173,7 +186,11 @@ func (uc *AuthUsecase) SendLoginCode(ctx context.Context, mobile string) (string
 	if mobile == "" {
 		return "", ErrBadRequest
 	}
-	code := loginCode()
+	code, err := loginCode()
+	if err != nil {
+		// 随机数不可用必须失败关闭，绝不能回退到可预测的固定验证码。
+		return "", err
+	}
 	if err := uc.repo.SaveLoginCode(ctx, mobile, code, time.Now().Add(captchaTTL)); err != nil {
 		return "", err
 	}
@@ -211,6 +228,9 @@ func (uc *AuthUsecase) VerifyCaptcha(ctx context.Context, id, code string) bool 
 
 // AllowSendCode 同一手机号 60s 内只允许发一次（Redis SETNX 保证多实例安全）。
 func (uc *AuthUsecase) AllowSendCode(ctx context.Context, mobile string) bool {
+	if uc.cache == nil {
+		return true
+	}
 	ok, err := uc.cache.MarkSend(ctx, mobile, sendCodeWindow)
 	if err != nil {
 		uc.log.WarnContext(ctx, "send code limiter failed", "err", err)
@@ -221,6 +241,9 @@ func (uc *AuthUsecase) AllowSendCode(ctx context.Context, mobile string) bool {
 
 // NeedsCaptcha 连续登录失败达到阈值后要求图形码。
 func (uc *AuthUsecase) NeedsCaptcha(ctx context.Context, mobile string) bool {
+	if uc.cache == nil {
+		return false
+	}
 	n, err := uc.cache.FailCount(ctx, mobile)
 	if err != nil {
 		uc.log.WarnContext(ctx, "login fail counter failed", "err", err)
@@ -231,6 +254,9 @@ func (uc *AuthUsecase) NeedsCaptcha(ctx context.Context, mobile string) bool {
 
 // BumpLoginFail 记录一次登录失败。
 func (uc *AuthUsecase) BumpLoginFail(ctx context.Context, mobile string) {
+	if uc.cache == nil {
+		return
+	}
 	if err := uc.cache.BumpFail(ctx, mobile, loginFailWindow); err != nil {
 		uc.log.WarnContext(ctx, "bump login fail failed", "err", err)
 	}
@@ -238,6 +264,9 @@ func (uc *AuthUsecase) BumpLoginFail(ctx context.Context, mobile string) {
 
 // ResetLoginFail 登录成功后清空失败计数。
 func (uc *AuthUsecase) ResetLoginFail(ctx context.Context, mobile string) {
+	if uc.cache == nil {
+		return
+	}
 	if err := uc.cache.ResetFail(ctx, mobile); err != nil {
 		uc.log.WarnContext(ctx, "reset login fail failed", "err", err)
 	}
@@ -274,15 +303,32 @@ func (uc *AuthUsecase) publish(ctx context.Context, ev *DomainEvent) {
 	}
 }
 
-// loginCode 生成 6 位数字短信验证码。
-func loginCode() string {
-	var b [6]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return "123456"
-	}
+// loginCode 用 crypto/rand 逐位生成 6 位数字验证码，避免取模偏置；
+// 任何随机源错误都向上返回，禁止降级为固定值。
+func loginCode() (string, error) {
 	out := make([]byte, 6)
 	for i := range out {
-		out[i] = '0' + b[i]%10
+		n, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			return "", fmt.Errorf("generate login code: %w", err)
+		}
+		out[i] = byte('0' + n.Int64())
 	}
-	return string(out)
+	return string(out), nil
+}
+
+// dummyPasswordHash 提供一次与真实校验等价的 PBKDF2 工作量，用于抹平时序差异。
+var (
+	dummyHashOnce sync.Once
+	dummyHash     string
+)
+
+func dummyPasswordHash() string {
+	dummyHashOnce.Do(func() {
+		h, err := secret.HashPassword("non-registered-user-placeholder")
+		if err == nil {
+			dummyHash = h
+		}
+	})
+	return dummyHash
 }

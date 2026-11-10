@@ -87,7 +87,8 @@ jobs:
     # 部署前置条件只看仓库变量（secrets 不可用于 job 级 if 表达式）
     if: ${{ vars.SERVER_HOST != '' }}
     env:
-      PLANSTAR_LITE: ${{ vars.PLANSTAR_LITE }}
+      # 生产部署固定使用 4C8G 低配档位 + docker-compose.prod.yml
+      PLANSTAR_CONFIG_FILE: config.lite.yaml
     permissions:
       contents: read
       packages: read
@@ -97,43 +98,73 @@ jobs:
       name: production
       url: http://${{ vars.SERVER_HOST || 'localhost' }}:8098
     steps:
+      # 【安全整改】workflow_dispatch 的 tag 是自由文本，禁止直接把
+      # ${{ ... }} 表达式插入远程 shell（可构造 `v1"; <命令>; #` 造成 RCE）。
+      # 先在 runner 侧用白名单正则校验，再经 envs 以环境变量传给远端。
+      - name: Validate release tag
+        shell: bash
+        env:
+          RAW_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RAW_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$ ]]; then
+            echo "Invalid release tag: $RAW_TAG" >&2
+            exit 1
+          fi
+          echo "DEPLOY_TAG=$RAW_TAG" >> "$GITHUB_ENV"
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          DEPLOY_APP_DIR: ${{ secrets.APP_DIR }}
+          DEPLOY_ACTOR: ${{ github.actor }}
+          DEPLOY_REGISTRY: ${{ env.REGISTRY }}
+          DEPLOY_IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          GHCR_TOKEN_VALUE: ${{ secrets.GHCR_TOKEN }}
         with:
           host: ${{ secrets.SERVER_HOST || vars.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT || '22' }}
-          envs: PLANSTAR_LITE
+          envs: DEPLOY_TAG,DEPLOY_APP_DIR,DEPLOY_ACTOR,DEPLOY_REGISTRY,DEPLOY_IMAGE_NAME,GHCR_TOKEN_VALUE
           script: |
             set -euo pipefail
-            cd "${{ secrets.APP_DIR }}"
+            : "${DEPLOY_TAG:?}"
+            : "${DEPLOY_APP_DIR:?}"
+            # 远端二次校验：防止 runner 与远端之间任何传递环节被篡改
+            if [[ ! "$DEPLOY_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$ ]]; then
+              echo "invalid deploy tag" >&2; exit 1
+            fi
+            cd "${DEPLOY_APP_DIR}"
             git fetch --tags --force
-            git checkout "${{ env.RELEASE_TAG }}"
-            if [ -n "${{ secrets.GHCR_TOKEN }}" ]; then
-              echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            git checkout "${DEPLOY_TAG}"
+            if [ -n "${GHCR_TOKEN_VALUE:-}" ]; then
+              printf '%s' "${GHCR_TOKEN_VALUE}" | docker login ghcr.io -u "${DEPLOY_ACTOR}" --password-stdin
             fi
 
-            # 按档位选择编排文件：低配不启动 ES/MQ/Consul 等重组件
-            if [ "${PLANSTAR_LITE:-0}" = "1" ]; then
-              export PLANSTAR_CONFIG_FILE=config.lite.yaml
-              FILES="-f planstar/docker-compose.yml -f planstar/docker-compose.lite.yml"
-              PROFILES=""
-            else
-              export PLANSTAR_CONFIG_FILE=config.prod.yaml
-              FILES="-f planstar/docker-compose.yml"
-              PROFILES="full"
+            # 生产档位：4C8G/2M 单机，config.lite.yaml + prod overlay + .env.prod
+            export PLANSTAR_CONFIG_FILE=config.lite.yaml
+            export COMPOSE_DIR="${DEPLOY_APP_DIR}/planstar"
+            export ENV_FILE=.env.prod
+
+            # Prometheus 抓取 9108/metrics 需要 Bearer 令牌，从服务器本地 .env.prod 落盘
+            OPS_TOKEN="$(grep -E '^PLANSTAR_OPS_TOKEN=' planstar/.env.prod | tail -1 | cut -d= -f2-)"
+            [ -n "${OPS_TOKEN}" ] || { echo "missing PLANSTAR_OPS_TOKEN in .env.prod" >&2; exit 1; }
+            ( umask 077; printf '%s' "${OPS_TOKEN}" > planstar/deploy/prometheus/ops_token )
+            chmod 600 planstar/deploy/prometheus/ops_token
+
+            COMPOSE="docker compose --env-file planstar/.env.prod -f planstar/docker-compose.yml -f planstar/docker-compose.prod.yml"
+            # 部署侧覆盖（例如运行时关闭不兼容的 OSS）存在即叠加。
+            if [ -f planstar/docker-compose.server.yml ]; then
+              COMPOSE="${COMPOSE} -f planstar/docker-compose.server.yml"
             fi
 
-            export PLANSTAR_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-            export PLANSTAR_TAG=${{ env.RELEASE_TAG }}
-            export COMPOSE_PROFILES="${PROFILES}"
-
-            # 先校验再切换，避免半套配置上线
-            docker compose ${FILES} config -q
-            docker compose ${FILES} pull planstar-api admin admin-web
-            docker compose ${FILES} up -d --remove-orphans
-            docker compose ${FILES} ps
+            # 先跑发布前门禁，再切换，避免半套配置或测试口令上线
+            ./planstar/deploy/preflight.sh
+            ${COMPOSE} config -q
+            ${COMPOSE} pull planstar-api admin admin-web
+            ${COMPOSE} up -d --remove-orphans
+            ${COMPOSE} ps
 
             # 部署后自检：就绪探针失败则 job 失败，便于及时人工回滚
             for i in $(seq 1 30); do

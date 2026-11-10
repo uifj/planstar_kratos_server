@@ -320,6 +320,27 @@ func (r *OrderRepo) CreateOrder(ctx context.Context, userID int64, in *biz.Order
 		}
 	}
 
+	// 报价快照一次性消费：同一 quoteId 只能落一单。
+	// 防止 15 分钟报价有效期内换一个客户端幂等键重复下单 / 重复扣库存。
+	// 冲突时回滚整个事务（库存扣减一并撤销）并返回首次创建的订单。
+	if quote.QuoteID != "" {
+		quoteKey := "quote:" + quote.QuoteID
+		_, err = tx.ExecContext(ctx,
+			`INSERT INTO order_idempotency (idem_key, user_id, order_id, order_number, gmt_create)
+			 VALUES (?, ?, ?, ?, NOW())`,
+			quoteKey, userID, orderID, orderNumber)
+		if err != nil {
+			if isDuplicateKey(err) {
+				_ = tx.Rollback()
+				existing, qerr := orderByIdemKey(ctx, db, userID, quoteKey)
+				if qerr == nil && existing != nil {
+					return existing, nil
+				}
+			}
+			return nil, err
+		}
+	}
+
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}

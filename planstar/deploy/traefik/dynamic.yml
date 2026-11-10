@@ -4,7 +4,7 @@ http:
     planstar:
       rule: "Host(`localhost`) || Host(`127.0.0.1`)"
       entryPoints: [web]
-      middlewares: [compress]
+      middlewares: [compress, security-headers]
       service: planstar
 
     # 生产 HTTPS：api.planstar.top -> planstar-api:8098
@@ -18,7 +18,7 @@ http:
     planstar-secure:
       rule: "Host(`api.planstar.top`)"
       entryPoints: [websecure]
-      middlewares: [compress]
+      middlewares: [compress, security-headers]
       service: planstar
       tls:
         certResolver: letsencrypt
@@ -38,7 +38,7 @@ http:
     admin-api:
       rule: "Host(`admin.planstar.top`) && PathPrefix(`/v1`)"
       entryPoints: [websecure]
-      middlewares: [compress]
+      middlewares: [compress, security-headers]
       service: admin
       priority: 100
       # 可选：叠加来源 IP 白名单后取消注释。
@@ -49,30 +49,37 @@ http:
     admin-console:
       rule: "Host(`admin.planstar.top`)"
       entryPoints: [websecure]
-      middlewares: [compress]
+      middlewares: [compress, security-headers]
       service: admin-web
       priority: 10
       # middlewares: [compress, admin-ip-allowlist]
       tls:
         certResolver: letsencrypt
 
-    # 可观测面板（子域名路由；也可直接端口访问）
-    grafana:
-      rule: "Host(`grafana.localhost`) || Host(`grafana.example.com`)"
-      entryPoints: [web]
-      service: grafana
-    prometheus:
-      rule: "Host(`prometheus.localhost`) || Host(`prometheus.example.com`)"
-      entryPoints: [web]
-      service: prometheus
-    jaeger:
-      rule: "Host(`jaeger.localhost`) || Host(`jaeger.example.com`)"
-      entryPoints: [web]
-      service: jaeger
+    # -----------------------------------------------------------------
+    # 【生产安全整改】可观测面板不再暴露到公网 HTTP :80。
+    # 旧配置的 grafana/prometheus/jaeger 三条 `web` 路由无 basicAuth、
+    # 无 ipAllowList、无 TLS，配合默认 admin/admin 可被任意 Host 头命中，
+    # Prometheus 的 --web.enable-lifecycle 还允许无鉴权 /-/reload、/-/quit。
+    # 现改为仅通过 compose 中 127.0.0.1 发布的端口 + SSH 隧道访问：
+    #   ssh -L 3000:127.0.0.1:3000 -L 9090:127.0.0.1:9090 <user>@<host>
+    # 若确需域名访问，必须新建 websecure 路由并叠加 basicAuth + ipAllowList。
+    # -----------------------------------------------------------------
 
   middlewares:
     # 响应压缩，降低 2M 带宽占用（planstar 与 admin 路由共用）。
     compress: {}
+
+    # 统一安全响应头（对齐 OWASP Secure Headers）。
+    security-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        forceSTSHeader: true
 
     # 业务与后台域名全站强制 HTTPS（HTTP-01 challenge 由 Traefik 内置 ACME 路由优先匹配）。
     https-redirect:

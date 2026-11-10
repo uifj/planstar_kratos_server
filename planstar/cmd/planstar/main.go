@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -44,7 +45,9 @@ func init() {
 func main() {
 	flag.Parse()
 
-	logger := klog.NewLogger(observability.NewTraceHandler(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true, Level: slog.LevelInfo}))).
+	// 结构化 JSON 日志：Loki/Promtail 直接索引字段，traceId 可关联 Jaeger；
+	// 对齐阿里手册「日志规约」禁止 System.out/明文敏感信息的要求。
+	logger := klog.NewLogger(observability.NewTraceHandler(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: true, Level: slog.LevelInfo}))).
 		With(slog.String("service.id", id), slog.String("service.name", Name), slog.String("service.version", Version))
 	klog.SetDefault(logger)
 
@@ -60,7 +63,8 @@ func main() {
 	c, err := conf.Load(flagconf)
 	if err != nil {
 		logger.Error("load config failed", "path", flagconf, "err", err)
-		os.Exit(1)
+		exitCode = 1
+		return
 	}
 
 	// 指标与运维鉴权在装配早期构建：鉴权配置错误直接失败关闭。
@@ -72,11 +76,13 @@ func main() {
 	opsAuth, err := server.NewOpsAuth(c.Ops, logger, metrics)
 	if err != nil {
 		logger.Error("init ops auth failed", "err", err)
-		os.Exit(1)
+		exitCode = 1
+		return
 	}
 	if err := opsAuth.Validate(c.Server.Env); err != nil {
 		logger.Error("invalid ops auth config", "err", err)
-		os.Exit(1)
+		exitCode = 1
+		return
 	}
 	if !opsAuth.Enabled() {
 		logger.Warn("ops auth disabled: PLANSTAR_OPS_TOKEN 未配置")
@@ -97,7 +103,8 @@ func main() {
 	d, err := data.NewData(c.Data, logger)
 	if err != nil {
 		logger.Error("init data clients failed", "err", err)
-		os.Exit(1)
+		exitCode = 1
+		return
 	}
 	defer d.Close()
 
@@ -123,15 +130,38 @@ func main() {
 		}
 	}
 
-	// 短信默认关闭：开发环境走日志实现（可看到验证码），生产环境为 Noop；
-	// 显式启用 aliyun 时使用真实客户端，配置缺失直接失败关闭。
+	// 生产强制接入已购买的阿里云短信（NewSMS 失败即终止启动）；
+	// 本地版本使用日志实现，且日志只输出验证码指纹不输出明文。
 	smsSender, err := notify.NewSMS(c.Notify.SMS, c.Server.Env, logger)
 	if err != nil {
 		logger.Error("init sms sender failed", "err", err)
-		os.Exit(1)
+		exitCode = 1
+		return
+	}
+
+	// 按环境装配认证仓储：仅本地版本允许测试口令；
+	// 验证码以 HMAC 摘要入库，密钥由配置或运维令牌派生。
+	authRepo := data.NewAuthRepoForEnvironment(
+		d,
+		c.Auth.TestCredentialPasswordValue(),
+		c.Auth.CodeHMACKeyValue(c.Ops.Token),
+	)
+	// 生产启动断言：库里不允许残留任何测试/弱口令账号。
+	if conf.IsProductionLikeEnv(c.Server.Env) {
+		guardCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		err := authRepo.AssertNoTestCredentials(guardCtx, []string{
+			conf.LocalTestCredentialPassword,
+			c.Auth.TestCredentialPassword,
+		})
+		cancel()
+		if err != nil {
+			logger.Error("production credential guard failed", "err", err)
+			exitCode = 1
+			return
+		}
 	}
 	authUC := biz.NewAuthUsecase(
-		data.NewAuthRepo(d),
+		authRepo,
 		data.NewAuthCache(d),
 		publisher,
 		smsSender,
@@ -151,12 +181,27 @@ func main() {
 	shopUC := biz.NewShopUsecase(data.NewShopRepo(d))
 	chatUC := biz.NewChatUsecase(data.NewChatRepo(d))
 
+	// 所有后台 goroutine 绑定到应用生命周期 context，停机时统一取消并等待收尾，
+	// 避免优雅停机后同步任务继续访问已关闭的 DB/ES（阿里手册并发处理规约）。
+	appCtx, cancelApp := context.WithCancel(context.Background())
+	var background sync.WaitGroup
+	defer func() {
+		cancelApp()
+		background.Wait()
+	}()
+
 	// ES 读模型：启动时建索引并做一次全量同步，之后周期刷新。
 	if d.Elastic() != nil {
-		if err := catalogRepo.EnsureIndex(context.Background()); err != nil {
+		indexCtx, cancelIndex := context.WithTimeout(appCtx, 10*time.Second)
+		if err := catalogRepo.EnsureIndex(indexCtx); err != nil {
 			logger.Warn("ensure elasticsearch index failed", "err", err)
 		}
-		go catalogRepo.RunSync(context.Background(), time.Duration(c.Data.Elastic.SyncInterval)*time.Second, logger)
+		cancelIndex()
+		background.Add(1)
+		go func() {
+			defer background.Done()
+			catalogRepo.RunSync(appCtx, time.Duration(c.Data.Elastic.SyncInterval)*time.Second, logger)
+		}()
 	}
 
 	mux := http.NewServeMux()
@@ -223,8 +268,9 @@ func main() {
 			return nil
 		}),
 		kratos.BeforeStop(func(ctx context.Context) error {
-			// 先关闭就绪闸门，让负载均衡把流量摘走，再执行优雅停机。
+			// 先关闭就绪闸门，让负载均衡把流量摘走，再取消后台任务。
 			readiness.MarkStopping()
+			cancelApp()
 			logger.InfoContext(ctx, "application stopping", "service", Name)
 			return nil
 		}),

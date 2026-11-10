@@ -65,8 +65,10 @@ func (a *OpsAuth) Enabled() bool { return a.token != "" }
 
 // Validate 校验环境相关约束：生产环境必须配置令牌，否则拒绝启动。
 func (a *OpsAuth) Validate(env string) error {
-	if strings.EqualFold(strings.TrimSpace(env), "prod") && !a.Enabled() {
-		return errors.New("生产环境必须配置 PLANSTAR_OPS_TOKEN")
+	// 默认拒绝：除显式本地环境外，任何环境（prod/production/staging/docker…）
+	// 未配置令牌都拒绝启动，避免环境命名差异绕过运维鉴权。
+	if conf.IsProductionLikeEnv(env) && !a.Enabled() {
+		return errors.New("非本地环境必须配置 PLANSTAR_OPS_TOKEN")
 	}
 	return nil
 }
@@ -76,7 +78,17 @@ func (a *OpsAuth) Wrap(endpoint string, next http.Handler) http.Handler {
 	action := "ops." + endpoint + ".access"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !a.Enabled() {
+			// fail-closed：无令牌时直接拒绝，绝不「只打一条告警就放行」。
+			// 运维端点包含举报处置 / 企划审核等写操作，静默放行等于未授权写入。
 			a.warnDisabled(endpoint)
+			a.incAuthFailed(endpoint)
+			a.audit(r.Context(), anonymousActor, action, endpoint, "unauthorized", r.RemoteAddr, http.StatusUnauthorized)
+			w.Header().Set("WWW-Authenticate", "Bearer")
+			writeAdminJSON(w, http.StatusUnauthorized, map[string]string{
+				"code":    "UNAUTHORIZED",
+				"message": "运维端点未配置凭据，已按最小权限原则关闭",
+			})
+			return
 		} else {
 			if !a.remoteAllowed(r.RemoteAddr) {
 				a.incAuthFailed(endpoint)

@@ -441,9 +441,17 @@ func (r *ProjectRepo) CreatePledge(ctx context.Context, userID, projectID int64,
 		addressID = 0
 	}
 
-	// 3. 原子扣减库存（限量档位），失败即冲突。
+	// 3. 单事务完成「扣库存 → 写支持单 → 更新企划聚合指标」。
+	// 所有 planstar_* 库位于同一 MySQL 实例，跨 schema DML 在同一 *sql.Tx 内原子提交；
+	// 不再使用「先提交扣库存、失败再用已取消 ctx 手工补偿」的跨连接池写法。
+	tx, err := catalogDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
 	if isLimited > 0 {
-		res, err := catalogDB.ExecContext(ctx,
+		res, err := tx.ExecContext(ctx,
 			`UPDATE planstar_catalog.reward_tier
 			    SET sold_num = sold_num + ?, remaining_num = remaining_num - ?, gmt_modified = NOW()
 			  WHERE reward_tier_id = ? AND is_limited = 1 AND remaining_num >= ?`,
@@ -458,21 +466,15 @@ func (r *ProjectRepo) CreatePledge(ctx context.Context, userID, projectID int64,
 		if affected == 0 {
 			return nil, biz.ErrConflict
 		}
-	} else if _, err := catalogDB.ExecContext(ctx,
+	} else if _, err := tx.ExecContext(ctx,
 		`UPDATE planstar_catalog.reward_tier
 		    SET sold_num = sold_num + ?, gmt_modified = NOW()
 		  WHERE reward_tier_id = ?`, in.Quantity, in.RewardTierID); err != nil {
 		return nil, err
 	}
 
-	orderDB, err := r.d.DB("order")
+	pledgeID, err := nextID(ctx, tx, "planstar_order.pledge", "pledge_id")
 	if err != nil {
-		r.restoreStock(ctx, catalogDB, in.RewardTierID, in.Quantity, isLimited > 0)
-		return nil, err
-	}
-	pledgeID, err := nextID(ctx, orderDB, "planstar_order.pledge", "pledge_id")
-	if err != nil {
-		r.restoreStock(ctx, catalogDB, in.RewardTierID, in.Quantity, isLimited > 0)
 		return nil, err
 	}
 	amount := math.Round(price*float64(in.Quantity)*100) / 100
@@ -480,7 +482,7 @@ func (r *ProjectRepo) CreatePledge(ctx context.Context, userID, projectID int64,
 	if addressID > 0 {
 		addressValue = addressID
 	}
-	if _, err := orderDB.ExecContext(ctx,
+	if _, err := tx.ExecContext(ctx,
 		`INSERT INTO planstar_order.pledge
 		   (pledge_id, pledge_no, project_id, reward_tier_id, user_id, support_amount, quantity,
 		    is_anonymous, support_message, contact_name, contact_phone, address_id, delivery_type,
@@ -488,26 +490,20 @@ func (r *ProjectRepo) CreatePledge(ctx context.Context, userID, projectID int64,
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())`,
 		pledgeID, pledgeNo(pledgeID), projectID, in.RewardTierID, userID, amount, in.Quantity,
 		boolInt(in.IsAnonymous), in.Message, contactName, contactPhone, addressValue, deliveryType); err != nil {
-		r.restoreStock(ctx, catalogDB, in.RewardTierID, in.Quantity, isLimited > 0)
 		return nil, err
 	}
-
-	return r.Pledge(ctx, userID, pledgeID)
-}
-
-func (r *ProjectRepo) restoreStock(ctx context.Context, db *sql.DB, tierID int64, quantity int, limited bool) {
-	if limited {
-		_, _ = db.ExecContext(ctx,
-			`UPDATE planstar_catalog.reward_tier
-			    SET sold_num = GREATEST(sold_num - ?, 0),
-			        remaining_num = remaining_num + ?, gmt_modified = NOW()
-			  WHERE reward_tier_id = ?`, quantity, quantity, tierID)
-		return
+	// 聚合指标与库存、支持单在同一事务推进，避免众筹进度永久停留在种子值。
+	if _, err := tx.ExecContext(ctx,
+		`UPDATE planstar_catalog.project
+		    SET raised_amount = raised_amount + ?, supporter_count = supporter_count + 1,
+		        gmt_modified = NOW()
+		  WHERE project_id = ?`, amount, projectID); err != nil {
+		return nil, err
 	}
-	_, _ = db.ExecContext(ctx,
-		`UPDATE planstar_catalog.reward_tier
-		    SET sold_num = GREATEST(sold_num - ?, 0), gmt_modified = NOW()
-		  WHERE reward_tier_id = ?`, quantity, tierID)
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return r.Pledge(ctx, userID, pledgeID)
 }
 
 func (r *ProjectRepo) Pledges(ctx context.Context, userID int64, status string, page, pageSize int) ([]*biz.Pledge, error) {
@@ -1043,9 +1039,9 @@ func pledgeNo(pledgeID int64) string {
 }
 
 // nextID 取业务主键的 MAX+1（与既有 user_address 的写法保持一致）。
-func nextID(ctx context.Context, db *sql.DB, table, column string) (int64, error) {
+func nextID(ctx context.Context, q rowQuerier, table, column string) (int64, error) {
 	var id int64
-	if err := db.QueryRowContext(ctx,
+	if err := q.QueryRowContext(ctx,
 		fmt.Sprintf("SELECT COALESCE(MAX(%s),0)+1 FROM %s", column, table)).Scan(&id); err != nil {
 		return 0, err
 	}

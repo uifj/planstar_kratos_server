@@ -158,3 +158,33 @@ func TestOpsAuthValidate(t *testing.T) {
 		t.Fatalf("Validate(prod) = %v, want nil", err)
 	}
 }
+
+// 无令牌时必须 fail-closed，不能「只打告警就放行」。
+func TestOpsAuthFailsClosedWithoutToken(t *testing.T) {
+	auth, _ := newTestOpsAuth(t, conf.Ops{})
+	h := auth.Wrap("metrics", okHandler())
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401 (fail-closed)", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "UNAUTHORIZED") {
+		t.Fatalf("body = %q, want UNAUTHORIZED", rec.Body.String())
+	}
+}
+
+// 环境判定默认拒绝：staging / docker / 空值都必须强制配置运维令牌。
+func TestOpsAuthValidateRejectsUnknownEnvironments(t *testing.T) {
+	empty, _ := newTestOpsAuth(t, conf.Ops{})
+	for _, env := range []string{"prod", "production", "staging", "docker", "", "prodktion"} {
+		if err := empty.Validate(env); err == nil {
+			t.Errorf("Validate(%q) = nil, want error", env)
+		}
+	}
+	for _, env := range []string{"local", "dev", "test"} {
+		if err := empty.Validate(env); err != nil {
+			t.Errorf("Validate(%q) = %v, want nil", env, err)
+		}
+	}
+}

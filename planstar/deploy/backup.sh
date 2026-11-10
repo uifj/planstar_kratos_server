@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 生产备份：9 个业务库 mysqldump + .env，按标签归档并保留 7 天。
+# 生产备份：全部 11 个 planstar_* 库 mysqldump + .env，按标签归档并保留 7 天。
+# 库名以 docs/sql/00_all.sql 与各 sql/*.sql 的 CREATE DATABASE 为唯一事实源。
 # 用法:
 #   ./backup.sh daily        # 每日全量（由 cron 调用）
 #   ./backup.sh pre-deploy   # 发布前快照
@@ -22,9 +23,13 @@ MYSQL_PASSWORD="$(grep -E '^MYSQL_ROOT_PASSWORD=' "${ENV_FILE}" | tail -1 | cut 
 docker compose -f docker-compose.yml exec -T mysql \
   mysqldump -uroot -p"${MYSQL_PASSWORD}" \
   --single-transaction --routines --triggers --databases \
-  planstar_user planstar_activity planstar_feed planstar_message \
-  planstar_order planstar_pay planstar_project planstar_shop planstar_admin \
+  planstar_user planstar_catalog planstar_ticket planstar_order \
+  planstar_payment planstar_marketing planstar_community planstar_content \
+  planstar_meta planstar_shop planstar_admin \
   | gzip > "${DIR}/mysql.sql.gz"
+
+# 空文件即视为失败（mysqldump 失败时 pipefail 已生效，此处再兜一层）
+[ -s "${DIR}/mysql.sql.gz" ] || { echo "backup produced empty archive" >&2; exit 1; }
 
 cp "${ENV_FILE}" "${DIR}/env.backup"
 chmod 600 "${DIR}/mysql.sql.gz" "${DIR}/env.backup"

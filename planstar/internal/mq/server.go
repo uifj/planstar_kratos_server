@@ -71,8 +71,8 @@ func (s *Server) loop(ctx context.Context) {
 			return
 		default:
 		}
-		c, err := NewConsumer(s.conf.Addr, s.conf.Exchange, s.conf.Queue,
-			routingKeys, s.handler)
+		c, err := NewConsumerWithLogger(s.conf.Addr, s.conf.Exchange, s.conf.Queue,
+			routingKeys, s.handler, s.log)
 		if err != nil {
 			s.log.WarnContext(ctx, "rabbitmq consumer connect failed, retrying", "err", err)
 			select {

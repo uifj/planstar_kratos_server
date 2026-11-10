@@ -119,7 +119,7 @@ type Elastic struct {
 
 type Auth struct {
 	SessionExpireDays int `yaml:"session_expire_days"`
-	// CookieSecure 显式控制 psSession 的 Secure 属性；未配置时按 server.env 推导（prod=true）。
+	// CookieSecure 显式控制 psSession 的 Secure 属性；未配置时按 server.env 推导（生产级环境=true）。
 	CookieSecure *bool `yaml:"cookie_secure"`
 	// SendCodeCooldownSeconds 是同一手机号发送验证码的冷却秒数。
 	SendCodeCooldownSeconds int `yaml:"send_code_cooldown_seconds"`
@@ -127,12 +127,71 @@ type Auth struct {
 	SendCodeIPLimitPerMinute int `yaml:"send_code_ip_limit_per_minute"`
 	// LoginFailCaptchaThreshold 是触发图形验证码的连续登录失败次数。
 	LoginFailCaptchaThreshold int `yaml:"login_fail_captcha_threshold"`
+	// AllowTestCredentials 仅允许本地版本开启：开启后新注册用户可被下发测试口令。
+	// 生产级环境必须为 false，Validate() 会强制失败关闭（见 validateProductionInvariants）。
+	AllowTestCredentials bool `yaml:"allow_test_credentials"`
+	// TestCredentialPassword 仅在 AllowTestCredentials=true 时生效；为空时使用 LocalTestCredentialPassword。
+	// 禁止写入任何生产配置文件，只能通过 PLANSTAR_AUTH_TEST_CREDENTIAL_PASSWORD 注入。
+	TestCredentialPassword string `yaml:"test_credential_password"`
+	// CodeHMACKey 是短信验证码入库摘要的 HMAC 密钥；为空时复用 ops.token，
+	// 生产环境由 PLANSTAR_AUTH_CODE_HMAC_KEY 显式注入。
+	CodeHMACKey string `yaml:"code_hmac_key"`
+}
+
+// CodeHMACKeyValue 返回验证码摘要密钥，未配置时回退到运维令牌（生产必填）。
+func (a Auth) CodeHMACKeyValue(fallback string) string {
+	if v := strings.TrimSpace(a.CodeHMACKey); v != "" {
+		return v
+	}
+	return fallback
 }
 
 // CookieSecureEnabled 返回是否对会话 Cookie 启用 Secure（默认配置在 Load 中补齐）。
 func (a Auth) CookieSecureEnabled() bool {
 	return a.CookieSecure != nil && *a.CookieSecure
 }
+
+// TestCredentialPasswordValue 返回本地版本使用的一次性测试口令。
+// 未开启 AllowTestCredentials 时返回空串，data 层据此把 password_hash 置空。
+func (a Auth) TestCredentialPasswordValue() string {
+	if !a.AllowTestCredentials {
+		return ""
+	}
+	if v := strings.TrimSpace(a.TestCredentialPassword); v != "" {
+		return v
+	}
+	return LocalTestCredentialPassword
+}
+
+// ---------------------------------------------------------------------------
+// 环境判定：默认拒绝（deny-by-default）。除显式声明的本地环境外，
+// 一律按生产级环境施加约束，避免 staging / docker / 拼写变体绕过安全基线。
+// 对应《阿里巴巴Java开发手册（黄山版）》「安全规约 / 工程规约」的
+// 「配置外置 + 环境隔离 + 上线前校验」要求。
+// ---------------------------------------------------------------------------
+
+const (
+	EnvLocal = "local"
+	EnvDev   = "dev"
+	EnvProd  = "prod"
+
+	// LocalTestCredentialPassword 是本地/演示版本演示账号的唯一测试口令常量。
+	// 代码里禁止再出现其它硬编码口令字面量；生产环境不允许引用该值。
+	LocalTestCredentialPassword = "123456"
+)
+
+var localEnvNames = map[string]struct{}{
+	"local": {}, "dev": {}, "development": {}, "test": {}, "testing": {},
+}
+
+// IsLocalEnv 判断是否为可放松安全基线的本地/测试环境。
+func IsLocalEnv(env string) bool {
+	_, ok := localEnvNames[strings.ToLower(strings.TrimSpace(env))]
+	return ok
+}
+
+// IsProductionLikeEnv 判断是否必须施加生产级安全约束（默认拒绝）。
+func IsProductionLikeEnv(env string) bool { return !IsLocalEnv(env) }
 
 type Trace struct {
 	Endpoint string `yaml:"endpoint"`
@@ -237,6 +296,12 @@ func Load(path string) (*Config, error) {
 	}
 	override(&c.Registry.Consul.Address, "PLANSTAR_CONSUL_ADDRESS")
 	override(&c.Ops.Token, "PLANSTAR_OPS_TOKEN")
+	// 测试口令开关仅由环境变量注入；配置文件里写死也不会在生产通过校验。
+	if err := overrideBool(&c.Auth.AllowTestCredentials, "PLANSTAR_AUTH_ALLOW_TEST_CREDENTIALS"); err != nil {
+		return nil, err
+	}
+	override(&c.Auth.TestCredentialPassword, "PLANSTAR_AUTH_TEST_CREDENTIAL_PASSWORD")
+	override(&c.Auth.CodeHMACKey, "PLANSTAR_AUTH_CODE_HMAC_KEY")
 	// 通知与对象存储默认关闭，密钥仅通过环境变量注入。
 	if err := overrideBool(&c.Notify.SMS.Enabled, "PLANSTAR_NOTIFY_SMS_ENABLED"); err != nil {
 		return nil, err
@@ -333,6 +398,73 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("server.http.request_timeout_seconds(%d) 必须小于 write_timeout_seconds(%d)",
 			c.Server.HTTP.RequestTimeoutSeconds, c.Server.HTTP.WriteTimeoutSeconds)
 	}
+	return c.validateProductionInvariants()
+}
+
+// validateProductionInvariants 是生产上线前的 fail-fast 断言。
+// 依据《阿里巴巴Java开发手册（黄山版）》安全规约「敏感信息不得硬编码 / 生产禁用测试账号」
+// 与工程规约「配置外置、启动即校验」，任何一条不满足都在启动阶段终止，而不是运行期暴露。
+func (c *Config) validateProductionInvariants() error {
+	if !IsProductionLikeEnv(c.Server.Env) {
+		return nil
+	}
+	fail := func(format string, args ...any) error {
+		return fmt.Errorf("生产配置校验失败（server.env=%s）: %s", c.Server.Env, fmt.Sprintf(format, args...))
+	}
+	if c.Auth.AllowTestCredentials {
+		return fail("auth.allow_test_credentials 必须为 false，生产禁止下发测试口令")
+	}
+	if !c.Auth.CookieSecureEnabled() {
+		return fail("auth.cookie_secure 必须为 true")
+	}
+	if strings.TrimSpace(c.Ops.Token) == "" {
+		return fail("ops.token 不能为空（PLANSTAR_OPS_TOKEN）")
+	}
+	if len(c.Ops.AllowedCIDRs) == 0 {
+		return fail("ops.allowed_cidrs 不能为空（PLANSTAR_OPS_ALLOWED_CIDRS）")
+	}
+	if strings.TrimSpace(c.Data.MySQL.Password) == "" {
+		return fail("data.mysql.password 不能为空（PLANSTAR_MYSQL_PASSWORD）")
+	}
+	if strings.EqualFold(strings.TrimSpace(c.Data.MySQL.User), "root") {
+		return fail("data.mysql.user 禁止使用 root，必须配置最小权限账号")
+	}
+	if strings.TrimSpace(c.Data.Redis.Password) == "" {
+		return fail("data.redis.password 不能为空（PLANSTAR_REDIS_PASSWORD）")
+	}
+	// 已购买的阿里云短信是生产唯一允许的验证码通道；Noop/Log 会静默丢弃验证码。
+	if !c.Notify.SMS.Enabled {
+		return fail("notify.sms.enabled 必须为 true（生产必须接入阿里云短信）")
+	}
+	if p := strings.ToLower(strings.TrimSpace(c.Notify.SMS.Provider)); p != "aliyun" && p != "aliyun-dypns" {
+		return fail("notify.sms.provider 必须是 aliyun")
+	}
+	for _, item := range []struct{ field, value string }{
+		{"notify.sms.access_key", c.Notify.SMS.AccessKey},
+		{"notify.sms.access_secret", c.Notify.SMS.AccessSecret},
+		{"notify.sms.sign_name", c.Notify.SMS.SignName},
+		{"notify.sms.template_code", c.Notify.SMS.TemplateCode},
+	} {
+		if strings.TrimSpace(item.value) == "" {
+			return fail("%s 不能为空", item.field)
+		}
+	}
+	// OSS 是可选项；一旦启用就必须完整配置，避免运行期才报错。
+	if c.Storage.OSS.Enabled {
+		if p := strings.ToLower(strings.TrimSpace(c.Storage.OSS.Provider)); p != "aliyun" && p != "oss" {
+			return fail("storage.oss.provider 必须是 aliyun")
+		}
+		for _, item := range []struct{ field, value string }{
+			{"storage.oss.endpoint", c.Storage.OSS.Endpoint},
+			{"storage.oss.bucket", c.Storage.OSS.Bucket},
+			{"storage.oss.access_key", c.Storage.OSS.AccessKey},
+			{"storage.oss.access_secret", c.Storage.OSS.AccessSecret},
+		} {
+			if strings.TrimSpace(item.value) == "" {
+				return fail("%s 不能为空", item.field)
+			}
+		}
+	}
 	return nil
 }
 
@@ -378,7 +510,8 @@ func Loaded() *Config {
 // applyDefaults 补齐安全默认值，不破坏已有配置字段。
 func applyDefaults(c *Config) {
 	if c.Server.Env == "" {
-		c.Server.Env = "dev"
+		// 默认拒绝：未显式声明环境时按生产级环境处理，缺配置直接启动失败。
+		c.Server.Env = EnvProd
 	}
 	if c.Server.HTTP.ReadTimeoutSeconds <= 0 {
 		c.Server.HTTP.ReadTimeoutSeconds = 10
@@ -399,7 +532,7 @@ func applyDefaults(c *Config) {
 		c.Auth.SessionExpireDays = 30
 	}
 	if c.Auth.CookieSecure == nil {
-		secure := c.Server.Env == "prod"
+		secure := IsProductionLikeEnv(c.Server.Env)
 		c.Auth.CookieSecure = &secure
 	}
 	if c.Auth.SendCodeCooldownSeconds <= 0 {

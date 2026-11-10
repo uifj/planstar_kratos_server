@@ -4,6 +4,9 @@ package notify
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"log/slog"
 	"strings"
 
@@ -47,19 +50,33 @@ type NoopEmail struct{}
 
 func (NoopEmail) Send(context.Context, Email) error { return nil }
 
-// logSMS 把短信内容写入日志；工厂保证生产环境不会返回该实现。
+// logSMS 是本地版本专用的短信实现。
+// 依据《阿里巴巴Java开发手册（黄山版）》日志规约「用户敏感信息必须脱敏」，
+// 任何环境都不再打印验证码明文，只输出不可逆指纹供对账；本地登录请使用演示账号测试口令。
 type logSMS struct {
 	log *slog.Logger
 }
 
+// codeFingerprint 返回验证码的 SHA-256 前 8 字节指纹（不可逆，仅用于排查是否同一码）。
+func codeFingerprint(code string) string {
+	sum := sha256.Sum256([]byte(code))
+	return hex.EncodeToString(sum[:8])
+}
+
 func (s *logSMS) SendCode(ctx context.Context, mobile, code string) error {
-	s.log.InfoContext(ctx, "sms login code (dev)", "mobile", MaskMobile(mobile), "code", code)
+	s.log.InfoContext(ctx, "sms login code issued (local)",
+		"mobile", MaskMobile(mobile), "code_fingerprint", codeFingerprint(code))
 	return nil
 }
 
 func (s *logSMS) Send(ctx context.Context, msg Message) error {
-	s.log.InfoContext(ctx, "sms sent (dev)",
-		"mobile", MaskMobile(msg.Mobile), "template", msg.Template, "params", msg.Params)
+	// 模板参数可能携带验证码等敏感值，只记录参数名不记录值。
+	keys := make([]string, 0, len(msg.Params))
+	for k := range msg.Params {
+		keys = append(keys, k)
+	}
+	s.log.InfoContext(ctx, "sms sent (local)",
+		"mobile", MaskMobile(msg.Mobile), "template", msg.Template, "param_keys", keys)
 	return nil
 }
 
@@ -73,15 +90,17 @@ func (e *logEmail) Send(ctx context.Context, email Email) error {
 	return nil
 }
 
-// NewSMS 按配置构造短信发送器：未启用时保持原有降级行为（生产 Noop、开发日志）；
-// 启用 aliyun/aliyun-dypns 时构造真实客户端，其余 provider 仍是未知 provider 处理。
+// NewSMS 按配置构造短信发送器。
+// 生产级环境强制启用已购买的阿里云 Dypnsapi：任何「未启用 / 未知 provider /
+// 配置缺失」都在启动阶段失败关闭，杜绝静默丢弃验证码导致用户无法登录。
 func NewSMS(cfg conf.SMS, env string, log *slog.Logger) (SMSSender, error) {
 	if log == nil {
 		log = slog.Default()
 	}
+	production := isProduction(env)
 	if !cfg.Enabled {
-		if isProduction(env) {
-			return NoopSMS{}, nil
+		if production {
+			return nil, fmt.Errorf("生产环境必须启用短信服务：PLANSTAR_NOTIFY_SMS_ENABLED=true 且 PROVIDER=aliyun")
 		}
 		return &logSMS{log: log}, nil
 	}
@@ -97,11 +116,10 @@ func NewSMS(cfg conf.SMS, env string, log *slog.Logger) (SMSSender, error) {
 		log.Info("aliyun sms provider enabled", "endpoint", dypnsEndpoint(cfg))
 		return &aliyunSMS{api: api, signName: cfg.SignName, templateCode: cfg.TemplateCode}, nil
 	default:
-		if isProduction(env) {
-			log.Warn("sms provider not implemented, messages are dropped", "provider", cfg.Provider)
-			return NoopSMS{}, nil
+		if production {
+			return nil, fmt.Errorf("生产环境短信 provider 必须是 aliyun，当前为 %q", cfg.Provider)
 		}
-		log.Warn("sms provider not implemented, falling back to log sender", "provider", cfg.Provider)
+		log.Warn("sms provider not implemented, falling back to local log sender", "provider", cfg.Provider)
 		return &logSMS{log: log}, nil
 	}
 }
@@ -156,12 +174,8 @@ func MaskEmail(email string) string {
 	return string(local[:1]) + "***" + email[at:]
 }
 
-// isProduction 同时接受 prod 与 production，避免部署环境命名差异导致日志泄露验证码。
+// isProduction 统一委托给 conf 的环境判定（默认拒绝）。
+// 除 dev/local/test 外，staging、docker、拼写变体与空值一律按生产级约束处理。
 func isProduction(env string) bool {
-	switch strings.ToLower(strings.TrimSpace(env)) {
-	case "prod", "production":
-		return true
-	default:
-		return false
-	}
+	return conf.IsProductionLikeEnv(env)
 }

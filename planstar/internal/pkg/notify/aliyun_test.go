@@ -150,11 +150,13 @@ func TestNewSMSAliyunProviderAliases(t *testing.T) {
 	}
 }
 
-func TestNewSMSDisabledKeepsFallback(t *testing.T) {
+// 生产环境禁用短信必须启动失败（fail-closed），绝不能静默丢弃验证码。
+func TestNewSMSDisabledFailsClosedInProduction(t *testing.T) {
 	cfg := conf.SMS{Enabled: false, Provider: "aliyun"}
-	if sender, err := NewSMS(cfg, "prod", nil); err != nil || !isNoopSMS(sender) {
-		t.Fatalf("NewSMS(prod, disabled) = %T, %v; want NoopSMS, nil", sender, err)
+	if sender, err := NewSMS(cfg, "prod", nil); err == nil || sender != nil {
+		t.Fatalf("NewSMS(prod, disabled) = %T, %v; want nil, error", sender, err)
 	}
+	// 本地版本保留 log sender 降级。
 	if sender, err := NewSMS(cfg, "dev", nil); err != nil || !isLogSMS(sender) {
 		t.Fatalf("NewSMS(dev, disabled) = %T, %v; want *logSMS, nil", sender, err)
 	}

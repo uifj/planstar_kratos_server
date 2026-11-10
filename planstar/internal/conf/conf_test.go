@@ -7,10 +7,13 @@ import (
 	"testing"
 )
 
-// baseConfig 返回补齐默认值后的最小可启动配置。
+// baseConfig 返回补齐默认值后的最小「本地」可启动配置。
+// applyDefaults 现在按默认拒绝把未声明环境推导为 prod，
+// 因此单测必须显式声明本地环境，否则会触发生产 fail-fast 断言。
 func baseConfig() *Config {
 	c := &Config{}
 	applyDefaults(c)
+	c.Server.Env = EnvLocal
 	c.Server.HTTP.Addr = "0.0.0.0:8098"
 	c.Data.MySQL.Addr = "127.0.0.1:3306"
 	c.Data.MySQL.User = "root"
@@ -84,6 +87,7 @@ data:
 		t.Fatal(err)
 	}
 
+	t.Setenv("PLANSTAR_ENV", "local")
 	t.Setenv("PLANSTAR_MYSQL_ADDR", "mysql:3307")
 	t.Setenv("PLANSTAR_MYSQL_USER", "planstar")
 	t.Setenv("PLANSTAR_HTTP_ADDR", "0.0.0.0:18098")
