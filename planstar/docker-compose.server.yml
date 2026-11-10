@@ -1,0 +1,29 @@
+# =====================================================================
+# 部署侧追加覆盖（叠加在 docker-compose.prod.yml 之后）
+#   用法：docker compose --env-file .env.prod \
+#           -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.server.yml up -d
+#
+# 当前覆盖两项：
+#   1. 运行时关闭对象存储（火山引擎 TOS/S3 与现有阿里云 OSS SDK 不兼容，
+#      待实现 S3 provider 前保持 Noop）。
+#   2. 【临时】ICP 备案完成前，公网 IP 直连调试：
+#      - 把业务端口 8098 从回环改为公网发布；
+#      - 注意：配合 config.lite.yaml 的 auth.cookie_secure=false 使用，
+#        HTTP 明文下 Secure Cookie 客户端不会保存。
+#      备案通过、域名 HTTPS 就绪后，删除 ports 项并把 cookie_secure 恢复 true。
+# =====================================================================
+
+name: planstar
+
+services:
+  planstar-api:
+    environment:
+      PLANSTAR_STORAGE_OSS_ENABLED: "false"
+      PLANSTAR_STORAGE_OSS_PROVIDER: ""
+      PLANSTAR_STORAGE_OSS_ENDPOINT: ""
+      PLANSTAR_STORAGE_OSS_REGION: ""
+      PLANSTAR_STORAGE_OSS_BUCKET: ""
+      PLANSTAR_STORAGE_OSS_CDN_HOST: ""
+    # 【临时】公网 IP 直连业务端口（备案完成走域名 HTTPS 后删除）
+    ports:
+      - "8098:8098"

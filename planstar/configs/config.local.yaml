@@ -1,0 +1,108 @@
+# ------------------------------------------------------------------
+# planstar 本地开发/联调配置（仅用于 docker-compose.local.yml）
+#   !! 严禁用于任何对外环境 !!
+#   本版本允许测试口令：演示账号见 sql/15_auth_support.sql，
+#   新注册用户也会被下发本地测试口令（auth.allow_test_credentials=true）。
+#   server.env=local 会跳过生产 fail-fast 断言；短信走日志实现且只打印指纹。
+# ------------------------------------------------------------------
+
+server:
+  env: local
+  http:
+    addr: 0.0.0.0:8098
+    read_timeout_seconds: 10
+    write_timeout_seconds: 30
+    idle_timeout_seconds: 60
+    request_timeout_seconds: 15
+    max_body_bytes: 1048576
+    cors_allow_origins: []
+  admin:
+    addr: 0.0.0.0:9108
+
+data:
+  mysql:
+    addr: mysql:3306
+    user: root
+    password: ""                # 由 PLANSTAR_MYSQL_PASSWORD 注入本地测试口令
+    charset: utf8mb4
+  redis:
+    addr: redis:6379
+    password: ""                # 由 PLANSTAR_REDIS_PASSWORD 注入本地测试口令
+    db: 0
+  elastic:
+    addr: ""                    # 本地不启动 ES，搜索降级 MySQL
+    index_prefix: planstar
+    sync_interval_seconds: 300
+    request_timeout_seconds: 3
+
+auth:
+  session_expire_days: 30
+  cookie_secure: false          # 本地 HTTP 联调
+  send_code_cooldown_seconds: 60
+  send_code_ip_limit_per_minute: 10
+  login_fail_captcha_threshold: 3
+  # 【本地版本唯一开启点】生产配置必须为 false
+  allow_test_credentials: true
+  test_credential_password: ""  # 为空时使用 conf.LocalTestCredentialPassword
+  code_hmac_key: ""
+
+trace:
+  endpoint: ""
+  insecure: true
+  env: local
+  sample_ratio: 0
+
+mq:
+  addr: ""                      # 本地不启动 RabbitMQ，事件为 no-op
+  exchange: planstar.exchange
+  queue: planstar.api.events
+
+registry:
+  consul:
+    address: ""
+    scheme: http
+
+ops:
+  token: ""
+  allowed_cidrs: []
+  probe_cache_ttl_seconds: 2
+  probe_timeout_seconds: 2
+  probe_total_timeout_seconds: 3
+  metrics_max_inflight: 8
+  metrics_timeout_seconds: 5
+  readiness:
+    mysql: {critical: true, timeout_seconds: 2}
+    redis: {critical: true, timeout_seconds: 2}
+    elasticsearch: {critical: false, timeout_seconds: 2}
+    rabbitmq: {critical: false, timeout_seconds: 2}
+    consul: {critical: false, timeout_seconds: 2}
+
+notify:
+  sms:
+    enabled: false              # 本地走 logSMS（只打印脱敏指纹，不打印验证码明文）
+    provider: ""
+    endpoint: ""
+    access_key: ""
+    access_secret: ""
+    sign_name: ""
+    template_code: ""
+  email:
+    enabled: false
+    provider: ""
+    smtp_host: ""
+    smtp_port: 465
+    username: ""
+    password: ""
+    from: ""
+
+storage:
+  oss:
+    enabled: false              # 本地不接 OSS
+    provider: ""
+    endpoint: ""
+    region: ""
+    bucket: ""
+    access_key: ""
+    access_secret: ""
+    cdn_host: ""
+    presign_ttl_seconds: 900

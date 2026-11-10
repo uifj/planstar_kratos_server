@@ -232,23 +232,6 @@ services:
     logging: *default-logging
     networks: [planstar]
 
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.110.0
-    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
-    profiles: ["full"]
-    restart: unless-stopped
-    command: ["--config=/etc/otelcol-contrib/config.yaml"]
-    volumes:
-      - ./deploy/otel/collector.yaml:/etc/otelcol-contrib/config.yaml:ro
-    ports:
-      # OTLP 接收端只在宿主机回环暴露，供本机调试；容器间走 planstar 网络
-      - "127.0.0.1:4317:4317"
-      - "127.0.0.1:4318:4318"
-    depends_on:
-      - jaeger
-    logging: *default-logging
-    networks: [planstar]
-
   alertmanager:
     image: prom/alertmanager:v0.27.0
     restart: unless-stopped
@@ -341,38 +324,6 @@ services:
     depends_on:
       prometheus:
         condition: service_started
-      # loki 属于 full profile，默认档位不启动
-      loki:
-        condition: service_started
-        required: false
-    logging: *default-logging
-    networks: [planstar]
-
-  loki:
-    image: grafana/loki:3.1.0
-    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
-    profiles: ["full"]
-    restart: unless-stopped
-    command: ["-config.file=/etc/loki/loki-config.yml"]
-    ports:
-      - "127.0.0.1:3100:3100"
-    volumes:
-      - ./deploy/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
-      - loki_data:/loki
-    logging: *default-logging
-    networks: [planstar]
-
-  promtail:
-    image: grafana/promtail:3.1.0
-    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
-    profiles: ["full"]
-    restart: unless-stopped
-    command: ["-config.file=/etc/promtail/promtail-config.yml"]
-    volumes:
-      - ./deploy/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      - loki
     logging: *default-logging
     networks: [planstar]
 
@@ -500,10 +451,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      # otel-collector 属于 full profile，默认档位不启动
-      otel-collector:
-        condition: service_started
-        required: false
     logging: *default-logging
     networks:
       planstar:
@@ -537,7 +484,6 @@ volumes:
   consul_data:
   prometheus_data:
   grafana_data:
-  loki_data:
   acme_data:
 
 networks:

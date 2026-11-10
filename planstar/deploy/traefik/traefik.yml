@@ -1,18 +1,44 @@
+# =====================================================================
+# Traefik 静态配置（服务器版 · 2026-11-10 同步）
+#
+# 与仓库原版的差异：
+#   * 开启本地面板（api.dashboard + insecure，仅经 compose 绑定的
+#     127.0.0.1:8080 可达，对外无暴露）
+#   * 启用 Docker Provider（配合 prod overlay 挂载 docker.sock），
+#     只监听 planstar 网络的容器，默认不暴露任何容器
+#   * Let's Encrypt 证书改走火山引擎 DNS Challenge —— ICP 备案期
+#     无法走 HTTP-01（80/443 域名未备案被拦截），DNS 挑战绕开
+# =====================================================================
+
+api:
+  dashboard: true
+  insecure: true   # 面板只在 127.0.0.1:8080 可访问，无公网暴露
+
 entryPoints:
   web:
     address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
   websecure:
     address: ":443"
 
-# 注意：api.insecure=true 已由 Traefik 内置的 `traefik` entryPoint 占用 :8080，
-# 不要再额外声明 address 为 :8080 的 entryPoint，否则端口冲突导致容器反复重启。
-api:
-  dashboard: true
-  insecure: true
-
 providers:
+  docker:
+    exposedByDefault: false   # 安全起见，默认不暴露
+    network: planstar         # 关键：只监听 planstar 网络上的容器
   file:
     filename: /etc/traefik/dynamic.yml
 
-# Let's Encrypt 证书解析器；邮箱与存储由 compose 的 command 注入
-# （避免在静态配置里写死敏感邮箱）。
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      # 域名邮箱（可在 planstar.top 下创建）；证书到期通知发往此处，避免暴露个人邮箱
+      email: ops@planstar.top
+      storage: /acme/acme.json
+      dnsChallenge:
+        provider: volcengine
+        propagation:
+          delayBeforeChecks: 30   # 注意：字段名带 "s"

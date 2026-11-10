@@ -1,0 +1,148 @@
+# =====================================================================
+# Planstar 本地开发 / Flutter 联调版本（ standalone，可独立运行 ）
+#
+#   docker compose -f docker-compose.local.yml up -d --build
+#   真机联调： PLANSTAR_LOCAL_BIND=0.0.0.0 docker compose -f docker-compose.local.yml up -d
+#   Flutter:    flutter run --dart-define=PS_API_BASE=http://10.0.2.2:8098/
+#              （真机换成宿主机局域网 IP）
+#
+# 与生产版本的本质差异（见 docs/PRODUCTION_DELIVERY.md）：
+#   * server.env=local，auth.allow_test_credentials=true → 允许演示账号测试口令
+#   * 挂载 14_mock_seed.sql / 15_auth_support.sql → 有演示业务数据与演示账号
+#   * 不挂载 21_disable_test_accounts.sql / 22_create_app_user.sh
+#   * 短信走本地 logSMS（只打印指纹），OSS 关闭，ES/MQ/Consul 全部关闭
+#   * 弱口令仅存在于本文件，且端口默认只绑回环
+#
+# !! 本文件严禁部署到任何公网服务器 !!
+# =====================================================================
+
+name: planstar-local
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "3"
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      # 本地测试口令（仅本机回环可达，禁止用于生产）
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-planstar_local_only}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb-buffer-pool-size=256M
+      - --max-connections=100
+    ports:
+      - "${PLANSTAR_LOCAL_BIND:-127.0.0.1}:3306:3306"
+    volumes:
+      - mysql_local_data:/var/lib/mysql
+      # 本地初始化集：建库 -> 演示数据 -> 演示账号 -> 生产化补丁
+      - ../docs/sql/00_all.sql:/docker-entrypoint-initdb.d/00_all.sql:ro
+      - ../docs/sql/14_mock_seed.sql:/docker-entrypoint-initdb.d/14_mock_seed.sql:ro
+      - ./sql/15_auth_support.sql:/docker-entrypoint-initdb.d/15_auth_support.sql:ro
+      - ./sql/16_production_hardening.sql:/docker-entrypoint-initdb.d/16_production_hardening.sql:ro
+      - ./sql/17_pay_refund_chat.sql:/docker-entrypoint-initdb.d/17_pay_refund_chat.sql:ro
+      - ./sql/18_star_coin_shop.sql:/docker-entrypoint-initdb.d/18_star_coin_shop.sql:ro
+      - ./sql/19_admin_console.sql:/docker-entrypoint-initdb.d/19_admin_console.sql:ro
+      - ./sql/20_project_idea.sql:/docker-entrypoint-initdb.d/20_project_idea.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+    mem_limit: 1g
+    cpus: 1.0
+    logging: *default-logging
+    networks: [planstar-local]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - "${REDIS_PASSWORD:-planstar_local_only}"
+      - --maxmemory
+      - 128mb
+      - --maxmemory-policy
+      - allkeys-lru
+    ports:
+      - "${PLANSTAR_LOCAL_BIND:-127.0.0.1}:6379:6379"
+    volumes:
+      - redis_local_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-planstar_local_only}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    mem_limit: 256m
+    cpus: 0.5
+    logging: *default-logging
+    networks: [planstar-local]
+
+  planstar-api:
+    image: planstar-api:local
+    build:
+      context: .
+      args:
+        VERSION: local
+    restart: unless-stopped
+    init: true
+    environment:
+      TZ: Asia/Shanghai
+      PLANSTAR_ENV: local
+      # 本地版本唯一允许测试口令的开关
+      PLANSTAR_AUTH_ALLOW_TEST_CREDENTIALS: "true"
+      PLANSTAR_MYSQL_USER: root
+      PLANSTAR_MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-planstar_local_only}
+      PLANSTAR_REDIS_PASSWORD: ${REDIS_PASSWORD:-planstar_local_only}
+      PLANSTAR_MQ_ADDR: ""
+      PLANSTAR_ES_ADDR: ""
+      PLANSTAR_CONSUL_ADDRESS: ""
+      PLANSTAR_TRACE_ENDPOINT: ""
+      PLANSTAR_OPS_TOKEN: ""
+      PLANSTAR_OPS_ALLOWED_CIDRS: ""
+      PLANSTAR_NOTIFY_SMS_ENABLED: "false"
+      PLANSTAR_STORAGE_OSS_ENABLED: "false"
+    ports:
+      - "${PLANSTAR_LOCAL_BIND:-127.0.0.1}:8098:8098"
+      - "${PLANSTAR_LOCAL_BIND:-127.0.0.1}:9108:9108"
+    volumes:
+      - ./configs/config.local.yaml:/data/conf/config.yaml:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9108/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: 768m
+    cpus: 1.0
+    logging: *default-logging
+    networks: [planstar-local]
+
+volumes:
+  mysql_local_data:
+  redis_local_data:
+
+networks:
+  planstar-local:
+    driver: bridge

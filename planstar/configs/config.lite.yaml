@@ -44,14 +44,19 @@ data:
 auth:
   # 会话有效期（天）
   session_expire_days: 30
-  # 生产环境强制 Secure Cookie
-  cookie_secure: true
+  # 【临时】ICP 备案期间走 HTTP + 公网 IP 直连：Secure Cookie 在明文 HTTP 下
+  # 客户端不会保存，登录会失效，故暂时关闭。备案完成切回域名 HTTPS 后必须改回 true。
+  cookie_secure: false
   # 同一手机号发送验证码的冷却秒数
   send_code_cooldown_seconds: 60
   # 同一 IP 每分钟发送验证码的最大次数
   send_code_ip_limit_per_minute: 10
   # 连续登录失败达到该次数后要求图形验证码
   login_fail_captcha_threshold: 3
+  # 【生产强制】4C8G 低配档位同样是生产环境，禁止测试口令
+  allow_test_credentials: false
+  test_credential_password: ""
+  code_hmac_key: ""
 
 # OTLP 链路追踪：endpoint 留空且采样率为 0，关闭 tracing
 trace:
