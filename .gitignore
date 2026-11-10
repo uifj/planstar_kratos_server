@@ -13,7 +13,7 @@
 
 # Dependency directories (remove the comment below to include it)
 vendor/
-_archive
+
 # Go workspace file
 go.work
 
@@ -31,12 +31,30 @@ Thumbs.db
 *.key
 *.log
 bin/
+
+# 环境文件与密钥：真实文件含密钥/口令，禁止提交；.example 模板不受影响
 .env
+.env.local
+.env.prod
+.env*.bak
+.env*.old
+.env*.tmp
+*.env~
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
 
 # Develop tools
 .vscode/
 .idea/
 *.swp
+.trae/
+.history/
+*.iml
+
+# 部署打包产物（含 .env.prod 等密钥）
+planstar-deploy*.tar.gz
 
 _archive
-

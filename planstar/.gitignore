@@ -18,5 +18,26 @@ bin/
 .idea/
 *.swp
 .env
-# 由 deploy.sh 从 $PLANSTAR_OPS_TOKEN 生成，禁止入库
+# 两版环境文件：.example 可入库，真实文件含密钥/测试口令，禁止提交
+.env.local
+.env.prod
+.prod-validate.env.tmp
+# 环境变量备份/临时副本（同样含密钥）；.example 模板不受影响
+.env*.bak
+.env*.old
+.env*.tmp
+*.env~
+# 由 deploy.sh / up-prod.sh 从 $PLANSTAR_OPS_TOKEN 生成，禁止入库
 deploy/prometheus/ops_token
+# 部署打包产物（含 .env.prod 等密钥）
+planstar-deploy*.tar.gz
+# 证书与密钥文件
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+# 编辑器/工具
+.trae/
+.history/
+*.iml
