@@ -4,12 +4,13 @@
 数据落在 9 个 `planstar_*` MySQL 库。客户端契约以
 [docs/api/API_CONTRACT.md](docs/api/API_CONTRACT.md) 为准。
 
-> 仓库根目录保留的是历史 kratos-layout 模板（已归档、无 Go 包），真实服务代码全部在
+> 仓库根目录的历史 kratos-layout 模板已归档清理（根 `openapi.yaml`、根
+> `docker-compose.yml`、buf 工具链等不再保留），真实服务代码全部在
 > [`planstar/`](planstar) 独立模块中，后端 CI 只构建 `planstar/`。
 >
-> 根目录的 `admin/`、根 `openapi.yaml`、根 `docker-compose.yml` 与根
-> `docs/architecture.md` 均为**非运行态遗留**（历史 kratos-shop 模板），
-> 不参与构建、部署与本地联调，排障与开发请以 `planstar/` 与 `docs/` 为准。
+> 根目录 `admin/` 是运营后台（Go API + 控制台），作为生产编排的**构建上下文**
+> 参与部署；`docs/architecture.md` 为历史架构文档仅作参考。排障与开发请以
+> `planstar/` 与 `docs/` 为准。
 
 ## 技术栈
 
@@ -34,10 +35,11 @@ planstar/                    独立 Go 模块（module planstar）
   internal/mq/               RabbitMQ 发布器 / 消费者（DLX + trace）
   internal/observability/    Prometheus 指标 + Jaeger tracing + trace 日志
   internal/pkg/              captcha / secret / session / httpx
-  configs/                   config.yaml / config.docker.yaml / config.prod.yaml
-  deploy/                    Prometheus / Alertmanager / Loki / Promtail / Traefik / Grafana
-  sql/                       认证支撑表
-  docker-compose.yml         单机全容器编排
+  configs/                   config.yaml / config.local.yaml / config.lite.yaml / config.prod.yaml
+  deploy/                    Prometheus / Alertmanager / Grafana / Traefik / preflight.sh / backup.sh
+  sql/                       认证支撑表与生产化补丁
+  docker-compose.yml         生产编排 base（+ docker-compose.prod.yml 生产叠加）
+                             （+ docker-compose.server.yml 部署侧覆盖；docker-compose.local.yml 本地联调）
 docs/api/                    客户端 API 契约
 docs/sql/                    9 个库建表 + 演示数据
 ```
@@ -55,23 +57,31 @@ go run ./cmd/planstar -conf ./configs/config.yaml
 
 ## 本地一键启动（docker compose）
 
+本地联调/Flutter 测试推荐使用**独立编排** `docker-compose.local.yml`（仅 3 个容器，
+带演示数据与演示账号测试口令）：
+
 ```bash
 cd planstar
-cp .env.example .env          # 按需修改口令
-docker compose up -d --build
+./up-local.sh
+# 或手动执行：
+# docker compose --env-file .env.local -f docker-compose.local.yml up -d --build
 ```
 
-全栈包含 MySQL / Redis / RabbitMQ / Elasticsearch / Consul / Jaeger /
-Prometheus / Alertmanager / Grafana / Loki / Promtail / Traefik。
+本地版包含 MySQL / Redis / planstar-api，端口默认绑 `127.0.0.1`；真机联调设
+`PLANSTAR_LOCAL_BIND=0.0.0.0`。停止：`docker compose --env-file .env.local -f docker-compose.local.yml down`。
+
+> 说明：仓库另有一套 `docker-compose.yml` + `docker-compose.prod.yml`（生产）
+> 与 `docker-compose.server.yml`（部署侧覆盖），仅用于服务器，禁止本地联调直连。
 
 首次启动时 MySQL 按文件名字典序执行初始化脚本：
 
 | 文件 | 用途 |
 | --- | --- |
 | `docs/sql/00_all.sql` | 建库建表 |
-| `docs/sql/14_mock_seed.sql` | 演示数据 |
+| `docs/sql/14_mock_seed.sql` | 演示数据（生产由 `14_noop.sql` 覆盖，零演示数据） |
 | `planstar/sql/15_auth_support.sql` | 演示账号与认证支撑表 |
 | `planstar/sql/16_production_hardening.sql` | 订单幂等/库存/唯一索引生产化补丁 |
+| `planstar/sql/21_disable_test_accounts.sql`、`22_create_app_user.sh` | 仅生产：禁用演示账号 + 创建最小权限 DB 账号 |
 
 > 初始化脚本仅在数据卷为空时执行；已有存量库用 `make sql-apply`（在 `planstar/` 下执行，
 > 口令取 `MYSQL_ROOT_PASSWORD`，默认 `root`）补齐。
@@ -88,8 +98,9 @@ sh scripts/smoke-local.sh                                             # Git Bash
 powershell -ExecutionPolicy Bypass -File scripts\smoke-local.ps1      # Windows
 ```
 
-面板入口：Grafana `http://127.0.0.1:3000`（默认 `admin/admin`）、
-Jaeger `http://127.0.0.1:16686`、Prometheus `http://127.0.0.1:9090`、
+面板入口（低配档位默认只启 Grafana / Prometheus）：
+Grafana `http://127.0.0.1:3000`、Prometheus `http://127.0.0.1:9090`；
+全量档位（`COMPOSE_PROFILES=full`）另有 Jaeger `http://127.0.0.1:16686`、
 Consul `http://127.0.0.1:8500`、RabbitMQ 管理台 `http://127.0.0.1:15672`。
 
 ## 前端联调 base URL
@@ -113,7 +124,7 @@ flutter run --dart-define=PS_API_BASE=http://10.0.2.2:8098/ --dart-define=PS_USE
 
 | 工作流 | 触发 | 产物 |
 |---|---|---|
-| [`CI`](.github/workflows/ci.yml) | push / PR 到 main（`planstar/**`、`docs/api/**`、`scripts/**`） | Go `gofmt`/`build`/`vet`/`test -race`、接口契约测试、`docker compose config` |
+| [`CI`](.github/workflows/ci.yml) | push / PR 到 main（`planstar/**`、`docs/api/**`、`scripts/**`） | Go `gofmt`/`build`/`vet`/`test -race`、接口契约测试、`docker compose config`（base + local 两套） |
 | Flutter `CI`（客户端仓库 `.github/workflows/ci.yml`） | push / PR 到 main（`lib/**`、`test/**`、`packages/**`） | `flutter analyze lib test packages/infras/core/lib`、`flutter test` |
 | [`Release`](.github/workflows/release.yml) | push tag `v*.*.*` | 镜像 `0.1.0`/`0.1`/`v0.1.0`/`latest`（**Packages**）+ **Release** + 部署（**Deployments**） |
 | [`GitHub Pages`](.github/workflows/pages.yml) | push 到 main（`site/**`） | 发布 `site/` 到 Pages |
@@ -141,15 +152,28 @@ git push origin v0.1.1
 
 ## 部署到单台服务器
 
-由 CI 自动完成；也可在服务器上手动执行：
+生产编排为三文件合并：`docker-compose.yml`（base）+ `docker-compose.prod.yml`
+（生产叠加）+ `docker-compose.server.yml`（部署侧覆盖：关闭不兼容的对象存储、
+临时公网暴露 8098 等），发布前强制走 `preflight.sh` 门禁。
 
 ```bash
-cd /opt/planstar
-PLANSTAR_IMAGE=ghcr.io/uifj/planstar-api PLANSTAR_TAG=v0.1.0 \
-  docker compose -f planstar/docker-compose.yml pull
-PLANSTAR_IMAGE=ghcr.io/uifj/planstar-api PLANSTAR_TAG=v0.1.0 \
-  docker compose -f planstar/docker-compose.yml up -d --remove-orphans
+cd /opt/planstar/planstar
+cp .env.prod.example .env.prod && chmod 600 .env.prod   # 逐项填写 <REPLACE_ME>
+# 关键项：各口令、阿里云号码认证(dypnsapi)短信 AK/SK/签名/模板CODE、
+# VOLC_ACCESSKEY / VOLC_SECRETKEY（火山引擎 DNS Challenge 申请证书）、
+# PLANSTAR_OPS_TOKEN 运维令牌、ACME_EMAIL 等
+
+./up-prod.sh
+# 或手动执行：
+# export C="docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.server.yml"
+# ./deploy/preflight.sh && $C up -d --build
 ```
+
+验证：`curl -fsS http://127.0.0.1:9108/readyz`；业务接口
+`curl -fsS 'http://127.0.0.1:8098/v1/activities?pageIndex=1&pageSize=1'`。
+HTTPS 由 Traefik 按 `api.planstar.top` / `admin.planstar.top` 自动签发证书
+（Let's Encrypt DNS Challenge），需先把两条 A 记录解析到服务器公网 IP，
+并在 ECS 安全组放行 80/443。
 
 ## 说明
 
@@ -169,7 +193,7 @@ PLANSTAR_IMAGE=ghcr.io/uifj/planstar-api PLANSTAR_TAG=v0.1.0 \
 
 如需商业授权，请通过 GitHub（@uifj）联系。
 
-根目录 `admin/` 等历史 kratos 模板目录保留其原始许可证，不参与构建与部署，
+根目录 `admin/` 作为运营后台随生产编排构建部署，其代码保留原始许可证，
 不受本项目许可证影响。
 
 Copyright (C) 2026 uifj
