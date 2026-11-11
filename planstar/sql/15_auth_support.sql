@@ -32,7 +32,7 @@ UPDATE `planstar_user`.`user_info`
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `planstar_user`.`login_code` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `mobile_no` VARCHAR(32) NOT NULL COMMENT '手机号 | LoginRequest.ua',
+  `mobile_no` VARCHAR(32) NOT NULL COMMENT '手机号',
   `code` VARCHAR(16) NOT NULL COMMENT '验证码',
   `expire_time` DATETIME NOT NULL COMMENT '过期时间',
   `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -49,7 +49,7 @@ SET @has_title := (
    WHERE table_schema = 'planstar_content' AND table_name = 'banner' AND column_name = 'title'
 );
 SET @ddl := IF(@has_title = 0,
-  'ALTER TABLE `planstar_content`.`banner` ADD COLUMN `title` VARCHAR(256) NOT NULL DEFAULT '''' COMMENT ''标题 | Banner.title'' AFTER `banner_id`',
+  'ALTER TABLE `planstar_content`.`banner` ADD COLUMN `title` VARCHAR(256) NOT NULL DEFAULT '''' COMMENT ''标题'' AFTER `banner_id`',
   'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 

@@ -51,7 +51,7 @@ SET @ddl := IF(@added_stock,
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- 仅在本次新增字段时回填，避免覆盖运营已维护的库存。
--- 优先票组在售余量（count - sold），否则回退票档 tickets_num。
+-- 优先票组在售余量（count - sold），否则回退回报档位 tickets_num。
 UPDATE `planstar_ticket`.`ticket_category` tc
    SET tc.`stock` = GREATEST(
          COALESCE((

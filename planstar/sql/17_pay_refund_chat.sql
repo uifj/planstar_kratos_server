@@ -72,13 +72,13 @@ CREATE TABLE IF NOT EXISTS `planstar_user`.`chat_thread` (
   `unread_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '未读数 | MessageThread.unreadCount',
   `avatar_url` VARCHAR(512) COMMENT '头像（开源图床 URL） | MessageThread.avatarFallbackUrl',
   `is_official` TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '是否官方客服 | MessageThread.isOfficial',
-  `visitor_token` VARCHAR(256) COMMENT '环信 visitor token | v1/chat/visitor',
+  `visitor_token` VARCHAR(256) COMMENT '环信 visitor token',
   `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_chat_thread_thread_id` (`thread_id`),
   KEY `idx_chat_thread_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='客服 / 会话线程 | ChatService v1/chat/user · v1/chat/visitor + Flutter MessageThread（原 chat_threads）' ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='客服 / 会话线程 | Flutter MessageThread（原 chat_threads）' ROW_FORMAT=DYNAMIC;
 
 -- ---------------------------------------------------------------------
 -- 4. 会话消息（与 docs/sql/02_user.sql 基线一致）
