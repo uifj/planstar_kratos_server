@@ -11,16 +11,16 @@
 --  目录结构参考: github.com/arixbit/kratos-shop/sql/01_init_databases.sql
 --  差异: 参考仓库用 PostgreSQL 的 \gexec 幂等建库；本文件保持 MySQL 8.0，
 --        使用 CREATE DATABASE IF NOT EXISTS，语义等价且可直接执行。
---  参考仓库 6 个库；本票务域拆为 9 个库（见下）。
+--  本文件建 9 个基线库（见下）；planstar_shop 由 planstar/sql/18_star_coin_shop.sql 增建。
 -- ========================================================================
 
 -- planstar_user · 用户与账号
 CREATE DATABASE IF NOT EXISTS `planstar_user` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- planstar_catalog · 基础字典与演出商品
+-- planstar_catalog · 基础字典与企划商品
 CREATE DATABASE IF NOT EXISTS `planstar_catalog` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- planstar_ticket · 票档 / 座位 / 库存
+-- planstar_ticket · 回报档位 / 座位 / 库存
 CREATE DATABASE IF NOT EXISTS `planstar_ticket` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- planstar_order · 订单

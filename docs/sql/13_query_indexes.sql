@@ -54,7 +54,7 @@
 --  [planstar_community.review]
 --    原候选 (activity_id, add_time, id)
 --    现内联  idx_review_activity_id (activity_id) + idx_review_user_id (user_id)
---    说明  : 演出详情评价按 activity_id 过滤，「我的评价」按 user_id 过滤，
+--    说明  : 企划详情评价按 activity_id 过滤，「我的评价」按 user_id 过滤，
 --            两个高频入口各一条索引，排序在结果集内完成。
 --
 --  [planstar_community.feed]
