@@ -1,4 +1,4 @@
-> 适用版本：planstar 单体 · 最后核对：2026-11-07 · 维护：后端组
+> 适用版本：planstar 单体 · 最后核对：2026-11-11 · 维护：后端组
 
 # Planstar 客户端接口契约
 
@@ -6,7 +6,7 @@
 
 - **唯一事实源**：`planstar/internal/service/service.go` 的 `Register` 路由表，以及同目录各 handler。
 - 服务监听 `8098`；所有路径区分大小写，使用 `METHOD /path` 精确匹配。
-- 当前注册 53 条路由，对应 **52 个唯一端点**：`GET /v1/user/` 是 `GET /v1/user` 的尾斜杠别名，复用同一 handler，本契约只记录一次。
+- 当前注册 56 条路由，对应 **55 个唯一端点**：`GET /v1/user/` 是 `GET /v1/user` 的尾斜杠别名，复用同一 handler，本契约只记录一次。
 - 成功响应为裸 JSON（无 `{code,message,data}` 信封），`Content-Type: application/json; charset=utf-8`；图片端点返回 `image/png`。
 - 请求体字段大小写敏感，允许的字段别名已在各端点列出；未列出的字段当前被忽略。
 
@@ -56,7 +56,7 @@
 
 | 端点族 | 参数 | 默认值 | 上限/异常处理 |
 | --- | --- | --- | --- |
-| 演出库、动态 | `page`、`pageSize` | `page=1`、`pageSize=20` | `page<=0` 归 1；`pageSize<=0` 或 `>100` 回落 20 |
+| 企划库、动态 | `page`、`pageSize` | `page=1`、`pageSize=20` | `page<=0` 归 1；`pageSize<=0` 或 `>100` 回落 20 |
 | 消息、订单 | `pageIndex`、`pageSize` | `pageIndex=1`、`pageSize=20` | `pageIndex<=0` 归 1；`pageSize<=0` 或 `>100` 回落 20 |
 | 动态翻页 | `nextPageKey` | 无 | `>0` 时覆盖 `page`；返回值是**下一页页码**，不是游标 |
 
@@ -81,7 +81,7 @@
 `v1` / `v3` / `v4` 是**兼容历史客户端的既有路径**，不是后端路由版本策略：
 
 - 发码是 `POST /v3/user/sendLoginCode`，登录是 `POST /v1/user/login`。
-- 演出详情是 `GET /v3/activities/{id}`，列表是 `GET /v1/activities`。
+- 企划详情（legacy activity 端点）是 `GET /v3/activities/{id}`，列表是 `GET /v1/activities`。
 - 热门动态是 `GET /v4/feed/hot`，普通动态是 `GET /v1/feed`。
 - 下单是 `POST /v3/unifiedOrder/makeOrder`，确认是 `POST /v1/unifiedOrder/confirm`。
 
@@ -134,10 +134,10 @@ POST /v1/user/login
 - 风控：同一手机号 10 分钟内失败 3 次后要求图形码
 - 错误：`400 BAD_REQUEST`（手机号/请求格式非法）、`401 UNAUTHORIZED`（密码或验证码错误）、`413 PAYLOAD_TOO_LARGE`、`500 INTERNAL`
 
-### 7.2 演出库（legacy · 仅线下回报可选）
+### 7.2 企划库（legacy activity 端点 · 仅线下回报可选）
 
 > 产品主叙事已从「演出/购票」切换为「企划/支持」。本节端点保留，仅服务线下活动型企划的
-> 场次与座位能力；新客户端请优先使用 7.7 企划域接口。字段语义对应关系：
+> 回报场次与座位能力；新客户端请优先使用 7.7 企划域接口。字段语义对应关系：
 > 演出 → 企划、场次 → 线下回报场次、票档 → 回报档位、购票 → 支持。
 
 GET /v1/home/banners
@@ -171,7 +171,7 @@ GET /v1/activities
 GET /v3/activities/{id}
 
 - 鉴权：否
-- 请求：路径参数 `id`（int64，演出 ID）
+- 请求：路径参数 `id`（int64，企划 ID）
 - 响应：单个 `ShowSummary`，额外填充：
   - `sessions[]`：`startsAt`、`showTime`、`tierSummary`、`soldOut`
   - `tiers[]`：`name`、`tierName`、`price`（分）、`note`、`remaining`
@@ -302,7 +302,7 @@ POST /v1/unifiedOrder/confirm
 - 鉴权：是
 - 请求体：`activityId`（必填，兼容 `activity_id` / `showId`）、`activityEventId`（可选，兼容 `sessionId`）、`ticketCategoryId`（可选，兼容 `ticketId`）、`quantity`（可选，兼容 `count` / `buyCount`，缺省 1，上限 6）
 - 响应：服务端报价快照 `QuoteSnapshot`（`quoteId`、`userId`、`activityId`、`activityEventId`、`ticketCategoryId`、`title`、`poster`、`unitPrice`、`quantity`、`totalAmount`、`version`、`expiresAt`），金额均为**分**，默认 15 分钟过期
-- 说明：价格来自 `planstar_ticket` 在售票档最低价（`ticket_group.sale_price` → `ticket_category.low_price` → `catalog.activity.low_price` 回退），**不接受客户端指定金额**。快照写入 Redis，未配置 Redis 时降级为进程内 TTL 缓存（仅单实例可用）
+- 说明：价格来自 `planstar_ticket` 在售回报档位最低价（`ticket_group.sale_price` → `ticket_category.low_price` → `catalog.activity.low_price` 回退），**不接受客户端指定金额**。快照写入 Redis，未配置 Redis 时降级为进程内 TTL 缓存（仅单实例可用）
 - 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`、`409 SOLD_OUT`、`409 LIMIT_EXCEEDED`、`413 PAYLOAD_TOO_LARGE`、`500 INTERNAL`
 
 POST /v3/unifiedOrder/makeOrder
@@ -311,8 +311,8 @@ POST /v3/unifiedOrder/makeOrder
 - 请求体（字段兼容多别名，依次取首个可解析值）：
   | 逻辑字段 | 允许的键 | 类型 | 必填 | 说明 |
   | --- | --- | --- | --- | --- |
-  | 演出 ID | `activityId` / `activity_id` / `showId` | int64 | 是 | `>0` |
-  | 场次 ID | `activityEventId` / `activity_event_id` / `sessionId` | int64 | 否 | 落 `activity_event_id` |
+  | 企划 ID | `activityId` / `activity_id` / `showId` | int64 | 是 | `>0` |
+  | 线下回报场次 ID | `activityEventId` / `activity_event_id` / `sessionId` | int64 | 否 | 落 `activity_event_id` |
   | 订单类型 | `orderType` / `order_type` | int | 否 | 缺省/0 时取 1 |
   | 支付金额 | `payAmount` / `pay_amount` | int64（分） | 否 | 兼容字段，落库值以服务端报价为准 |
   | 订单总额 | `totalAmount` / `total_amount` | int64（分） | 否 | 兼容字段，落库值以服务端报价为准 |
@@ -323,10 +323,10 @@ POST /v3/unifiedOrder/makeOrder
   | 报价版本 | `quoteVersion` / `quote_version` / `version` | int | 否 | 传了则必须与快照 `version` 一致 |
   | 客户端金额 | `amount` / `payAmount` / `pay_amount` | int64（分） | 条件必填 | 无 `quoteId` 时必填，仅用于与服务端重算结果比对 |
   | 购买数量 | `quantity` / `count` / `buyCount` | int | 否 | 单笔上限 6（`biz.MaxQuantityPerOrder`） |
-  | 票档 ID | `ticketCategoryId` / `ticket_category_id` / `ticketId` | int64 | 否 | 定价以服务端在售票档为准 |
+  | 回报档位 ID | `ticketCategoryId` / `ticket_category_id` / `ticketId` | int64 | 否 | 定价以服务端在售回报档位为准 |
 - 请求头：`Idempotency-Key`（可选但推荐，同 key 24 小时内返回首次创建的订单）
 - 响应：`TicketOrder`，字段见第 8.7 节
-- 说明：服务端按报价快照或当前权威价格重算金额，**忽略客户端金额的定价作用**。创建在单个事务内完成：幂等查询 → 原子扣减 `planstar_ticket.ticket_category.stock`（影响 0 行即 `SOLD_OUT`）→ 写 `order_info` → 写 `order_idempotency`。订单 ID 由应用侧生成（毫秒时间戳 + 随机位），`order_number` 为 `PN + 毫秒 + 6 位随机` 且有唯一索引；不存在 `MAX(id)+1` 逻辑。演出数据通过 `CatalogReader` 端口从 catalog 库读取，不再跨库直查
+- 说明：服务端按报价快照或当前权威价格重算金额，**忽略客户端金额的定价作用**。创建在单个事务内完成：幂等查询 → 原子扣减 `planstar_ticket.ticket_category.stock`（影响 0 行即 `SOLD_OUT`）→ 写 `order_info` → 写 `order_idempotency`。订单 ID 由应用侧生成（毫秒时间戳 + 随机位），`order_number` 为 `PN + 毫秒 + 6 位随机` 且有唯一索引；不存在 `MAX(id)+1` 逻辑。企划数据通过 `CatalogReader` 端口从 catalog 库读取，不再跨库直查
 - 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`（缺 `activityId`/`quoteId`/`amount` 或 body 非法）、`409 PRICE_CHANGED`、`409 SOLD_OUT`、`409 LIMIT_EXCEEDED`、`409 QUOTE_EXPIRED`、`413 PAYLOAD_TOO_LARGE`、`500 INTERNAL`
 
 POST /v1/unifiedPay/pay
@@ -714,7 +714,7 @@ POST /v1/projectIdeas/{ideaId}/vote
 ### 8.10 企划域
 
 > 以下模型对应第 7.7 节，已在 `internal/biz/project.go` 落地，属于第 1 节所述
-> 52 个唯一端点。金额字段与第 3 节一致，均为**分**。
+> 55 个唯一端点。金额字段与第 3 节一致，均为**分**。
 
 `ProjectSummary`：
 `projectId(int64)`、`projectNo(string)`、`title(string)`、`subtitle(string,omitempty)`、`cover(string)`、`categoryId(int64)`、`categoryName(string)`、`projectType(string)`、`creatorId(int64)`、`creatorName(string)`、`goalAmount(int64)`、`raisedAmount(int64)`、`supporterCount(int)`、`deadline(毫秒时间戳)`、`remainingDays(int)`、`fundingStatus(string)`、`achievementRate(int, 千分比)`、`minSupportAmount(int64)`、`tags(string[])`、`isFeatured(bool)`
@@ -795,7 +795,7 @@ POST /v1/projectIdeas/{ideaId}/vote
 | 企划创意 / 表态 | `planstar_catalog.project_idea`、`project_idea_vote` |
 | 支持记录 / 支持下单 | `planstar_order.pledge` |
 | 组队支持 | `planstar_catalog.support_team`、`support_team_member` |
-| 演出列表 / 热门 / 详情（legacy） | `planstar_catalog`（activity、activity_event、activity_category、city、venue、activity_lineup、activity_detail）+ `planstar_ticket`（ticket_category、ticket_group） |
+| 企划列表 / 热门 / 详情（legacy activity 表） | `planstar_catalog`（activity、activity_event、activity_category、city、venue、activity_lineup、activity_detail）+ `planstar_ticket`（ticket_category、ticket_group） |
 | 动态 / 评论 | `planstar_community.feed`、`feed_media`、`review` |
 | 消息 | `planstar_user.user_message` |
 | 客服会话 / 消息 | `planstar_user.chat_thread`、`chat_message` |
