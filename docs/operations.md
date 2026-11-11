@@ -343,7 +343,7 @@ planstar-api --OTLP/gRPC--> otel-collector:4317 --batch--> jaeger:4317
 - HTTP：`planstar/internal/observability.Middleware` 为业务与 9108 的每个请求创建
   server span（`METHOD route`），记录 `http.method`/`http.target`/`http.route`/
   `http.status_code`。
-- MySQL：`otelsql.Register("mysql", ...)`，9 个库共用一个带埋点的驱动，span 属性
+- MySQL：`otelsql.Register("mysql", ...)`，10 个库共用一个带埋点的驱动，span 属性
   含 `db.system=mysql`；driver 注册失败时回退原生 `mysql`，不影响业务。
 - Redis：`redisotel.InstrumentTracing(rdb)`，命令级 span 沿用全局 TracerProvider。
 - 日志：`observability.NewTraceHandler` 给每条日志补 `trace_id`/`span_id`。

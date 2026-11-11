@@ -1,7 +1,17 @@
 # Planstar 后端服务
 
-企划星（Planstar）Flutter 客户端的后端 API 服务：单一 Kratos v3 服务、单一二进制，
-数据落在 9 个 `planstar_*` MySQL 库。客户端契约以
+**企划星（Planstar）**是一款以「做项目前由网友投票」为核心机制的投票决策类应用：应用内的
+决策项目被称为「企划」，涵盖游戏创作、自媒体、小说创作、周边同人等多个分类。「企划」页
+显示多条实时更新的企划审批，用户可化身**星推官**，选择**通过 / 驳回**并写下审批理由——
+发布企划的过程也在帮创作者厘清创作思路，形成「保持行动、即时反馈」的通道，同时让陌生人
+补足作者没想过的角度、为企划找出问题。
+
+产品口径是**企划支持平台**：立项前投票只表达态度与理由、不扣星币；立项后创作者设置回报
+档位，用户用资金支持企划落地，并获得周边、内容或参与权益。定位、品类边界与术语对照的
+唯一事实源是 [docs/product/POSITIONING.md](docs/product/POSITIONING.md)。
+
+本仓库是企划星 Flutter 客户端的后端 API 服务：单一 Kratos v3 服务、单一二进制，
+数据落在 10 个 `planstar_*` MySQL 库。客户端契约以
 [docs/api/API_CONTRACT.md](docs/api/API_CONTRACT.md) 为准。
 
 > 仓库根目录的历史 kratos-layout 模板已归档清理（根 `openapi.yaml`、根
@@ -15,10 +25,10 @@
 ## 技术栈
 
 - **Kratos v3**（HTTP 传输，`http.ServeMux` + 原生 `net/http` handler）
-- **MySQL 8.x**：9 个库（user/catalog/ticket/order/payment/marketing/community/content/meta）
+- **MySQL 8.x**：10 个库（user/catalog/ticket/order/payment/marketing/community/content/meta/shop）
 - **Redis**：会话缓存、验证码、发码限流、登录失败计数
 - **RabbitMQ**：领域事件发布/消费（重试 + DLX + W3C trace 透传）
-- **Elasticsearch**：演出读模型与热榜查询（失败回退 MySQL）
+- **Elasticsearch**：企划读模型与热榜查询（索引 `planstar-activities`，失败回退 MySQL）
 - **Consul** 服务注册、**Jaeger** 链路追踪、**Prometheus** 指标
 - 依赖在 [`planstar/cmd/planstar/main.go`](planstar/cmd/planstar/main.go) 手工组装，无 Wire
 
@@ -37,11 +47,11 @@ planstar/                    独立 Go 模块（module planstar）
   internal/pkg/              captcha / secret / session / httpx
   configs/                   config.yaml / config.local.yaml / config.lite.yaml / config.prod.yaml
   deploy/                    Prometheus / Alertmanager / Grafana / Traefik / preflight.sh / backup.sh
-  sql/                       认证支撑表与生产化补丁
+  sql/                       认证支撑表、生产化补丁与增量库（星币商城 / 运营后台 / 企划创意）
   docker-compose.yml         生产编排 base（+ docker-compose.prod.yml 生产叠加）
                              （+ docker-compose.server.yml 部署侧覆盖；docker-compose.local.yml 本地联调）
 docs/api/                    客户端 API 契约
-docs/sql/                    9 个库建表 + 演示数据
+docs/sql/                    9 个基线库建表 + 演示数据
 ```
 
 ## 本地开发
@@ -108,7 +118,7 @@ Consul `http://127.0.0.1:8500`、RabbitMQ 管理台 `http://127.0.0.1:15672`。
 Flutter 客户端通过编译期开关 `PS_API_BASE` 指向本地后端（**结尾带 `/`**，未写时客户端自动补）：
 
 ```bash
-cd flutter_piaoniu_app
+cd flutter_planstar_app
 
 # Android 模拟器：10.0.2.2 指向宿主机
 flutter run --dart-define=PS_API_BASE=http://10.0.2.2:8098/

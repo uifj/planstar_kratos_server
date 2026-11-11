@@ -242,8 +242,8 @@ curl -i -X POST https://api.planstar.top/v1/user/login \
 - [ ] **会话令牌回归**：登录响应 `psSession` 只出现在 `Set-Cookie`（含 `HttpOnly; Secure; SameSite=Lax`），**不得**出现在普通响应头；`curl -I` 的 `Access-Control-Expose-Headers` 不含 `psSession`。
 - [ ] **运维面回归**：无 Bearer 访问 `127.0.0.1:9108/metrics` 返回 401；公网 `http://<host>/` 带 `Host: grafana.example.com` 不再到达 Grafana；`/-/reload` 返回 404。
 - [ ] **备份恢复演练**：`./deploy/backup.sh pre-deploy` 产出非空 `mysql.sql.gz`，并在临时实例 `mysql < mysql.sql` 能导入 11 个库。
-- [x] **Flutter 客户端 4 项 P0/P1 已修复**（2026-11-09，`flutter_piaoniu_app/`）：
-  - P0-08 选票参数：`router.dart` 解析并透传 `tier/qty/session`；新增 `OrderConfirmArgs` 作为 controller/seed 的 family 参数；票数按限购收敛、越界回退，金额始终由服务端票档重算。
+- [x] **Flutter 客户端 4 项 P0/P1 已修复**（2026-11-09，`flutter_planstar_app/`）：
+  - P0-08 选档参数：`router.dart` 解析并透传 `tier/qty/session`；新增 `OrderConfirmArgs` 作为 controller/seed 的 family 参数；份数按限购收敛、越界回退，金额始终由服务端回报档位重算。
   - P0-09 下单一致性：`TicketOrder.reopenForRetry()` 在外部分写入失败时回滚聚合并丢弃幽灵 `OrderPlaced`；`_apply()` 在提交中/已提交时禁止编辑且用 `copyWith` 保留 `submitting`；`_refreshServerQuote()` 用请求代数丢弃陈旧响应；建单体改用本次校验过的报价。
   - P1-01 金额口径：`order_list_page.dart` / `order_detail_page.dart` 三处跳转改取 `order.quote?.paymentAmount ?? goodsTotal`。
   - P1-02/03 Android：`build.gradle.kts` release 改用 `key.properties` 正式签名（缺配置即 fail-fast，禁止回退 debug key），启用 R8 + `proguard-rules.pro`；`usesCleartextTraffic=false` + `networkSecurityConfig`（release 禁明文，debug 源集放开本地联调）。

@@ -11,9 +11,9 @@ flowchart LR
     C["Flutter 客户端"] -->|HTTP :8098| API["planstar.api 单进程"]
     OPS["Prometheus / 运维探针"] -->|HTTP :9108| ADM["admin server"]
     API --> ADM
-    API --> MY["MySQL 8（9 个 planstar_* 库）"]
+    API --> MY["MySQL 8（10 个 planstar_* 库）"]
     API --> RD["Redis（会话/验证码/限流）"]
-    API --> ES["Elasticsearch 7（演出读模型）"]
+    API --> ES["Elasticsearch 7（企划读模型）"]
     API --> MQ["RabbitMQ（领域事件）"]
     API --> CO["Consul（可选注册）"]
     API --> JA["Jaeger（可选 tracing）"]
@@ -60,7 +60,7 @@ client → DTO → service → DO → biz → DO → data → PO → storage
 8. 指标、span 与访问日志在响应后收尾：`planstar_http_requests_total`、`planstar_http_request_duration_seconds` 与 `http request` 日志共用同一 `route` 标签；日志通过 `observability.NewTraceHandler` 自动附加 `trace_id`/`span_id`。
 9. 进程收到 `SIGTERM`/`SIGINT` 后，`kratos.App` 先执行 `BeforeStop`，注销 Consul 实例，再并发停止三个 `transport.Server`（业务 HTTP、admin HTTP、MQ 消费者），最多等待 `StopTimeout=15s`；全部停止后再执行 `AfterStop`、关闭 MySQL/MQ/tracing。
 
-失败响应由 `service.fail` + `httpx.Error` 统一为 `{"code","message","traceId"}`，并通过响应头 `X-Trace-Id` 回传同一个 traceId。订单业务码 `PRICE_CHANGED`/`SOLD_OUT`/`LIMIT_EXCEEDED`/`QUOTE_EXPIRED` 已映射为 409。报价快照（Redis 优先、进程内 TTL 降级）与「单事务扣库存 + 幂等键」已落地；SKU 级定价仍以票档最低在售价聚合，细化场次/票档策略为后续工作。`httpx.Plain` 仅保留给历史调用方，当前业务错误不再使用。
+失败响应由 `service.fail` + `httpx.Error` 统一为 `{"code","message","traceId"}`，并通过响应头 `X-Trace-Id` 回传同一个 traceId。订单业务码 `PRICE_CHANGED`/`SOLD_OUT`/`LIMIT_EXCEEDED`/`QUOTE_EXPIRED` 已映射为 409。报价快照（Redis 优先、进程内 TTL 降级）与「单事务扣库存 + 幂等键」已落地；SKU 级定价仍以回报档位最低在售价聚合，细化线下回报场次/回报档位策略为后续工作。`httpx.Plain` 仅保留给历史调用方，当前业务错误不再使用。
 
 ## 4. MySQL 多逻辑库
 
@@ -70,7 +70,7 @@ client → DTO → service → DO → biz → DO → data → PO → storage
 | --- | --- |
 | `planstar_user` | `user_info`、`user_statistic`、`user_address`、`user_message`、`login_session`、`login_code` |
 | `planstar_catalog` | `activity`、`activity_event`、`activity_category`、`city`、`venue`、`activity_lineup`、`activity_detail` |
-| `planstar_ticket` | `ticket_category`、`ticket_group`（票档与可售数量） |
+| `planstar_ticket` | `ticket_category`、`ticket_group`（回报档位与可售数量） |
 | `planstar_order` | `order_info`（订单列表、详情、创建） |
 | `planstar_payment` | 支付相关表（当前无 HTTP 端点直接读写） |
 | `planstar_marketing` | 营销相关表（当前无 HTTP 端点直接读写） |

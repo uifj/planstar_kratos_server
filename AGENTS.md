@@ -21,7 +21,7 @@ planstar/configs/                 config.yaml / config.docker.yaml / config.prod
 planstar/deploy/                  Prometheus / Alertmanager / Loki / Promtail / Traefik / Grafana
 planstar/docker-compose.yml       single-host full-stack compose
 docs/api/API_CONTRACT.md          client API contract (source of truth)
-docs/sql/                         schema + seed for the 9 planstar_* databases
+docs/sql/                         schema + seed for the 9 baseline planstar_* databases
 ```
 
 ## Layering & dependency rules
