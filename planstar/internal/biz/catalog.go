@@ -2,7 +2,7 @@ package biz
 
 import "context"
 
-// ActivityQuery 演出库列表查询参数（page/pageSize 为演出族分页）。
+// ActivityQuery 企划库列表查询参数（page/pageSize 为企划族分页）。
 type ActivityQuery struct {
 	Page       int
 	PageSize   int
@@ -10,14 +10,14 @@ type ActivityQuery struct {
 	City       string
 }
 
-// CatalogRepo 是演出库仓储端口。
+// CatalogRepo 是企划库仓储端口（读 legacy catalog.activity，见 POSITIONING §12）。
 type CatalogRepo interface {
 	Banners(ctx context.Context) ([]*Banner, error)
 	Activities(ctx context.Context, q ActivityQuery, hot bool) ([]*ShowSummary, error)
 	Activity(ctx context.Context, id int64) (*ShowSummary, error)
 }
 
-// ActivitySnapshot 是下单/报价所需的演出权威快照（价格单位为分）。
+// ActivitySnapshot 是下单/报价所需的企划权威快照（价格单位为分）。
 type ActivitySnapshot struct {
 	ActivityID       int64
 	TicketCategoryID int64
@@ -27,13 +27,13 @@ type ActivitySnapshot struct {
 	SoldOut          bool
 }
 
-// CatalogReader 是演出权威数据的只读端口，由 data 层用 catalog / ticket 库连接实现。
+// CatalogReader 是企划权威数据的只读端口，由 data 层用 catalog / ticket 库连接实现。
 // 订单链路不得在 order 库连接上跨库查询。
 type CatalogReader interface {
 	GetActivitySnapshot(ctx context.Context, activityID int64) (*ActivitySnapshot, error)
 }
 
-// CatalogUsecase 演出库用例。
+// CatalogUsecase 企划库用例。
 type CatalogUsecase struct {
 	repo CatalogRepo
 }

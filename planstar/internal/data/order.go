@@ -135,8 +135,8 @@ func (r *OrderRepo) GetActivitySnapshot(ctx context.Context, activityID int64) (
 	}
 	snap.SoldOut = soldOut > 0 || status != 1 || publishStatus != 1
 
-	// 优先使用票档/票组（ticket 库）的在售价格，取最低价 SKU。
-	// SKU 级定价待接入：目前按演出聚合最低票档，未细分场次与票档售卖策略。
+	// 优先使用回报档位/票组（legacy planstar_ticket 库）的在售价格，取最低价 SKU。
+	// SKU 级定价待接入：目前按企划聚合最低回报档位，未细分线下回报场次与档位售卖策略。
 	if tdb, terr := r.d.DB("ticket"); terr == nil {
 		var categoryID int64
 		var salePrice float64
@@ -155,7 +155,7 @@ func (r *OrderRepo) GetActivitySnapshot(ctx context.Context, activityID int64) (
 		}
 	}
 	if snap.UnitPrice <= 0 {
-		// SKU 级定价待接入：票档表无可用售价时回退 catalog.activity.low_price。
+		// SKU 级定价待接入：回报档位表无可用售价时回退 catalog.activity.low_price。
 		snap.UnitPrice = biz.Fen(lowPrice)
 	}
 	return snap, nil

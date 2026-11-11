@@ -52,7 +52,7 @@ func RegisterCatalogMetrics(reg prometheus.Registerer) {
 	}
 }
 
-// esActivityMapping 是演出库读模型的索引结构。
+// esActivityMapping 是企划库读模型的索引结构。
 const esActivityMapping = `{
   "settings": {"number_of_shards": 1, "number_of_replicas": 0},
   "mappings": {
@@ -264,8 +264,8 @@ func (r *CatalogRepo) HotIDs(ctx context.Context, offset, limit int) ([]int64, e
 	return ids, nil
 }
 
-// UpsertActivity 增量写入/更新单个演出文档，供目录变更事件消费调用（本次不接入 MQ）。
-// 演出下架或不存在时转为删除文档。
+// UpsertActivity 增量写入/更新单个企划文档，由 MQ 消费 catalog.activity.changed 时调用（见 service.EventHandler）。
+// 企划下架或不存在时转为删除文档。
 func (r *CatalogRepo) UpsertActivity(ctx context.Context, activityID int64) error {
 	es := r.d.Elastic()
 	if es == nil || activityID <= 0 {
@@ -291,7 +291,7 @@ func (r *CatalogRepo) UpsertActivity(ctx context.Context, activityID int64) erro
 	return err
 }
 
-// DeleteActivity 增量删除单个演出文档，供目录变更事件消费调用（本次不接入 MQ）。
+// DeleteActivity 增量删除单个企划文档，由 MQ 消费 catalog.activity.deleted 时调用（见 service.EventHandler）。
 func (r *CatalogRepo) DeleteActivity(ctx context.Context, activityID int64) error {
 	es := r.d.Elastic()
 	if es == nil || activityID <= 0 {

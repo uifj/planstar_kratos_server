@@ -42,7 +42,7 @@ func (s *Service) orderDetail(w http.ResponseWriter, r *http.Request) {
 	httpx.JSON(w, http.StatusOK, item)
 }
 
-// confirmOrder 服务端权威报价：按演出/场次/票档/数量重新计算金额，返回带版本号与过期时间的快照。
+// confirmOrder 服务端权威报价：按企划/线下回报场次/回报档位/数量重新计算金额，返回带版本号与过期时间的快照。
 func (s *Service) confirmOrder(w http.ResponseWriter, r *http.Request) {
 	userID, ok := s.requireUser(w, r)
 	if !ok {

@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	// otelDriverOnce 保证 otelsql 驱动只注册一次（9 个库共享同一驱动）。
+	// otelDriverOnce 保证 otelsql 驱动只注册一次（10 个库共享同一驱动）。
 	otelDriverOnce sync.Once
 	otelDriverName string
 )
@@ -42,13 +42,13 @@ func mysqlDriver(log *slog.Logger) string {
 	return otelDriverName
 }
 
-// domains 是 9 个服务库的域名，data 层按库连接。
+// domains 是 10 个服务库的域名，data 层按库连接。
 var domains = []string{
 	"user", "catalog", "ticket", "order", "payment",
 	"marketing", "community", "content", "meta", "shop",
 }
 
-// Data 持有 9 个 planstar_* 库的连接池，以及 Redis / Elasticsearch 长连接。
+// Data 持有 10 个 planstar_* 库的连接池，以及 Redis / Elasticsearch 长连接。
 type Data struct {
 	mu    sync.Mutex
 	dbs   map[string]*sql.DB
@@ -154,7 +154,7 @@ func (d *Data) Redis() *redis.Client { return d.rdb }
 // Elastic 返回共享 Elasticsearch 客户端（未配置时为 nil）。
 func (d *Data) Elastic() *elastic.Client { return d.es }
 
-// ElasticIndex 是演出库读模型的查询别名（具体索引由全量重建创建并原子切换）。
+// ElasticIndex 是企划库读模型的查询别名（具体索引由全量重建创建并原子切换）。
 func (d *Data) ElasticIndex() string { return d.esIndex }
 
 // ElasticTimeout ES 查询超时。

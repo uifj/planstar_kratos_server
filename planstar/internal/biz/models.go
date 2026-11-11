@@ -83,7 +83,7 @@ type SendCodeResp struct {
 	ErrorMsg    string `json:"errorMsg,omitempty"`
 }
 
-// ShowSummary 演出库条目（契约 4.2，字段给全两个别名）。
+// ShowSummary 企划库条目（契约 4.2，字段给全两个别名）。
 type ShowSummary struct {
 	ID               int64            `json:"id"`
 	ActivityID       int64            `json:"activityId"`
@@ -132,7 +132,7 @@ type SessionSummary struct {
 	SoldOut     bool   `json:"soldOut"`
 }
 
-// TierSummary 票档摘要。
+// TierSummary 回报档位摘要（数据来自 legacy planstar_ticket.ticket_category）。
 type TierSummary struct {
 	Name      string `json:"name"`
 	TierName  string `json:"tierName"`

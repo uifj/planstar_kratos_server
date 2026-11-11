@@ -172,7 +172,7 @@ func (r *CatalogRepo) Banners(ctx context.Context) ([]*biz.Banner, error) {
 	return items, rows.Err()
 }
 
-// parseShowID 从跳转 scheme 中提取演出 ID（planstar://activity/1001 或 ...activityId=1001）。
+// parseShowID 从跳转 scheme 中提取企划 ID（planstar://activity/1001 或 ...activityId=1001）。
 func parseShowID(schema string) int64 {
 	if schema == "" {
 		return 0
@@ -352,7 +352,7 @@ func (r *CatalogRepo) Activity(ctx context.Context, id int64) (*biz.ShowSummary,
 		return nil, err
 	}
 
-	// 票档（按演出聚合，同名票档取最低价）
+	// 回报档位（按企划聚合，同名档位取最低价；读 legacy planstar_ticket.ticket_category / ticket_group）
 	trows, err := db.QueryContext(ctx,
 		`SELECT tc.specification, COALESCE(tc.low_price, tc.origin_price, 0), COALESCE(tc.is_e_ticket,0),
 		        COALESCE((SELECT MIN(tg.sale_price) FROM planstar_ticket.ticket_group tg

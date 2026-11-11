@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// MaxQuantityPerOrder 是单笔订单的最大购买数量（限购规则，后续可按票档 sell_limit 细化）。
+// MaxQuantityPerOrder 是单笔订单的最大购买数量（限购规则，后续可按回报档位 sell_limit 细化）。
 const MaxQuantityPerOrder = 6
 
 // defaultQuoteTTL 是报价快照的默认有效期（15 分钟）。
@@ -118,7 +118,7 @@ func (uc *OrderUsecase) Quote(ctx context.Context, userID int64, in *QuoteInput)
 	return snap, nil
 }
 
-// buildQuote 从权威表读取演出/票档价格并生成快照；不信任任何客户端金额。
+// buildQuote 从权威表读取企划/回报档位价格并生成快照；不信任任何客户端金额。
 func (uc *OrderUsecase) buildQuote(ctx context.Context, userID int64, in *QuoteInput) (*QuoteSnapshot, error) {
 	if in == nil || in.ActivityID <= 0 {
 		return nil, ErrBadRequest
@@ -145,7 +145,7 @@ func (uc *OrderUsecase) buildQuote(ctx context.Context, userID int64, in *QuoteI
 	if err != nil {
 		return nil, err
 	}
-	// SKU 级定价待接入：当前由服务端在在售票档中选取最低价 SKU，不接受客户端指定票档参与定价/扣库存。
+	// SKU 级定价待接入：当前由服务端在在售回报档位中选取最低价 SKU，不接受客户端指定回报档位参与定价/扣库存。
 	categoryID := act.TicketCategoryID
 	return &QuoteSnapshot{
 		QuoteID:          quoteID,

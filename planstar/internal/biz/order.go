@@ -26,7 +26,7 @@ type OrderInput struct {
 	AddressID      int64
 }
 
-// OrderRepo 是订单仓储端口（同时提供报价快照存储与演出权威数据读取）。
+// OrderRepo 是订单仓储端口（同时提供报价快照存储与企划权威数据读取）。
 type OrderRepo interface {
 	Orders(ctx context.Context, userID int64, status, orderType, pageIndex, pageSize int) ([]*TicketOrder, error)
 	OrderByNumber(ctx context.Context, userID int64, orderNumber string) (*TicketOrder, error)
@@ -95,7 +95,7 @@ func (uc *OrderUsecase) MakeOrder(ctx context.Context, userID int64, in *OrderIn
 	if err != nil {
 		return nil, err
 	}
-	// 以服务端报价覆盖客户端金额与演出维度，禁止信任客户端金额。
+	// 以服务端报价覆盖客户端金额与企划维度，禁止信任客户端金额。
 	in.ActivityID = quote.ActivityID
 	if quote.ActivityEventID > 0 {
 		in.ActivityEventID = quote.ActivityEventID
