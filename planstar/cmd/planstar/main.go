@@ -241,7 +241,7 @@ func main() {
 	})
 
 	hs := server.NewHTTPServer(c.Server, mux, metrics, logger)
-	adminSrv := server.NewAdminServer(c.Server, metrics, readiness, Version, opsAuth, biz.NewReportUsecase(data.NewReportRepo(d)), projectUC, logger)
+	adminSrv := server.NewAdminServer(c.Server, metrics, readiness, Version, opsAuth, biz.NewReportUsecase(data.NewReportRepo(d)), projectUC, biz.NewOpsUsecase(data.NewOpsRepo(d)), logger)
 
 	// 异步事件消费者：随 kratos.App 一起启停。
 	eventHandler := service.NewEventHandler(messageUC, catalogRepo, logger)

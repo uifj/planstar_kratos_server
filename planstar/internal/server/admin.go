@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -49,7 +50,7 @@ func writeProbeJSON(w http.ResponseWriter, status int, v any) {
 
 // NewAdminServer 提供运维端点：/metrics、/healthz、/readyz，以及运营后台的举报审核与企划审核端点。
 // 与业务端口分离，避免指标与审核能力暴露在公网 API 上。
-func NewAdminServer(c conf.Server, metrics *observability.Metrics, ready *ops.Readiness, version string, auth *OpsAuth, reports *biz.ReportUsecase, projects *biz.ProjectUsecase, logger *slog.Logger) *khttp.Server {
+func NewAdminServer(c conf.Server, metrics *observability.Metrics, ready *ops.Readiness, version string, auth *OpsAuth, reports *biz.ReportUsecase, projects *biz.ProjectUsecase, opsUC *biz.OpsUsecase, logger *slog.Logger) *khttp.Server {
 	mux := http.NewServeMux()
 	// /metrics 与运营后台需要 Bearer 凭据；探针保持匿名，供容器编排健康检查使用。
 	mux.Handle("/metrics", auth.Wrap("metrics", metrics.Handler()))
@@ -162,6 +163,43 @@ func NewAdminServer(c conf.Server, metrics *observability.Metrics, ready *ops.Re
 		writeAdminJSON(w, http.StatusOK, mod)
 	})))
 
+	// 运营写面：动态/商品/规格上下架 + 退款审核。仅运维内网端口可达，
+	// 由 admin 运营服务代理调用，业务公网 API 不暴露。
+	mux.Handle("POST /admin/feeds/{id}/status", auth.Wrap("admin", opsStatusHandler(auth, "feed.status", opsUC.SetFeedStatus)))
+	mux.Handle("POST /admin/goods/{id}/status", auth.Wrap("admin", opsStatusHandler(auth, "goods.status", opsUC.SetGoodsStatus)))
+	mux.Handle("POST /admin/goods-skus/{id}/status", auth.Wrap("admin", opsStatusHandler(auth, "goods_sku.status", opsUC.SetGoodsSKUStatus)))
+	mux.Handle("POST /admin/refunds/{id}/review", auth.Wrap("admin", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		target := r.PathValue("id")
+		id, err := strconv.ParseInt(target, 10, 64)
+		if err != nil || id <= 0 {
+			auth.auditWrite(r.Context(), "refund.review", target, "bad_request")
+			writeAdminError(w, biz.ErrBadRequest)
+			return
+		}
+		var body struct {
+			Decision string `json:"decision"`
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			auth.auditWrite(r.Context(), "refund.review", target, "bad_request")
+			writeAdminError(w, biz.ErrBadRequest)
+			return
+		}
+		if body.Decision != "approve" && body.Decision != "reject" {
+			auth.auditWrite(r.Context(), "refund.review", target, "bad_request")
+			writeAdminError(w, biz.ErrBadRequest)
+			return
+		}
+		review, err := opsUC.ReviewRefund(r.Context(), id, body.Decision == "approve")
+		if err != nil {
+			auth.auditWrite(r.Context(), "refund.review", target, opsResult(err))
+			writeAdminError(w, err)
+			return
+		}
+		auth.auditWrite(r.Context(), "refund.review", target, body.Decision)
+		writeAdminJSON(w, http.StatusOK, review)
+	})))
+
 	srv := khttp.NewServer(
 		khttp.Address(c.Admin.Addr),
 		khttp.Timeout(10*time.Second),
@@ -186,9 +224,54 @@ func writeAdminError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, biz.ErrBadRequest):
 		writeAdminJSON(w, http.StatusBadRequest, map[string]string{"code": "BAD_REQUEST", "message": "参数错误"})
+	case errors.Is(err, biz.ErrRefundNotAllowed):
+		writeAdminJSON(w, http.StatusBadRequest, map[string]string{"code": "REFUND_NOT_ALLOWED", "message": "退款单当前状态不可审核"})
 	case errors.Is(err, biz.ErrNotFound):
-		writeAdminJSON(w, http.StatusNotFound, map[string]string{"code": "NOT_FOUND", "message": "举报单不存在"})
+		writeAdminJSON(w, http.StatusNotFound, map[string]string{"code": "NOT_FOUND", "message": "对象不存在"})
 	default:
 		writeAdminJSON(w, http.StatusInternalServerError, map[string]string{"code": "INTERNAL", "message": "服务异常"})
+	}
+}
+
+// opsStatusHandler 生成「设置状态」运营写 handler；set 为对应 biz 用例方法。
+func opsStatusHandler(auth *OpsAuth, action string, set func(context.Context, int64, int32) error) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		target := r.PathValue("id")
+		id, err := strconv.ParseInt(target, 10, 64)
+		if err != nil || id <= 0 {
+			auth.auditWrite(r.Context(), action, target, "bad_request")
+			writeAdminError(w, biz.ErrBadRequest)
+			return
+		}
+		var body struct {
+			Status int32 `json:"status"`
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			auth.auditWrite(r.Context(), action, target, "bad_request")
+			writeAdminError(w, biz.ErrBadRequest)
+			return
+		}
+		if err := set(r.Context(), id, body.Status); err != nil {
+			auth.auditWrite(r.Context(), action, target, opsResult(err))
+			writeAdminError(w, err)
+			return
+		}
+		auth.auditWrite(r.Context(), action, target, "success")
+		writeAdminJSON(w, http.StatusOK, map[string]any{"id": id, "status": body.Status})
+	}
+}
+
+// opsResult 把运营写领域错误归并为审计结果类别。
+func opsResult(err error) string {
+	switch {
+	case errors.Is(err, biz.ErrBadRequest):
+		return "bad_request"
+	case errors.Is(err, biz.ErrNotFound):
+		return "not_found"
+	case errors.Is(err, biz.ErrRefundNotAllowed):
+		return "not_allowed"
+	default:
+		return "error"
 	}
 }
