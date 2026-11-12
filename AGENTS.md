@@ -59,8 +59,15 @@ client -> DTO -> service -> DO -> biz -> DO -> data -> PO -> storage
 cd planstar
 go build ./...
 go vet ./...
-go test ./...
+go test ./...          # unit tests, colocated, no infrastructure needed
+make test-integration  # real-MySQL tests (build tag "integration")
 ```
+
+Unit tests stay colocated (`*_test.go`) and are table-driven; shared harnesses
+live in `internal/testutil`. Integration tests are guarded by
+`//go:build integration` and read `PLANSTAR_TEST_MYSQL_DSN`; they auto-skip when
+it is unset or unreachable, and clean up seeded rows via `testutil.Cleanup`.
+`make check` runs gofmt + vet + `go test -race`.
 
 ## CI/CD
 

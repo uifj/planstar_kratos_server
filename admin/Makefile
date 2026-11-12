@@ -36,6 +36,34 @@ all:
 	make config
 	make generate
 
+.PHONY: vet
+# vet static analysis
+vet:
+	go vet ./...
+
+.PHONY: test
+# test unit tests with the race detector (no infrastructure required)
+test:
+	go test -race ./...
+
+.PHONY: test-integration
+# test-integration real-MySQL integration tests (build tag "integration").
+# Set ADMIN_TEST_MYSQL_DSN to a throwaway/local MySQL to enable them; when the
+# variable is unset or the server is unreachable the tests skip, so this target
+# is safe to run anywhere.
+test-integration:
+	go test -tags integration ./...
+
+.PHONY: cover
+# cover unit-test coverage summary
+cover:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out | tail -1
+
+.PHONY: check
+# check pre-commit static gates: vet + unit tests
+check: vet test
+
 # show help
 help:
 	@echo ''

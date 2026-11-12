@@ -84,3 +84,16 @@ sql-apply:
 	docker compose exec -T mysql mysql -uroot -p$${MYSQL_ROOT_PASSWORD:-root} < ../docs/sql/14_mock_seed.sql
 	docker compose exec -T mysql mysql -uroot -p$${MYSQL_ROOT_PASSWORD:-root} < ./sql/15_auth_support.sql
 	docker compose exec -T mysql mysql -uroot -p$${MYSQL_ROOT_PASSWORD:-root} < ./sql/16_production_hardening.sql
+
+.PHONY: test-integration
+# test-integration 真实 MySQL 集成测试（build tag "integration"）。
+# 设置 PLANSTAR_TEST_MYSQL_DSN 指向本地/一次性 MySQL 后启用；未设置或不可达时
+# 用例自动 skip，因此该目标在任何环境都可安全执行。
+test-integration:
+	go test -tags integration ./...
+
+.PHONY: cover
+# cover 单元测试覆盖率汇总
+cover:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out | tail -1

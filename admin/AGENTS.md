@@ -114,9 +114,18 @@ design rather than add the import.
 
 ### Testing seam
 
-Tests live beside the code they cover (`*_test.go`). Test layers in
-isolation: service tests fake the usecase, biz tests fake the repo, data
-tests exercise repo implementations at the storage boundary.
+Tests live beside the code they cover (`*_test.go`); Go unit tests are not
+moved into a separate `tests/` tree. Unit tests are table-driven (`t.Run`
+subtests) and test layers in isolation: service tests fake the usecase, biz
+tests fake the repo. Shared fakes/harnesses live in `internal/testutil`.
+
+Integration tests are colocated but guarded by `//go:build integration` and
+obtain a real MySQL via `internal/testutil.MySQL` (env `ADMIN_TEST_MYSQL_DSN`);
+they auto-skip when the DSN is unset or unreachable, so plain `go test ./...`
+never needs infrastructure. Seed rows must be removed with `testutil.Cleanup`.
+
+Run `make test` (unit, race), `make test-integration` (real MySQL), `make cover`
+(coverage), `make check` (vet + unit).
 
 ## Generation & generated files
 
