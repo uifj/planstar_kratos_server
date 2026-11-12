@@ -109,6 +109,48 @@ func (c *opsClient) HandleReport(ctx context.Context, id int64, status, note str
 	}, nil
 }
 
+// SetFeedStatus forwards a feed hide/show decision to the ops service.
+func (c *opsClient) SetFeedStatus(ctx context.Context, id int64, status int32) error {
+	path := fmt.Sprintf("/admin/feeds/%d/status", id)
+	return c.post(ctx, path, map[string]int32{"status": status}, &struct{}{}, biz.ErrFeedNotFound)
+}
+
+// SetGoodsStatus forwards a goods on/off-shelf decision to the ops service.
+func (c *opsClient) SetGoodsStatus(ctx context.Context, id int64, status int32) error {
+	path := fmt.Sprintf("/admin/goods/%d/status", id)
+	return c.post(ctx, path, map[string]int32{"status": status}, &struct{}{}, biz.ErrGoodsNotFound)
+}
+
+// SetGoodsSkuStatus forwards a SKU on/off-shelf decision to the ops service.
+func (c *opsClient) SetGoodsSkuStatus(ctx context.Context, id int64, status int32) error {
+	path := fmt.Sprintf("/admin/goods-skus/%d/status", id)
+	return c.post(ctx, path, map[string]int32{"status": status}, &struct{}{}, biz.ErrSkuNotFound)
+}
+
+// ReviewRefund forwards a refund approve/reject decision to the ops service.
+func (c *opsClient) ReviewRefund(ctx context.Context, id int64, decision string) (*biz.RefundReview, error) {
+	var resp struct {
+		RefundID     int64  `json:"refundId"`
+		RefundNo     string `json:"refundNo"`
+		OrderID      int64  `json:"orderId"`
+		Status       string `json:"status"`
+		OrderStatus  int32  `json:"orderStatus"`
+		RefundAmount int64  `json:"refundAmount"`
+	}
+	path := fmt.Sprintf("/admin/refunds/%d/review", id)
+	if err := c.post(ctx, path, map[string]string{"decision": decision}, &resp, biz.ErrRefundNotFound); err != nil {
+		return nil, err
+	}
+	return &biz.RefundReview{
+		RefundID:     resp.RefundID,
+		RefundNo:     resp.RefundNo,
+		OrderID:      resp.OrderID,
+		Status:       resp.Status,
+		OrderStatus:  resp.OrderStatus,
+		RefundAmount: resp.RefundAmount,
+	}, nil
+}
+
 // post sends one JSON request and decodes a successful reply. Transport,
 // timeout and unexpected status failures collapse into ErrOpsUnavailable so
 // callers report 503 instead of pretending the write happened.

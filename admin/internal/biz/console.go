@@ -116,6 +116,17 @@ type ConsoleRepo interface {
 	ListProjects(context.Context, ProjectQuery) ([]*Project, error)
 	ListOrders(context.Context, OrderQuery) ([]*Order, error)
 	ListReports(context.Context, ReportQuery) ([]*Report, error)
+	Dashboard(context.Context) (*Dashboard, error)
+	ListIdeas(context.Context, IdeaQuery) ([]*Idea, error)
+	GetIdea(context.Context, int64) (*IdeaDetail, error)
+	ListGoods(context.Context, GoodsQuery) ([]*Goods, error)
+	GetGoods(context.Context, int64) (*GoodsDetail, error)
+	ListGoodsOrders(context.Context, GoodsOrderQuery) ([]*GoodsOrder, error)
+	GetOrder(context.Context, int64) (*OrderDetail, error)
+	ListPayOrders(context.Context, PayOrderQuery) ([]*PayOrder, error)
+	ListRefunds(context.Context, RefundQuery) ([]*Refund, error)
+	ListFeeds(context.Context, FeedQuery) ([]*Feed, error)
+	GetFeed(context.Context, int64) (*FeedDetail, error)
 }
 
 // OpsClient forwards moderation decisions to the business service. The
@@ -123,6 +134,10 @@ type ConsoleRepo interface {
 type OpsClient interface {
 	ReviewProject(ctx context.Context, id int64, decision string) (*ReviewResult, error)
 	HandleReport(ctx context.Context, id int64, status, note string) (*Report, error)
+	SetFeedStatus(ctx context.Context, id int64, status int32) error
+	SetGoodsStatus(ctx context.Context, id int64, status int32) error
+	SetGoodsSkuStatus(ctx context.Context, id int64, status int32) error
+	ReviewRefund(ctx context.Context, id int64, decision string) (*RefundReview, error)
 }
 
 // ConsoleUsecase implements the console business operations.
@@ -148,7 +163,8 @@ func (uc *ConsoleUsecase) ListUsers(ctx context.Context, q UserQuery) ([]*Planst
 
 // UpdateUserStatus updates the account status of one business user.
 func (uc *ConsoleUsecase) UpdateUserStatus(ctx context.Context, id int64, status int32) (*PlanstarUser, error) {
-	if id <= 0 || status < 0 {
+	// user_info.status 只有 0（禁用）/1（正常）两个合法值。
+	if id <= 0 || status < 0 || status > 1 {
 		return nil, ErrInvalidStatus
 	}
 	return uc.repo.UpdateUserStatus(ctx, id, status)

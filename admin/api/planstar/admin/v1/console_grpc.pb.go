@@ -19,13 +19,29 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ConsoleService_ListUsers_FullMethodName        = "/planstar.admin.v1.ConsoleService/ListUsers"
-	ConsoleService_UpdateUserStatus_FullMethodName = "/planstar.admin.v1.ConsoleService/UpdateUserStatus"
-	ConsoleService_ListProjects_FullMethodName     = "/planstar.admin.v1.ConsoleService/ListProjects"
-	ConsoleService_ReviewProject_FullMethodName    = "/planstar.admin.v1.ConsoleService/ReviewProject"
-	ConsoleService_ListOrders_FullMethodName       = "/planstar.admin.v1.ConsoleService/ListOrders"
-	ConsoleService_ListReports_FullMethodName      = "/planstar.admin.v1.ConsoleService/ListReports"
-	ConsoleService_HandleReport_FullMethodName     = "/planstar.admin.v1.ConsoleService/HandleReport"
+	ConsoleService_ListUsers_FullMethodName         = "/planstar.admin.v1.ConsoleService/ListUsers"
+	ConsoleService_UpdateUserStatus_FullMethodName  = "/planstar.admin.v1.ConsoleService/UpdateUserStatus"
+	ConsoleService_ListProjects_FullMethodName      = "/planstar.admin.v1.ConsoleService/ListProjects"
+	ConsoleService_ReviewProject_FullMethodName     = "/planstar.admin.v1.ConsoleService/ReviewProject"
+	ConsoleService_ListOrders_FullMethodName        = "/planstar.admin.v1.ConsoleService/ListOrders"
+	ConsoleService_ListReports_FullMethodName       = "/planstar.admin.v1.ConsoleService/ListReports"
+	ConsoleService_HandleReport_FullMethodName      = "/planstar.admin.v1.ConsoleService/HandleReport"
+	ConsoleService_GetDashboard_FullMethodName      = "/planstar.admin.v1.ConsoleService/GetDashboard"
+	ConsoleService_ListAuditLogs_FullMethodName     = "/planstar.admin.v1.ConsoleService/ListAuditLogs"
+	ConsoleService_ListIdeas_FullMethodName         = "/planstar.admin.v1.ConsoleService/ListIdeas"
+	ConsoleService_GetIdea_FullMethodName           = "/planstar.admin.v1.ConsoleService/GetIdea"
+	ConsoleService_ListGoods_FullMethodName         = "/planstar.admin.v1.ConsoleService/ListGoods"
+	ConsoleService_GetGoods_FullMethodName          = "/planstar.admin.v1.ConsoleService/GetGoods"
+	ConsoleService_ListGoodsOrders_FullMethodName   = "/planstar.admin.v1.ConsoleService/ListGoodsOrders"
+	ConsoleService_GetOrder_FullMethodName          = "/planstar.admin.v1.ConsoleService/GetOrder"
+	ConsoleService_ListPayOrders_FullMethodName     = "/planstar.admin.v1.ConsoleService/ListPayOrders"
+	ConsoleService_ListRefunds_FullMethodName       = "/planstar.admin.v1.ConsoleService/ListRefunds"
+	ConsoleService_ListFeeds_FullMethodName         = "/planstar.admin.v1.ConsoleService/ListFeeds"
+	ConsoleService_GetFeed_FullMethodName           = "/planstar.admin.v1.ConsoleService/GetFeed"
+	ConsoleService_SetFeedStatus_FullMethodName     = "/planstar.admin.v1.ConsoleService/SetFeedStatus"
+	ConsoleService_SetGoodsStatus_FullMethodName    = "/planstar.admin.v1.ConsoleService/SetGoodsStatus"
+	ConsoleService_SetGoodsSkuStatus_FullMethodName = "/planstar.admin.v1.ConsoleService/SetGoodsSkuStatus"
+	ConsoleService_ReviewRefund_FullMethodName      = "/planstar.admin.v1.ConsoleService/ReviewRefund"
 )
 
 // ConsoleServiceClient is the client API for ConsoleService service.
@@ -48,6 +64,38 @@ type ConsoleServiceClient interface {
 	ListReports(ctx context.Context, in *ListReportsRequest, opts ...grpc.CallOption) (*ReportSet, error)
 	// HandleReport accepts or rejects a report through the ops service.
 	HandleReport(ctx context.Context, in *HandleReportRequest, opts ...grpc.CallOption) (*Report, error)
+	// GetDashboard aggregates read-only business metrics for the overview page.
+	GetDashboard(ctx context.Context, in *GetDashboardRequest, opts ...grpc.CallOption) (*Dashboard, error)
+	// ListAuditLogs pages the console write audit trail (admin role only).
+	ListAuditLogs(ctx context.Context, in *ListAuditLogsRequest, opts ...grpc.CallOption) (*AuditLogSet, error)
+	// ListIdeas lists community ideas.
+	ListIdeas(ctx context.Context, in *ListIdeasRequest, opts ...grpc.CallOption) (*IdeaSet, error)
+	// GetIdea returns one idea with its vote aggregation and recent votes.
+	GetIdea(ctx context.Context, in *GetIdeaRequest, opts ...grpc.CallOption) (*IdeaDetail, error)
+	// ListGoods lists shop goods.
+	ListGoods(ctx context.Context, in *ListGoodsRequest, opts ...grpc.CallOption) (*GoodsSet, error)
+	// GetGoods returns one goods item with its SKUs.
+	GetGoods(ctx context.Context, in *GetGoodsRequest, opts ...grpc.CallOption) (*GoodsDetail, error)
+	// ListGoodsOrders lists coin purchases.
+	ListGoodsOrders(ctx context.Context, in *ListGoodsOrdersRequest, opts ...grpc.CallOption) (*GoodsOrderSet, error)
+	// GetOrder returns one unified order with its payments and refunds.
+	GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*OrderDetail, error)
+	// ListPayOrders lists payment attempts.
+	ListPayOrders(ctx context.Context, in *ListPayOrdersRequest, opts ...grpc.CallOption) (*PayOrderSet, error)
+	// ListRefunds lists refund requests.
+	ListRefunds(ctx context.Context, in *ListRefundsRequest, opts ...grpc.CallOption) (*RefundSet, error)
+	// ListFeeds lists community feeds.
+	ListFeeds(ctx context.Context, in *ListFeedsRequest, opts ...grpc.CallOption) (*FeedSet, error)
+	// GetFeed returns one feed with its media and author snapshot.
+	GetFeed(ctx context.Context, in *GetFeedRequest, opts ...grpc.CallOption) (*FeedDetail, error)
+	// SetFeedStatus hides or shows a community feed through the ops service.
+	SetFeedStatus(ctx context.Context, in *SetFeedStatusRequest, opts ...grpc.CallOption) (*StatusReply, error)
+	// SetGoodsStatus puts a shop goods on or off shelf through the ops service.
+	SetGoodsStatus(ctx context.Context, in *SetGoodsStatusRequest, opts ...grpc.CallOption) (*StatusReply, error)
+	// SetGoodsSkuStatus puts a goods SKU on or off shelf through the ops service.
+	SetGoodsSkuStatus(ctx context.Context, in *SetGoodsSkuStatusRequest, opts ...grpc.CallOption) (*StatusReply, error)
+	// ReviewRefund approves or rejects a refund through the ops service.
+	ReviewRefund(ctx context.Context, in *ReviewRefundRequest, opts ...grpc.CallOption) (*RefundReview, error)
 }
 
 type consoleServiceClient struct {
@@ -128,6 +176,166 @@ func (c *consoleServiceClient) HandleReport(ctx context.Context, in *HandleRepor
 	return out, nil
 }
 
+func (c *consoleServiceClient) GetDashboard(ctx context.Context, in *GetDashboardRequest, opts ...grpc.CallOption) (*Dashboard, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Dashboard)
+	err := c.cc.Invoke(ctx, ConsoleService_GetDashboard_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) ListAuditLogs(ctx context.Context, in *ListAuditLogsRequest, opts ...grpc.CallOption) (*AuditLogSet, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AuditLogSet)
+	err := c.cc.Invoke(ctx, ConsoleService_ListAuditLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) ListIdeas(ctx context.Context, in *ListIdeasRequest, opts ...grpc.CallOption) (*IdeaSet, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IdeaSet)
+	err := c.cc.Invoke(ctx, ConsoleService_ListIdeas_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) GetIdea(ctx context.Context, in *GetIdeaRequest, opts ...grpc.CallOption) (*IdeaDetail, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IdeaDetail)
+	err := c.cc.Invoke(ctx, ConsoleService_GetIdea_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) ListGoods(ctx context.Context, in *ListGoodsRequest, opts ...grpc.CallOption) (*GoodsSet, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GoodsSet)
+	err := c.cc.Invoke(ctx, ConsoleService_ListGoods_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) GetGoods(ctx context.Context, in *GetGoodsRequest, opts ...grpc.CallOption) (*GoodsDetail, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GoodsDetail)
+	err := c.cc.Invoke(ctx, ConsoleService_GetGoods_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) ListGoodsOrders(ctx context.Context, in *ListGoodsOrdersRequest, opts ...grpc.CallOption) (*GoodsOrderSet, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GoodsOrderSet)
+	err := c.cc.Invoke(ctx, ConsoleService_ListGoodsOrders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*OrderDetail, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OrderDetail)
+	err := c.cc.Invoke(ctx, ConsoleService_GetOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) ListPayOrders(ctx context.Context, in *ListPayOrdersRequest, opts ...grpc.CallOption) (*PayOrderSet, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PayOrderSet)
+	err := c.cc.Invoke(ctx, ConsoleService_ListPayOrders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) ListRefunds(ctx context.Context, in *ListRefundsRequest, opts ...grpc.CallOption) (*RefundSet, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RefundSet)
+	err := c.cc.Invoke(ctx, ConsoleService_ListRefunds_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) ListFeeds(ctx context.Context, in *ListFeedsRequest, opts ...grpc.CallOption) (*FeedSet, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FeedSet)
+	err := c.cc.Invoke(ctx, ConsoleService_ListFeeds_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) GetFeed(ctx context.Context, in *GetFeedRequest, opts ...grpc.CallOption) (*FeedDetail, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FeedDetail)
+	err := c.cc.Invoke(ctx, ConsoleService_GetFeed_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) SetFeedStatus(ctx context.Context, in *SetFeedStatusRequest, opts ...grpc.CallOption) (*StatusReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StatusReply)
+	err := c.cc.Invoke(ctx, ConsoleService_SetFeedStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) SetGoodsStatus(ctx context.Context, in *SetGoodsStatusRequest, opts ...grpc.CallOption) (*StatusReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StatusReply)
+	err := c.cc.Invoke(ctx, ConsoleService_SetGoodsStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) SetGoodsSkuStatus(ctx context.Context, in *SetGoodsSkuStatusRequest, opts ...grpc.CallOption) (*StatusReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StatusReply)
+	err := c.cc.Invoke(ctx, ConsoleService_SetGoodsSkuStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consoleServiceClient) ReviewRefund(ctx context.Context, in *ReviewRefundRequest, opts ...grpc.CallOption) (*RefundReview, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RefundReview)
+	err := c.cc.Invoke(ctx, ConsoleService_ReviewRefund_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ConsoleServiceServer is the server API for ConsoleService service.
 // All implementations must embed UnimplementedConsoleServiceServer
 // for forward compatibility.
@@ -148,6 +356,38 @@ type ConsoleServiceServer interface {
 	ListReports(context.Context, *ListReportsRequest) (*ReportSet, error)
 	// HandleReport accepts or rejects a report through the ops service.
 	HandleReport(context.Context, *HandleReportRequest) (*Report, error)
+	// GetDashboard aggregates read-only business metrics for the overview page.
+	GetDashboard(context.Context, *GetDashboardRequest) (*Dashboard, error)
+	// ListAuditLogs pages the console write audit trail (admin role only).
+	ListAuditLogs(context.Context, *ListAuditLogsRequest) (*AuditLogSet, error)
+	// ListIdeas lists community ideas.
+	ListIdeas(context.Context, *ListIdeasRequest) (*IdeaSet, error)
+	// GetIdea returns one idea with its vote aggregation and recent votes.
+	GetIdea(context.Context, *GetIdeaRequest) (*IdeaDetail, error)
+	// ListGoods lists shop goods.
+	ListGoods(context.Context, *ListGoodsRequest) (*GoodsSet, error)
+	// GetGoods returns one goods item with its SKUs.
+	GetGoods(context.Context, *GetGoodsRequest) (*GoodsDetail, error)
+	// ListGoodsOrders lists coin purchases.
+	ListGoodsOrders(context.Context, *ListGoodsOrdersRequest) (*GoodsOrderSet, error)
+	// GetOrder returns one unified order with its payments and refunds.
+	GetOrder(context.Context, *GetOrderRequest) (*OrderDetail, error)
+	// ListPayOrders lists payment attempts.
+	ListPayOrders(context.Context, *ListPayOrdersRequest) (*PayOrderSet, error)
+	// ListRefunds lists refund requests.
+	ListRefunds(context.Context, *ListRefundsRequest) (*RefundSet, error)
+	// ListFeeds lists community feeds.
+	ListFeeds(context.Context, *ListFeedsRequest) (*FeedSet, error)
+	// GetFeed returns one feed with its media and author snapshot.
+	GetFeed(context.Context, *GetFeedRequest) (*FeedDetail, error)
+	// SetFeedStatus hides or shows a community feed through the ops service.
+	SetFeedStatus(context.Context, *SetFeedStatusRequest) (*StatusReply, error)
+	// SetGoodsStatus puts a shop goods on or off shelf through the ops service.
+	SetGoodsStatus(context.Context, *SetGoodsStatusRequest) (*StatusReply, error)
+	// SetGoodsSkuStatus puts a goods SKU on or off shelf through the ops service.
+	SetGoodsSkuStatus(context.Context, *SetGoodsSkuStatusRequest) (*StatusReply, error)
+	// ReviewRefund approves or rejects a refund through the ops service.
+	ReviewRefund(context.Context, *ReviewRefundRequest) (*RefundReview, error)
 	mustEmbedUnimplementedConsoleServiceServer()
 }
 
@@ -178,6 +418,54 @@ func (UnimplementedConsoleServiceServer) ListReports(context.Context, *ListRepor
 }
 func (UnimplementedConsoleServiceServer) HandleReport(context.Context, *HandleReportRequest) (*Report, error) {
 	return nil, status.Error(codes.Unimplemented, "method HandleReport not implemented")
+}
+func (UnimplementedConsoleServiceServer) GetDashboard(context.Context, *GetDashboardRequest) (*Dashboard, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDashboard not implemented")
+}
+func (UnimplementedConsoleServiceServer) ListAuditLogs(context.Context, *ListAuditLogsRequest) (*AuditLogSet, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListAuditLogs not implemented")
+}
+func (UnimplementedConsoleServiceServer) ListIdeas(context.Context, *ListIdeasRequest) (*IdeaSet, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListIdeas not implemented")
+}
+func (UnimplementedConsoleServiceServer) GetIdea(context.Context, *GetIdeaRequest) (*IdeaDetail, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetIdea not implemented")
+}
+func (UnimplementedConsoleServiceServer) ListGoods(context.Context, *ListGoodsRequest) (*GoodsSet, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListGoods not implemented")
+}
+func (UnimplementedConsoleServiceServer) GetGoods(context.Context, *GetGoodsRequest) (*GoodsDetail, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetGoods not implemented")
+}
+func (UnimplementedConsoleServiceServer) ListGoodsOrders(context.Context, *ListGoodsOrdersRequest) (*GoodsOrderSet, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListGoodsOrders not implemented")
+}
+func (UnimplementedConsoleServiceServer) GetOrder(context.Context, *GetOrderRequest) (*OrderDetail, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetOrder not implemented")
+}
+func (UnimplementedConsoleServiceServer) ListPayOrders(context.Context, *ListPayOrdersRequest) (*PayOrderSet, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPayOrders not implemented")
+}
+func (UnimplementedConsoleServiceServer) ListRefunds(context.Context, *ListRefundsRequest) (*RefundSet, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListRefunds not implemented")
+}
+func (UnimplementedConsoleServiceServer) ListFeeds(context.Context, *ListFeedsRequest) (*FeedSet, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListFeeds not implemented")
+}
+func (UnimplementedConsoleServiceServer) GetFeed(context.Context, *GetFeedRequest) (*FeedDetail, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetFeed not implemented")
+}
+func (UnimplementedConsoleServiceServer) SetFeedStatus(context.Context, *SetFeedStatusRequest) (*StatusReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetFeedStatus not implemented")
+}
+func (UnimplementedConsoleServiceServer) SetGoodsStatus(context.Context, *SetGoodsStatusRequest) (*StatusReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetGoodsStatus not implemented")
+}
+func (UnimplementedConsoleServiceServer) SetGoodsSkuStatus(context.Context, *SetGoodsSkuStatusRequest) (*StatusReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetGoodsSkuStatus not implemented")
+}
+func (UnimplementedConsoleServiceServer) ReviewRefund(context.Context, *ReviewRefundRequest) (*RefundReview, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReviewRefund not implemented")
 }
 func (UnimplementedConsoleServiceServer) mustEmbedUnimplementedConsoleServiceServer() {}
 func (UnimplementedConsoleServiceServer) testEmbeddedByValue()                        {}
@@ -326,6 +614,294 @@ func _ConsoleService_HandleReport_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ConsoleService_GetDashboard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDashboardRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).GetDashboard(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_GetDashboard_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).GetDashboard(ctx, req.(*GetDashboardRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_ListAuditLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAuditLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).ListAuditLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_ListAuditLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).ListAuditLogs(ctx, req.(*ListAuditLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_ListIdeas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIdeasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).ListIdeas(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_ListIdeas_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).ListIdeas(ctx, req.(*ListIdeasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_GetIdea_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIdeaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).GetIdea(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_GetIdea_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).GetIdea(ctx, req.(*GetIdeaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_ListGoods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGoodsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).ListGoods(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_ListGoods_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).ListGoods(ctx, req.(*ListGoodsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_GetGoods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGoodsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).GetGoods(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_GetGoods_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).GetGoods(ctx, req.(*GetGoodsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_ListGoodsOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGoodsOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).ListGoodsOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_ListGoodsOrders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).ListGoodsOrders(ctx, req.(*ListGoodsOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_GetOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).GetOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_GetOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).GetOrder(ctx, req.(*GetOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_ListPayOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPayOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).ListPayOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_ListPayOrders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).ListPayOrders(ctx, req.(*ListPayOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_ListRefunds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRefundsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).ListRefunds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_ListRefunds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).ListRefunds(ctx, req.(*ListRefundsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_ListFeeds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFeedsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).ListFeeds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_ListFeeds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).ListFeeds(ctx, req.(*ListFeedsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_GetFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFeedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).GetFeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_GetFeed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).GetFeed(ctx, req.(*GetFeedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_SetFeedStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetFeedStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).SetFeedStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_SetFeedStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).SetFeedStatus(ctx, req.(*SetFeedStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_SetGoodsStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetGoodsStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).SetGoodsStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_SetGoodsStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).SetGoodsStatus(ctx, req.(*SetGoodsStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_SetGoodsSkuStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetGoodsSkuStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).SetGoodsSkuStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_SetGoodsSkuStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).SetGoodsSkuStatus(ctx, req.(*SetGoodsSkuStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConsoleService_ReviewRefund_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReviewRefundRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsoleServiceServer).ReviewRefund(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConsoleService_ReviewRefund_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsoleServiceServer).ReviewRefund(ctx, req.(*ReviewRefundRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ConsoleService_ServiceDesc is the grpc.ServiceDesc for ConsoleService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -360,6 +936,70 @@ var ConsoleService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HandleReport",
 			Handler:    _ConsoleService_HandleReport_Handler,
+		},
+		{
+			MethodName: "GetDashboard",
+			Handler:    _ConsoleService_GetDashboard_Handler,
+		},
+		{
+			MethodName: "ListAuditLogs",
+			Handler:    _ConsoleService_ListAuditLogs_Handler,
+		},
+		{
+			MethodName: "ListIdeas",
+			Handler:    _ConsoleService_ListIdeas_Handler,
+		},
+		{
+			MethodName: "GetIdea",
+			Handler:    _ConsoleService_GetIdea_Handler,
+		},
+		{
+			MethodName: "ListGoods",
+			Handler:    _ConsoleService_ListGoods_Handler,
+		},
+		{
+			MethodName: "GetGoods",
+			Handler:    _ConsoleService_GetGoods_Handler,
+		},
+		{
+			MethodName: "ListGoodsOrders",
+			Handler:    _ConsoleService_ListGoodsOrders_Handler,
+		},
+		{
+			MethodName: "GetOrder",
+			Handler:    _ConsoleService_GetOrder_Handler,
+		},
+		{
+			MethodName: "ListPayOrders",
+			Handler:    _ConsoleService_ListPayOrders_Handler,
+		},
+		{
+			MethodName: "ListRefunds",
+			Handler:    _ConsoleService_ListRefunds_Handler,
+		},
+		{
+			MethodName: "ListFeeds",
+			Handler:    _ConsoleService_ListFeeds_Handler,
+		},
+		{
+			MethodName: "GetFeed",
+			Handler:    _ConsoleService_GetFeed_Handler,
+		},
+		{
+			MethodName: "SetFeedStatus",
+			Handler:    _ConsoleService_SetFeedStatus_Handler,
+		},
+		{
+			MethodName: "SetGoodsStatus",
+			Handler:    _ConsoleService_SetGoodsStatus_Handler,
+		},
+		{
+			MethodName: "SetGoodsSkuStatus",
+			Handler:    _ConsoleService_SetGoodsSkuStatus_Handler,
+		},
+		{
+			MethodName: "ReviewRefund",
+			Handler:    _ConsoleService_ReviewRefund_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

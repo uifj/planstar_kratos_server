@@ -1277,6 +1277,3255 @@ func (x *HandleReportRequest) GetNote() string {
 	return ""
 }
 
+// SetFeedStatusRequest is the request for SetFeedStatus.
+type SetFeedStatusRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Required. Community feed ID.
+	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Required. 0 hidden, 1 normal.
+	Status        int32 `protobuf:"varint,2,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetFeedStatusRequest) Reset() {
+	*x = SetFeedStatusRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetFeedStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetFeedStatusRequest) ProtoMessage() {}
+
+func (x *SetFeedStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetFeedStatusRequest.ProtoReflect.Descriptor instead.
+func (*SetFeedStatusRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *SetFeedStatusRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *SetFeedStatusRequest) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+// SetGoodsStatusRequest is the request for SetGoodsStatus.
+type SetGoodsStatusRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Required. Shop goods ID.
+	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Required. 0 off shelf, 1 on shelf.
+	Status        int32 `protobuf:"varint,2,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetGoodsStatusRequest) Reset() {
+	*x = SetGoodsStatusRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetGoodsStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetGoodsStatusRequest) ProtoMessage() {}
+
+func (x *SetGoodsStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetGoodsStatusRequest.ProtoReflect.Descriptor instead.
+func (*SetGoodsStatusRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *SetGoodsStatusRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *SetGoodsStatusRequest) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+// SetGoodsSkuStatusRequest is the request for SetGoodsSkuStatus.
+type SetGoodsSkuStatusRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Required. Shop goods SKU ID.
+	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Required. 0 off shelf, 1 on shelf.
+	Status        int32 `protobuf:"varint,2,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetGoodsSkuStatusRequest) Reset() {
+	*x = SetGoodsSkuStatusRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetGoodsSkuStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetGoodsSkuStatusRequest) ProtoMessage() {}
+
+func (x *SetGoodsSkuStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetGoodsSkuStatusRequest.ProtoReflect.Descriptor instead.
+func (*SetGoodsSkuStatusRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *SetGoodsSkuStatusRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *SetGoodsSkuStatusRequest) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+// StatusReply echoes the id and status after a status write.
+type StatusReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Status        int32                  `protobuf:"varint,2,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StatusReply) Reset() {
+	*x = StatusReply{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatusReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusReply) ProtoMessage() {}
+
+func (x *StatusReply) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatusReply.ProtoReflect.Descriptor instead.
+func (*StatusReply) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *StatusReply) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *StatusReply) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+// ReviewRefundRequest is the request for ReviewRefund.
+type ReviewRefundRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Required. Payment refund ID.
+	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Required. approve or reject.
+	Decision      string `protobuf:"bytes,2,opt,name=decision,proto3" json:"decision,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReviewRefundRequest) Reset() {
+	*x = ReviewRefundRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReviewRefundRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReviewRefundRequest) ProtoMessage() {}
+
+func (x *ReviewRefundRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReviewRefundRequest.ProtoReflect.Descriptor instead.
+func (*ReviewRefundRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *ReviewRefundRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ReviewRefundRequest) GetDecision() string {
+	if x != nil {
+		return x.Decision
+	}
+	return ""
+}
+
+// RefundReview is the result of reviewing a refund.
+type RefundReview struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	RefundId int64                  `protobuf:"varint,1,opt,name=refund_id,json=refundId,proto3" json:"refund_id,omitempty"`
+	RefundNo string                 `protobuf:"bytes,2,opt,name=refund_no,json=refundNo,proto3" json:"refund_no,omitempty"`
+	OrderId  int64                  `protobuf:"varint,3,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	// success or rejected.
+	Status string `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	// Unified order status after the review.
+	OrderStatus int32 `protobuf:"varint,5,opt,name=order_status,json=orderStatus,proto3" json:"order_status,omitempty"`
+	// Refunded amount in cents.
+	RefundAmount  int64 `protobuf:"varint,6,opt,name=refund_amount,json=refundAmount,proto3" json:"refund_amount,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RefundReview) Reset() {
+	*x = RefundReview{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RefundReview) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RefundReview) ProtoMessage() {}
+
+func (x *RefundReview) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RefundReview.ProtoReflect.Descriptor instead.
+func (*RefundReview) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *RefundReview) GetRefundId() int64 {
+	if x != nil {
+		return x.RefundId
+	}
+	return 0
+}
+
+func (x *RefundReview) GetRefundNo() string {
+	if x != nil {
+		return x.RefundNo
+	}
+	return ""
+}
+
+func (x *RefundReview) GetOrderId() int64 {
+	if x != nil {
+		return x.OrderId
+	}
+	return 0
+}
+
+func (x *RefundReview) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *RefundReview) GetOrderStatus() int32 {
+	if x != nil {
+		return x.OrderStatus
+	}
+	return 0
+}
+
+func (x *RefundReview) GetRefundAmount() int64 {
+	if x != nil {
+		return x.RefundAmount
+	}
+	return 0
+}
+
+// StatusCount is one bucket of a grouped count.
+type StatusCount struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        int32                  `protobuf:"varint,1,opt,name=status,proto3" json:"status,omitempty"`
+	Count         int64                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StatusCount) Reset() {
+	*x = StatusCount{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatusCount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusCount) ProtoMessage() {}
+
+func (x *StatusCount) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatusCount.ProtoReflect.Descriptor instead.
+func (*StatusCount) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *StatusCount) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+func (x *StatusCount) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+// DailyCount is one day of a trend series (date formatted YYYY-MM-DD).
+type DailyCount struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	Count         int64                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DailyCount) Reset() {
+	*x = DailyCount{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DailyCount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DailyCount) ProtoMessage() {}
+
+func (x *DailyCount) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DailyCount.ProtoReflect.Descriptor instead.
+func (*DailyCount) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *DailyCount) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *DailyCount) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+// TrendSeries is a named daily series covering the last 14 days.
+type TrendSeries struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Series key: orders / pledges / votes / new_users.
+	Name          string        `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Points        []*DailyCount `protobuf:"bytes,2,rep,name=points,proto3" json:"points,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TrendSeries) Reset() {
+	*x = TrendSeries{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TrendSeries) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TrendSeries) ProtoMessage() {}
+
+func (x *TrendSeries) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TrendSeries.ProtoReflect.Descriptor instead.
+func (*TrendSeries) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *TrendSeries) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *TrendSeries) GetPoints() []*DailyCount {
+	if x != nil {
+		return x.Points
+	}
+	return nil
+}
+
+// Dashboard aggregates read-only business metrics across the Planstar databases.
+type Dashboard struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UsersTotal    int64                  `protobuf:"varint,1,opt,name=users_total,json=usersTotal,proto3" json:"users_total,omitempty"`
+	ProjectsTotal int64                  `protobuf:"varint,2,opt,name=projects_total,json=projectsTotal,proto3" json:"projects_total,omitempty"`
+	// Buckets keyed by project.publish_status (0/1/2/3).
+	ProjectsByPublishStatus []*StatusCount `protobuf:"bytes,3,rep,name=projects_by_publish_status,json=projectsByPublishStatus,proto3" json:"projects_by_publish_status,omitempty"`
+	// Projects whose funding_status is ongoing.
+	ProjectsOngoing int64 `protobuf:"varint,4,opt,name=projects_ongoing,json=projectsOngoing,proto3" json:"projects_ongoing,omitempty"`
+	// Sum of raised_amount over published projects, in cents.
+	RaisedTotal int64 `protobuf:"varint,5,opt,name=raised_total,json=raisedTotal,proto3" json:"raised_total,omitempty"`
+	// Pledges in paid/confirmed/shipped/delivered.
+	PledgesPaid int64 `protobuf:"varint,6,opt,name=pledges_paid,json=pledgesPaid,proto3" json:"pledges_paid,omitempty"`
+	// Sum of support_amount over paid pledges, in cents.
+	PledgedAmount  int64 `protobuf:"varint,7,opt,name=pledged_amount,json=pledgedAmount,proto3" json:"pledged_amount,omitempty"`
+	IdeasTotal     int64 `protobuf:"varint,8,opt,name=ideas_total,json=ideasTotal,proto3" json:"ideas_total,omitempty"`
+	IdeasPublished int64 `protobuf:"varint,9,opt,name=ideas_published,json=ideasPublished,proto3" json:"ideas_published,omitempty"`
+	VotesTotal     int64 `protobuf:"varint,10,opt,name=votes_total,json=votesTotal,proto3" json:"votes_total,omitempty"`
+	VotesSupport   int64 `protobuf:"varint,11,opt,name=votes_support,json=votesSupport,proto3" json:"votes_support,omitempty"`
+	VotesOppose    int64 `protobuf:"varint,12,opt,name=votes_oppose,json=votesOppose,proto3" json:"votes_oppose,omitempty"`
+	OrdersTotal    int64 `protobuf:"varint,13,opt,name=orders_total,json=ordersTotal,proto3" json:"orders_total,omitempty"`
+	// Orders with a non-null pay_time.
+	OrdersPaid int64 `protobuf:"varint,14,opt,name=orders_paid,json=ordersPaid,proto3" json:"orders_paid,omitempty"`
+	// Sum of pay_amount over paid orders, in cents.
+	Gmv int64 `protobuf:"varint,15,opt,name=gmv,proto3" json:"gmv,omitempty"`
+	// order_refund rows in applied/processing.
+	RefundsPending int64 `protobuf:"varint,16,opt,name=refunds_pending,json=refundsPending,proto3" json:"refunds_pending,omitempty"`
+	// project_report rows still pending.
+	ReportsPending int64 `protobuf:"varint,17,opt,name=reports_pending,json=reportsPending,proto3" json:"reports_pending,omitempty"`
+	GoodsOnSale    int64 `protobuf:"varint,18,opt,name=goods_on_sale,json=goodsOnSale,proto3" json:"goods_on_sale,omitempty"`
+	// goods_order rows in paid/completed.
+	GoodsOrdersPaid int64 `protobuf:"varint,19,opt,name=goods_orders_paid,json=goodsOrdersPaid,proto3" json:"goods_orders_paid,omitempty"`
+	// Sum of price_coins over paid/completed goods orders.
+	CoinsSpent int64 `protobuf:"varint,20,opt,name=coins_spent,json=coinsSpent,proto3" json:"coins_spent,omitempty"`
+	FeedsTotal int64 `protobuf:"varint,21,opt,name=feeds_total,json=feedsTotal,proto3" json:"feeds_total,omitempty"`
+	// Feeds whose status is not 1 (hidden).
+	FeedsHidden   int64          `protobuf:"varint,22,opt,name=feeds_hidden,json=feedsHidden,proto3" json:"feeds_hidden,omitempty"`
+	Trends        []*TrendSeries `protobuf:"bytes,23,rep,name=trends,proto3" json:"trends,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Dashboard) Reset() {
+	*x = Dashboard{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Dashboard) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Dashboard) ProtoMessage() {}
+
+func (x *Dashboard) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Dashboard.ProtoReflect.Descriptor instead.
+func (*Dashboard) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *Dashboard) GetUsersTotal() int64 {
+	if x != nil {
+		return x.UsersTotal
+	}
+	return 0
+}
+
+func (x *Dashboard) GetProjectsTotal() int64 {
+	if x != nil {
+		return x.ProjectsTotal
+	}
+	return 0
+}
+
+func (x *Dashboard) GetProjectsByPublishStatus() []*StatusCount {
+	if x != nil {
+		return x.ProjectsByPublishStatus
+	}
+	return nil
+}
+
+func (x *Dashboard) GetProjectsOngoing() int64 {
+	if x != nil {
+		return x.ProjectsOngoing
+	}
+	return 0
+}
+
+func (x *Dashboard) GetRaisedTotal() int64 {
+	if x != nil {
+		return x.RaisedTotal
+	}
+	return 0
+}
+
+func (x *Dashboard) GetPledgesPaid() int64 {
+	if x != nil {
+		return x.PledgesPaid
+	}
+	return 0
+}
+
+func (x *Dashboard) GetPledgedAmount() int64 {
+	if x != nil {
+		return x.PledgedAmount
+	}
+	return 0
+}
+
+func (x *Dashboard) GetIdeasTotal() int64 {
+	if x != nil {
+		return x.IdeasTotal
+	}
+	return 0
+}
+
+func (x *Dashboard) GetIdeasPublished() int64 {
+	if x != nil {
+		return x.IdeasPublished
+	}
+	return 0
+}
+
+func (x *Dashboard) GetVotesTotal() int64 {
+	if x != nil {
+		return x.VotesTotal
+	}
+	return 0
+}
+
+func (x *Dashboard) GetVotesSupport() int64 {
+	if x != nil {
+		return x.VotesSupport
+	}
+	return 0
+}
+
+func (x *Dashboard) GetVotesOppose() int64 {
+	if x != nil {
+		return x.VotesOppose
+	}
+	return 0
+}
+
+func (x *Dashboard) GetOrdersTotal() int64 {
+	if x != nil {
+		return x.OrdersTotal
+	}
+	return 0
+}
+
+func (x *Dashboard) GetOrdersPaid() int64 {
+	if x != nil {
+		return x.OrdersPaid
+	}
+	return 0
+}
+
+func (x *Dashboard) GetGmv() int64 {
+	if x != nil {
+		return x.Gmv
+	}
+	return 0
+}
+
+func (x *Dashboard) GetRefundsPending() int64 {
+	if x != nil {
+		return x.RefundsPending
+	}
+	return 0
+}
+
+func (x *Dashboard) GetReportsPending() int64 {
+	if x != nil {
+		return x.ReportsPending
+	}
+	return 0
+}
+
+func (x *Dashboard) GetGoodsOnSale() int64 {
+	if x != nil {
+		return x.GoodsOnSale
+	}
+	return 0
+}
+
+func (x *Dashboard) GetGoodsOrdersPaid() int64 {
+	if x != nil {
+		return x.GoodsOrdersPaid
+	}
+	return 0
+}
+
+func (x *Dashboard) GetCoinsSpent() int64 {
+	if x != nil {
+		return x.CoinsSpent
+	}
+	return 0
+}
+
+func (x *Dashboard) GetFeedsTotal() int64 {
+	if x != nil {
+		return x.FeedsTotal
+	}
+	return 0
+}
+
+func (x *Dashboard) GetFeedsHidden() int64 {
+	if x != nil {
+		return x.FeedsHidden
+	}
+	return 0
+}
+
+func (x *Dashboard) GetTrends() []*TrendSeries {
+	if x != nil {
+		return x.Trends
+	}
+	return nil
+}
+
+// GetDashboardRequest is the request for GetDashboard.
+type GetDashboardRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDashboardRequest) Reset() {
+	*x = GetDashboardRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDashboardRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDashboardRequest) ProtoMessage() {}
+
+func (x *GetDashboardRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDashboardRequest.ProtoReflect.Descriptor instead.
+func (*GetDashboardRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{27}
+}
+
+// AuditLog is one console write recorded in planstar_admin.admin_audit_log.
+type AuditLog struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Admin UUID; empty when the actor was not an authenticated admin.
+	AdminId string `protobuf:"bytes,2,opt,name=admin_id,json=adminId,proto3" json:"admin_id,omitempty"`
+	Actor   string `protobuf:"bytes,3,opt,name=actor,proto3" json:"actor,omitempty"`
+	Action  string `protobuf:"bytes,4,opt,name=action,proto3" json:"action,omitempty"`
+	Target  string `protobuf:"bytes,5,opt,name=target,proto3" json:"target,omitempty"`
+	// success / failure.
+	Result        string                 `protobuf:"bytes,6,opt,name=result,proto3" json:"result,omitempty"`
+	Detail        string                 `protobuf:"bytes,7,opt,name=detail,proto3" json:"detail,omitempty"`
+	RemoteAddr    string                 `protobuf:"bytes,8,opt,name=remote_addr,json=remoteAddr,proto3" json:"remote_addr,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuditLog) Reset() {
+	*x = AuditLog{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuditLog) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuditLog) ProtoMessage() {}
+
+func (x *AuditLog) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuditLog.ProtoReflect.Descriptor instead.
+func (*AuditLog) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *AuditLog) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *AuditLog) GetAdminId() string {
+	if x != nil {
+		return x.AdminId
+	}
+	return ""
+}
+
+func (x *AuditLog) GetActor() string {
+	if x != nil {
+		return x.Actor
+	}
+	return ""
+}
+
+func (x *AuditLog) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *AuditLog) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
+
+func (x *AuditLog) GetResult() string {
+	if x != nil {
+		return x.Result
+	}
+	return ""
+}
+
+func (x *AuditLog) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+func (x *AuditLog) GetRemoteAddr() string {
+	if x != nil {
+		return x.RemoteAddr
+	}
+	return ""
+}
+
+func (x *AuditLog) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+// AuditLogSet is a page of audit logs.
+type AuditLogSet struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Logs          []*AuditLog            `protobuf:"bytes,1,rep,name=logs,proto3" json:"logs,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuditLogSet) Reset() {
+	*x = AuditLogSet{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuditLogSet) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuditLogSet) ProtoMessage() {}
+
+func (x *AuditLogSet) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuditLogSet.ProtoReflect.Descriptor instead.
+func (*AuditLogSet) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *AuditLogSet) GetLogs() []*AuditLog {
+	if x != nil {
+		return x.Logs
+	}
+	return nil
+}
+
+func (x *AuditLogSet) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+// ListAuditLogsRequest is the request for ListAuditLogs.
+type ListAuditLogsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional. Matches actor, action or target.
+	Keyword string `protobuf:"bytes,1,opt,name=keyword,proto3" json:"keyword,omitempty"`
+	// Optional. Exact action filter, e.g. project.review.
+	Action string `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
+	// Optional. success / failure; empty lists every result.
+	Result string `protobuf:"bytes,3,opt,name=result,proto3" json:"result,omitempty"`
+	// Optional. Defaults to 20, capped at 200.
+	PageSize int32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// Optional. Token returned by the previous page.
+	PageToken     string `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListAuditLogsRequest) Reset() {
+	*x = ListAuditLogsRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAuditLogsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAuditLogsRequest) ProtoMessage() {}
+
+func (x *ListAuditLogsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListAuditLogsRequest.ProtoReflect.Descriptor instead.
+func (*ListAuditLogsRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ListAuditLogsRequest) GetKeyword() string {
+	if x != nil {
+		return x.Keyword
+	}
+	return ""
+}
+
+func (x *ListAuditLogsRequest) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *ListAuditLogsRequest) GetResult() string {
+	if x != nil {
+		return x.Result
+	}
+	return ""
+}
+
+func (x *ListAuditLogsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListAuditLogsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+// Idea is a community idea (planstar_catalog.project_idea).
+type Idea struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Business idea ID (project_idea.idea_id).
+	Id         int64  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	UserId     int64  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Title      string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Summary    string `protobuf:"bytes,4,opt,name=summary,proto3" json:"summary,omitempty"`
+	Cover      string `protobuf:"bytes,5,opt,name=cover,proto3" json:"cover,omitempty"`
+	CategoryId int64  `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	// Category name resolved from project_category.name.
+	CategoryName string `protobuf:"bytes,7,opt,name=category_name,json=categoryName,proto3" json:"category_name,omitempty"`
+	// Stage: 1 concept / 2 validated.
+	Stage int32 `protobuf:"varint,8,opt,name=stage,proto3" json:"stage,omitempty"`
+	// Publish status: 0 draft, 1 published, 2 under review, 3 rejected.
+	PublishStatus int32 `protobuf:"varint,9,opt,name=publish_status,json=publishStatus,proto3" json:"publish_status,omitempty"`
+	// Visibility: 1 normal / 0 hidden.
+	Status       int32 `protobuf:"varint,10,opt,name=status,proto3" json:"status,omitempty"`
+	SupportCount int32 `protobuf:"varint,11,opt,name=support_count,json=supportCount,proto3" json:"support_count,omitempty"`
+	OpposeCount  int32 `protobuf:"varint,12,opt,name=oppose_count,json=opposeCount,proto3" json:"oppose_count,omitempty"`
+	// Sum of pledged coin intent.
+	CoinIntentSum int64                  `protobuf:"varint,13,opt,name=coin_intent_sum,json=coinIntentSum,proto3" json:"coin_intent_sum,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Idea) Reset() {
+	*x = Idea{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Idea) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Idea) ProtoMessage() {}
+
+func (x *Idea) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Idea.ProtoReflect.Descriptor instead.
+func (*Idea) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *Idea) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *Idea) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *Idea) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Idea) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+func (x *Idea) GetCover() string {
+	if x != nil {
+		return x.Cover
+	}
+	return ""
+}
+
+func (x *Idea) GetCategoryId() int64 {
+	if x != nil {
+		return x.CategoryId
+	}
+	return 0
+}
+
+func (x *Idea) GetCategoryName() string {
+	if x != nil {
+		return x.CategoryName
+	}
+	return ""
+}
+
+func (x *Idea) GetStage() int32 {
+	if x != nil {
+		return x.Stage
+	}
+	return 0
+}
+
+func (x *Idea) GetPublishStatus() int32 {
+	if x != nil {
+		return x.PublishStatus
+	}
+	return 0
+}
+
+func (x *Idea) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+func (x *Idea) GetSupportCount() int32 {
+	if x != nil {
+		return x.SupportCount
+	}
+	return 0
+}
+
+func (x *Idea) GetOpposeCount() int32 {
+	if x != nil {
+		return x.OpposeCount
+	}
+	return 0
+}
+
+func (x *Idea) GetCoinIntentSum() int64 {
+	if x != nil {
+		return x.CoinIntentSum
+	}
+	return 0
+}
+
+func (x *Idea) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+// IdeaSet is a page of ideas.
+type IdeaSet struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ideas         []*Idea                `protobuf:"bytes,1,rep,name=ideas,proto3" json:"ideas,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IdeaSet) Reset() {
+	*x = IdeaSet{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IdeaSet) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IdeaSet) ProtoMessage() {}
+
+func (x *IdeaSet) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IdeaSet.ProtoReflect.Descriptor instead.
+func (*IdeaSet) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *IdeaSet) GetIdeas() []*Idea {
+	if x != nil {
+		return x.Ideas
+	}
+	return nil
+}
+
+func (x *IdeaSet) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+// IdeaVote is one vote on an idea (planstar_catalog.project_idea_vote).
+type IdeaVote struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Id     int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	IdeaId int64                  `protobuf:"varint,2,opt,name=idea_id,json=ideaId,proto3" json:"idea_id,omitempty"`
+	UserId int64                  `protobuf:"varint,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// 1 support / 2 oppose.
+	VoteType int32 `protobuf:"varint,4,opt,name=vote_type,json=voteType,proto3" json:"vote_type,omitempty"`
+	// Coin tier: 0/5/10/20.
+	CoinTier      int32                  `protobuf:"varint,5,opt,name=coin_tier,json=coinTier,proto3" json:"coin_tier,omitempty"`
+	ReasonCode    string                 `protobuf:"bytes,6,opt,name=reason_code,json=reasonCode,proto3" json:"reason_code,omitempty"`
+	ReasonText    string                 `protobuf:"bytes,7,opt,name=reason_text,json=reasonText,proto3" json:"reason_text,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IdeaVote) Reset() {
+	*x = IdeaVote{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IdeaVote) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IdeaVote) ProtoMessage() {}
+
+func (x *IdeaVote) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IdeaVote.ProtoReflect.Descriptor instead.
+func (*IdeaVote) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *IdeaVote) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *IdeaVote) GetIdeaId() int64 {
+	if x != nil {
+		return x.IdeaId
+	}
+	return 0
+}
+
+func (x *IdeaVote) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *IdeaVote) GetVoteType() int32 {
+	if x != nil {
+		return x.VoteType
+	}
+	return 0
+}
+
+func (x *IdeaVote) GetCoinTier() int32 {
+	if x != nil {
+		return x.CoinTier
+	}
+	return 0
+}
+
+func (x *IdeaVote) GetReasonCode() string {
+	if x != nil {
+		return x.ReasonCode
+	}
+	return ""
+}
+
+func (x *IdeaVote) GetReasonText() string {
+	if x != nil {
+		return x.ReasonText
+	}
+	return ""
+}
+
+func (x *IdeaVote) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+// IdeaDetail is an idea plus its vote aggregation and recent votes.
+type IdeaDetail struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Idea          *Idea                  `protobuf:"bytes,1,opt,name=idea,proto3" json:"idea,omitempty"`
+	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	VotesTotal    int64                  `protobuf:"varint,3,opt,name=votes_total,json=votesTotal,proto3" json:"votes_total,omitempty"`
+	VotesSupport  int64                  `protobuf:"varint,4,opt,name=votes_support,json=votesSupport,proto3" json:"votes_support,omitempty"`
+	VotesOppose   int64                  `protobuf:"varint,5,opt,name=votes_oppose,json=votesOppose,proto3" json:"votes_oppose,omitempty"`
+	RecentVotes   []*IdeaVote            `protobuf:"bytes,6,rep,name=recent_votes,json=recentVotes,proto3" json:"recent_votes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IdeaDetail) Reset() {
+	*x = IdeaDetail{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IdeaDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IdeaDetail) ProtoMessage() {}
+
+func (x *IdeaDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IdeaDetail.ProtoReflect.Descriptor instead.
+func (*IdeaDetail) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *IdeaDetail) GetIdea() *Idea {
+	if x != nil {
+		return x.Idea
+	}
+	return nil
+}
+
+func (x *IdeaDetail) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *IdeaDetail) GetVotesTotal() int64 {
+	if x != nil {
+		return x.VotesTotal
+	}
+	return 0
+}
+
+func (x *IdeaDetail) GetVotesSupport() int64 {
+	if x != nil {
+		return x.VotesSupport
+	}
+	return 0
+}
+
+func (x *IdeaDetail) GetVotesOppose() int64 {
+	if x != nil {
+		return x.VotesOppose
+	}
+	return 0
+}
+
+func (x *IdeaDetail) GetRecentVotes() []*IdeaVote {
+	if x != nil {
+		return x.RecentVotes
+	}
+	return nil
+}
+
+// Goods is a shop item (planstar_shop.goods).
+type Goods struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Business goods ID (goods.goods_id).
+	Id       int64  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	GoodsSn  string `protobuf:"bytes,2,opt,name=goods_sn,json=goodsSn,proto3" json:"goods_sn,omitempty"`
+	Name     string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Brief    string `protobuf:"bytes,4,opt,name=brief,proto3" json:"brief,omitempty"`
+	Cover    string `protobuf:"bytes,5,opt,name=cover,proto3" json:"cover,omitempty"`
+	Category string `protobuf:"bytes,6,opt,name=category,proto3" json:"category,omitempty"`
+	// 1 on sale / 0 off sale.
+	Status        int32                  `protobuf:"varint,7,opt,name=status,proto3" json:"status,omitempty"`
+	Sort          int32                  `protobuf:"varint,8,opt,name=sort,proto3" json:"sort,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Goods) Reset() {
+	*x = Goods{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Goods) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Goods) ProtoMessage() {}
+
+func (x *Goods) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Goods.ProtoReflect.Descriptor instead.
+func (*Goods) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *Goods) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *Goods) GetGoodsSn() string {
+	if x != nil {
+		return x.GoodsSn
+	}
+	return ""
+}
+
+func (x *Goods) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Goods) GetBrief() string {
+	if x != nil {
+		return x.Brief
+	}
+	return ""
+}
+
+func (x *Goods) GetCover() string {
+	if x != nil {
+		return x.Cover
+	}
+	return ""
+}
+
+func (x *Goods) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *Goods) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+func (x *Goods) GetSort() int32 {
+	if x != nil {
+		return x.Sort
+	}
+	return 0
+}
+
+func (x *Goods) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+// GoodsSet is a page of goods.
+type GoodsSet struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Goods         []*Goods               `protobuf:"bytes,1,rep,name=goods,proto3" json:"goods,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GoodsSet) Reset() {
+	*x = GoodsSet{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GoodsSet) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GoodsSet) ProtoMessage() {}
+
+func (x *GoodsSet) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GoodsSet.ProtoReflect.Descriptor instead.
+func (*GoodsSet) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *GoodsSet) GetGoods() []*Goods {
+	if x != nil {
+		return x.Goods
+	}
+	return nil
+}
+
+func (x *GoodsSet) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+// GoodsSku is one sellable unit (planstar_shop.goods_sku).
+type GoodsSku struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Business SKU ID (goods_sku.sku_id).
+	Id         int64  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	GoodsId    int64  `protobuf:"varint,2,opt,name=goods_id,json=goodsId,proto3" json:"goods_id,omitempty"`
+	SkuName    string `protobuf:"bytes,3,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
+	PriceCoins int32  `protobuf:"varint,4,opt,name=price_coins,json=priceCoins,proto3" json:"price_coins,omitempty"`
+	Stock      int32  `protobuf:"varint,5,opt,name=stock,proto3" json:"stock,omitempty"`
+	Sold       int32  `protobuf:"varint,6,opt,name=sold,proto3" json:"sold,omitempty"`
+	// 1 on sale / 0 off sale.
+	Status        int32 `protobuf:"varint,7,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GoodsSku) Reset() {
+	*x = GoodsSku{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GoodsSku) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GoodsSku) ProtoMessage() {}
+
+func (x *GoodsSku) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GoodsSku.ProtoReflect.Descriptor instead.
+func (*GoodsSku) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *GoodsSku) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *GoodsSku) GetGoodsId() int64 {
+	if x != nil {
+		return x.GoodsId
+	}
+	return 0
+}
+
+func (x *GoodsSku) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+func (x *GoodsSku) GetPriceCoins() int32 {
+	if x != nil {
+		return x.PriceCoins
+	}
+	return 0
+}
+
+func (x *GoodsSku) GetStock() int32 {
+	if x != nil {
+		return x.Stock
+	}
+	return 0
+}
+
+func (x *GoodsSku) GetSold() int32 {
+	if x != nil {
+		return x.Sold
+	}
+	return 0
+}
+
+func (x *GoodsSku) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+// GoodsDetail is a goods item plus its SKUs.
+type GoodsDetail struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Goods         *Goods                 `protobuf:"bytes,1,opt,name=goods,proto3" json:"goods,omitempty"`
+	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Skus          []*GoodsSku            `protobuf:"bytes,3,rep,name=skus,proto3" json:"skus,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GoodsDetail) Reset() {
+	*x = GoodsDetail{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GoodsDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GoodsDetail) ProtoMessage() {}
+
+func (x *GoodsDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GoodsDetail.ProtoReflect.Descriptor instead.
+func (*GoodsDetail) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *GoodsDetail) GetGoods() *Goods {
+	if x != nil {
+		return x.Goods
+	}
+	return nil
+}
+
+func (x *GoodsDetail) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *GoodsDetail) GetSkus() []*GoodsSku {
+	if x != nil {
+		return x.Skus
+	}
+	return nil
+}
+
+// GoodsOrder is a coin purchase (planstar_shop.goods_order).
+type GoodsOrder struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Id         int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	OrderNo    string                 `protobuf:"bytes,2,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	UserId     int64                  `protobuf:"varint,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	GoodsId    int64                  `protobuf:"varint,4,opt,name=goods_id,json=goodsId,proto3" json:"goods_id,omitempty"`
+	SkuId      int64                  `protobuf:"varint,5,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	SkuName    string                 `protobuf:"bytes,6,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
+	PriceCoins int32                  `protobuf:"varint,7,opt,name=price_coins,json=priceCoins,proto3" json:"price_coins,omitempty"`
+	// paid / completed / cancelled.
+	Status        string                 `protobuf:"bytes,8,opt,name=status,proto3" json:"status,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GoodsOrder) Reset() {
+	*x = GoodsOrder{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GoodsOrder) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GoodsOrder) ProtoMessage() {}
+
+func (x *GoodsOrder) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GoodsOrder.ProtoReflect.Descriptor instead.
+func (*GoodsOrder) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *GoodsOrder) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *GoodsOrder) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *GoodsOrder) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *GoodsOrder) GetGoodsId() int64 {
+	if x != nil {
+		return x.GoodsId
+	}
+	return 0
+}
+
+func (x *GoodsOrder) GetSkuId() int64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *GoodsOrder) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+func (x *GoodsOrder) GetPriceCoins() int32 {
+	if x != nil {
+		return x.PriceCoins
+	}
+	return 0
+}
+
+func (x *GoodsOrder) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *GoodsOrder) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+// GoodsOrderSet is a page of goods orders.
+type GoodsOrderSet struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Orders        []*GoodsOrder          `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GoodsOrderSet) Reset() {
+	*x = GoodsOrderSet{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GoodsOrderSet) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GoodsOrderSet) ProtoMessage() {}
+
+func (x *GoodsOrderSet) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GoodsOrderSet.ProtoReflect.Descriptor instead.
+func (*GoodsOrderSet) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *GoodsOrderSet) GetOrders() []*GoodsOrder {
+	if x != nil {
+		return x.Orders
+	}
+	return nil
+}
+
+func (x *GoodsOrderSet) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+// PayOrder is a payment attempt (planstar_payment.pay_order).
+type PayOrder struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Id      int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	PayNo   string                 `protobuf:"bytes,2,opt,name=pay_no,json=payNo,proto3" json:"pay_no,omitempty"`
+	OrderNo string                 `protobuf:"bytes,3,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	OrderId int64                  `protobuf:"varint,4,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	UserId  int64                  `protobuf:"varint,5,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// wechat / alipay / unionpay / balance.
+	Channel string `protobuf:"bytes,6,opt,name=channel,proto3" json:"channel,omitempty"`
+	// Amount in cents.
+	Amount int64 `protobuf:"varint,7,opt,name=amount,proto3" json:"amount,omitempty"`
+	// pending / success / failed / expired.
+	Status        string                 `protobuf:"bytes,8,opt,name=status,proto3" json:"status,omitempty"`
+	ThirdTradeNo  string                 `protobuf:"bytes,9,opt,name=third_trade_no,json=thirdTradeNo,proto3" json:"third_trade_no,omitempty"`
+	PaidAt        *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=paid_at,json=paidAt,proto3" json:"paid_at,omitempty"`
+	ExpireAt      *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=expire_at,json=expireAt,proto3" json:"expire_at,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PayOrder) Reset() {
+	*x = PayOrder{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PayOrder) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PayOrder) ProtoMessage() {}
+
+func (x *PayOrder) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PayOrder.ProtoReflect.Descriptor instead.
+func (*PayOrder) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *PayOrder) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *PayOrder) GetPayNo() string {
+	if x != nil {
+		return x.PayNo
+	}
+	return ""
+}
+
+func (x *PayOrder) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *PayOrder) GetOrderId() int64 {
+	if x != nil {
+		return x.OrderId
+	}
+	return 0
+}
+
+func (x *PayOrder) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *PayOrder) GetChannel() string {
+	if x != nil {
+		return x.Channel
+	}
+	return ""
+}
+
+func (x *PayOrder) GetAmount() int64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+func (x *PayOrder) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *PayOrder) GetThirdTradeNo() string {
+	if x != nil {
+		return x.ThirdTradeNo
+	}
+	return ""
+}
+
+func (x *PayOrder) GetPaidAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PaidAt
+	}
+	return nil
+}
+
+func (x *PayOrder) GetExpireAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpireAt
+	}
+	return nil
+}
+
+func (x *PayOrder) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+// PayOrderSet is a page of payment attempts.
+type PayOrderSet struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PayOrders     []*PayOrder            `protobuf:"bytes,1,rep,name=pay_orders,json=payOrders,proto3" json:"pay_orders,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PayOrderSet) Reset() {
+	*x = PayOrderSet{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PayOrderSet) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PayOrderSet) ProtoMessage() {}
+
+func (x *PayOrderSet) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PayOrderSet.ProtoReflect.Descriptor instead.
+func (*PayOrderSet) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *PayOrderSet) GetPayOrders() []*PayOrder {
+	if x != nil {
+		return x.PayOrders
+	}
+	return nil
+}
+
+func (x *PayOrderSet) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+// Refund is a refund request (planstar_payment.order_refund).
+type Refund struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Id         int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	RefundNo   string                 `protobuf:"bytes,2,opt,name=refund_no,json=refundNo,proto3" json:"refund_no,omitempty"`
+	OrderId    int64                  `protobuf:"varint,3,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	OrderNo    string                 `protobuf:"bytes,4,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	UserId     int64                  `protobuf:"varint,5,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ReasonCode string                 `protobuf:"bytes,6,opt,name=reason_code,json=reasonCode,proto3" json:"reason_code,omitempty"`
+	ReasonText string                 `protobuf:"bytes,7,opt,name=reason_text,json=reasonText,proto3" json:"reason_text,omitempty"`
+	// Refundable amount in cents.
+	RefundableAmount int64 `protobuf:"varint,8,opt,name=refundable_amount,json=refundableAmount,proto3" json:"refundable_amount,omitempty"`
+	// applied / processing / success / rejected.
+	Status              string                 `protobuf:"bytes,9,opt,name=status,proto3" json:"status,omitempty"`
+	ExpectedArrivalDays int32                  `protobuf:"varint,10,opt,name=expected_arrival_days,json=expectedArrivalDays,proto3" json:"expected_arrival_days,omitempty"`
+	CreatedAt           *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *Refund) Reset() {
+	*x = Refund{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Refund) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Refund) ProtoMessage() {}
+
+func (x *Refund) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Refund.ProtoReflect.Descriptor instead.
+func (*Refund) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *Refund) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *Refund) GetRefundNo() string {
+	if x != nil {
+		return x.RefundNo
+	}
+	return ""
+}
+
+func (x *Refund) GetOrderId() int64 {
+	if x != nil {
+		return x.OrderId
+	}
+	return 0
+}
+
+func (x *Refund) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *Refund) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *Refund) GetReasonCode() string {
+	if x != nil {
+		return x.ReasonCode
+	}
+	return ""
+}
+
+func (x *Refund) GetReasonText() string {
+	if x != nil {
+		return x.ReasonText
+	}
+	return ""
+}
+
+func (x *Refund) GetRefundableAmount() int64 {
+	if x != nil {
+		return x.RefundableAmount
+	}
+	return 0
+}
+
+func (x *Refund) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *Refund) GetExpectedArrivalDays() int32 {
+	if x != nil {
+		return x.ExpectedArrivalDays
+	}
+	return 0
+}
+
+func (x *Refund) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+// RefundSet is a page of refunds.
+type RefundSet struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Refunds       []*Refund              `protobuf:"bytes,1,rep,name=refunds,proto3" json:"refunds,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RefundSet) Reset() {
+	*x = RefundSet{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RefundSet) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RefundSet) ProtoMessage() {}
+
+func (x *RefundSet) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RefundSet.ProtoReflect.Descriptor instead.
+func (*RefundSet) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *RefundSet) GetRefunds() []*Refund {
+	if x != nil {
+		return x.Refunds
+	}
+	return nil
+}
+
+func (x *RefundSet) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+// OrderDetail is a unified order plus its payment attempts and refunds.
+type OrderDetail struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Order *Order                 `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	Title string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// Order total in cents.
+	TotalAmount int64 `protobuf:"varint,3,opt,name=total_amount,json=totalAmount,proto3" json:"total_amount,omitempty"`
+	// Already-refunded amount in cents.
+	RefundAmount  int64                  `protobuf:"varint,4,opt,name=refund_amount,json=refundAmount,proto3" json:"refund_amount,omitempty"`
+	PayTime       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=pay_time,json=payTime,proto3" json:"pay_time,omitempty"`
+	PayOrders     []*PayOrder            `protobuf:"bytes,6,rep,name=pay_orders,json=payOrders,proto3" json:"pay_orders,omitempty"`
+	Refunds       []*Refund              `protobuf:"bytes,7,rep,name=refunds,proto3" json:"refunds,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OrderDetail) Reset() {
+	*x = OrderDetail{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OrderDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OrderDetail) ProtoMessage() {}
+
+func (x *OrderDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OrderDetail.ProtoReflect.Descriptor instead.
+func (*OrderDetail) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *OrderDetail) GetOrder() *Order {
+	if x != nil {
+		return x.Order
+	}
+	return nil
+}
+
+func (x *OrderDetail) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *OrderDetail) GetTotalAmount() int64 {
+	if x != nil {
+		return x.TotalAmount
+	}
+	return 0
+}
+
+func (x *OrderDetail) GetRefundAmount() int64 {
+	if x != nil {
+		return x.RefundAmount
+	}
+	return 0
+}
+
+func (x *OrderDetail) GetPayTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PayTime
+	}
+	return nil
+}
+
+func (x *OrderDetail) GetPayOrders() []*PayOrder {
+	if x != nil {
+		return x.PayOrders
+	}
+	return nil
+}
+
+func (x *OrderDetail) GetRefunds() []*Refund {
+	if x != nil {
+		return x.Refunds
+	}
+	return nil
+}
+
+// Feed is a community post (planstar_community.feed).
+type Feed struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Business feed ID (feed.feed_id).
+	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Feed type (see dict_enum.FeedType).
+	Type       int32  `protobuf:"varint,2,opt,name=type,proto3" json:"type,omitempty"`
+	UserId     int64  `protobuf:"varint,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Title      string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	Content    string `protobuf:"bytes,5,opt,name=content,proto3" json:"content,omitempty"`
+	Likes      int32  `protobuf:"varint,6,opt,name=likes,proto3" json:"likes,omitempty"`
+	ReplyCount int32  `protobuf:"varint,7,opt,name=reply_count,json=replyCount,proto3" json:"reply_count,omitempty"`
+	Views      int32  `protobuf:"varint,8,opt,name=views,proto3" json:"views,omitempty"`
+	// 1 normal; anything else is hidden.
+	Status        int32                  `protobuf:"varint,9,opt,name=status,proto3" json:"status,omitempty"`
+	IsQuality     int32                  `protobuf:"varint,10,opt,name=is_quality,json=isQuality,proto3" json:"is_quality,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Feed) Reset() {
+	*x = Feed{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Feed) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Feed) ProtoMessage() {}
+
+func (x *Feed) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Feed.ProtoReflect.Descriptor instead.
+func (*Feed) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *Feed) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *Feed) GetType() int32 {
+	if x != nil {
+		return x.Type
+	}
+	return 0
+}
+
+func (x *Feed) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *Feed) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Feed) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+func (x *Feed) GetLikes() int32 {
+	if x != nil {
+		return x.Likes
+	}
+	return 0
+}
+
+func (x *Feed) GetReplyCount() int32 {
+	if x != nil {
+		return x.ReplyCount
+	}
+	return 0
+}
+
+func (x *Feed) GetViews() int32 {
+	if x != nil {
+		return x.Views
+	}
+	return 0
+}
+
+func (x *Feed) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+func (x *Feed) GetIsQuality() int32 {
+	if x != nil {
+		return x.IsQuality
+	}
+	return 0
+}
+
+func (x *Feed) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+// FeedSet is a page of feeds.
+type FeedSet struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Feeds         []*Feed                `protobuf:"bytes,1,rep,name=feeds,proto3" json:"feeds,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FeedSet) Reset() {
+	*x = FeedSet{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FeedSet) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FeedSet) ProtoMessage() {}
+
+func (x *FeedSet) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FeedSet.ProtoReflect.Descriptor instead.
+func (*FeedSet) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *FeedSet) GetFeeds() []*Feed {
+	if x != nil {
+		return x.Feeds
+	}
+	return nil
+}
+
+func (x *FeedSet) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+// FeedDetail is a feed plus its media and author snapshot.
+type FeedDetail struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Feed   *Feed                  `protobuf:"bytes,1,opt,name=feed,proto3" json:"feed,omitempty"`
+	Images []string               `protobuf:"bytes,2,rep,name=images,proto3" json:"images,omitempty"`
+	Videos []string               `protobuf:"bytes,3,rep,name=videos,proto3" json:"videos,omitempty"`
+	Tags   []string               `protobuf:"bytes,4,rep,name=tags,proto3" json:"tags,omitempty"`
+	// Author display name from the feed.user snapshot.
+	AuthorName    string `protobuf:"bytes,5,opt,name=author_name,json=authorName,proto3" json:"author_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FeedDetail) Reset() {
+	*x = FeedDetail{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FeedDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FeedDetail) ProtoMessage() {}
+
+func (x *FeedDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FeedDetail.ProtoReflect.Descriptor instead.
+func (*FeedDetail) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *FeedDetail) GetFeed() *Feed {
+	if x != nil {
+		return x.Feed
+	}
+	return nil
+}
+
+func (x *FeedDetail) GetImages() []string {
+	if x != nil {
+		return x.Images
+	}
+	return nil
+}
+
+func (x *FeedDetail) GetVideos() []string {
+	if x != nil {
+		return x.Videos
+	}
+	return nil
+}
+
+func (x *FeedDetail) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
+}
+
+func (x *FeedDetail) GetAuthorName() string {
+	if x != nil {
+		return x.AuthorName
+	}
+	return ""
+}
+
+// ListIdeasRequest is the request for ListIdeas.
+type ListIdeasRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional. Matches idea title, summary or idea ID.
+	Keyword string `protobuf:"bytes,1,opt,name=keyword,proto3" json:"keyword,omitempty"`
+	// Optional. Publish status (0/1/2/3); omit to list every status.
+	PublishStatus *int32 `protobuf:"varint,2,opt,name=publish_status,json=publishStatus,proto3,oneof" json:"publish_status,omitempty"`
+	PageSize      int32  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListIdeasRequest) Reset() {
+	*x = ListIdeasRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListIdeasRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListIdeasRequest) ProtoMessage() {}
+
+func (x *ListIdeasRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListIdeasRequest.ProtoReflect.Descriptor instead.
+func (*ListIdeasRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *ListIdeasRequest) GetKeyword() string {
+	if x != nil {
+		return x.Keyword
+	}
+	return ""
+}
+
+func (x *ListIdeasRequest) GetPublishStatus() int32 {
+	if x != nil && x.PublishStatus != nil {
+		return *x.PublishStatus
+	}
+	return 0
+}
+
+func (x *ListIdeasRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListIdeasRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+// GetIdeaRequest is the request for GetIdea.
+type GetIdeaRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Required. Business idea ID.
+	Id            int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetIdeaRequest) Reset() {
+	*x = GetIdeaRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetIdeaRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetIdeaRequest) ProtoMessage() {}
+
+func (x *GetIdeaRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetIdeaRequest.ProtoReflect.Descriptor instead.
+func (*GetIdeaRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *GetIdeaRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+// ListGoodsRequest is the request for ListGoods.
+type ListGoodsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional. Matches goods name, SN or goods ID.
+	Keyword string `protobuf:"bytes,1,opt,name=keyword,proto3" json:"keyword,omitempty"`
+	// Optional. 1 on sale / 0 off sale; omit to list every status.
+	Status        *int32 `protobuf:"varint,2,opt,name=status,proto3,oneof" json:"status,omitempty"`
+	PageSize      int32  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListGoodsRequest) Reset() {
+	*x = ListGoodsRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListGoodsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListGoodsRequest) ProtoMessage() {}
+
+func (x *ListGoodsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListGoodsRequest.ProtoReflect.Descriptor instead.
+func (*ListGoodsRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{51}
+}
+
+func (x *ListGoodsRequest) GetKeyword() string {
+	if x != nil {
+		return x.Keyword
+	}
+	return ""
+}
+
+func (x *ListGoodsRequest) GetStatus() int32 {
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return 0
+}
+
+func (x *ListGoodsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListGoodsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+// GetGoodsRequest is the request for GetGoods.
+type GetGoodsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Required. Business goods ID.
+	Id            int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGoodsRequest) Reset() {
+	*x = GetGoodsRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGoodsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGoodsRequest) ProtoMessage() {}
+
+func (x *GetGoodsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGoodsRequest.ProtoReflect.Descriptor instead.
+func (*GetGoodsRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *GetGoodsRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+// ListGoodsOrdersRequest is the request for ListGoodsOrders.
+type ListGoodsOrdersRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional. Matches order number or user ID.
+	Keyword string `protobuf:"bytes,1,opt,name=keyword,proto3" json:"keyword,omitempty"`
+	// Optional. paid / completed / cancelled; empty lists every status.
+	Status        string `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	PageSize      int32  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListGoodsOrdersRequest) Reset() {
+	*x = ListGoodsOrdersRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListGoodsOrdersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListGoodsOrdersRequest) ProtoMessage() {}
+
+func (x *ListGoodsOrdersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListGoodsOrdersRequest.ProtoReflect.Descriptor instead.
+func (*ListGoodsOrdersRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{53}
+}
+
+func (x *ListGoodsOrdersRequest) GetKeyword() string {
+	if x != nil {
+		return x.Keyword
+	}
+	return ""
+}
+
+func (x *ListGoodsOrdersRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ListGoodsOrdersRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListGoodsOrdersRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+// GetOrderRequest is the request for GetOrder.
+type GetOrderRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Required. Business order ID.
+	Id            int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetOrderRequest) Reset() {
+	*x = GetOrderRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetOrderRequest) ProtoMessage() {}
+
+func (x *GetOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetOrderRequest.ProtoReflect.Descriptor instead.
+func (*GetOrderRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *GetOrderRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+// ListPayOrdersRequest is the request for ListPayOrders.
+type ListPayOrdersRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional. Matches pay number, order number or user ID.
+	Keyword string `protobuf:"bytes,1,opt,name=keyword,proto3" json:"keyword,omitempty"`
+	// Optional. pending / success / failed / expired; empty lists every status.
+	Status        string `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	PageSize      int32  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPayOrdersRequest) Reset() {
+	*x = ListPayOrdersRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPayOrdersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPayOrdersRequest) ProtoMessage() {}
+
+func (x *ListPayOrdersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPayOrdersRequest.ProtoReflect.Descriptor instead.
+func (*ListPayOrdersRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *ListPayOrdersRequest) GetKeyword() string {
+	if x != nil {
+		return x.Keyword
+	}
+	return ""
+}
+
+func (x *ListPayOrdersRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ListPayOrdersRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListPayOrdersRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+// ListRefundsRequest is the request for ListRefunds.
+type ListRefundsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional. Matches refund number, order number or user ID.
+	Keyword string `protobuf:"bytes,1,opt,name=keyword,proto3" json:"keyword,omitempty"`
+	// Optional. applied / processing / success / rejected; empty lists every status.
+	Status        string `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	PageSize      int32  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListRefundsRequest) Reset() {
+	*x = ListRefundsRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListRefundsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListRefundsRequest) ProtoMessage() {}
+
+func (x *ListRefundsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListRefundsRequest.ProtoReflect.Descriptor instead.
+func (*ListRefundsRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *ListRefundsRequest) GetKeyword() string {
+	if x != nil {
+		return x.Keyword
+	}
+	return ""
+}
+
+func (x *ListRefundsRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ListRefundsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListRefundsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+// ListFeedsRequest is the request for ListFeeds.
+type ListFeedsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional. Matches feed title, content or feed ID.
+	Keyword string `protobuf:"bytes,1,opt,name=keyword,proto3" json:"keyword,omitempty"`
+	// Optional. 1 normal / 0 hidden; omit to list every status.
+	Status        *int32 `protobuf:"varint,2,opt,name=status,proto3,oneof" json:"status,omitempty"`
+	PageSize      int32  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFeedsRequest) Reset() {
+	*x = ListFeedsRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFeedsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFeedsRequest) ProtoMessage() {}
+
+func (x *ListFeedsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFeedsRequest.ProtoReflect.Descriptor instead.
+func (*ListFeedsRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{57}
+}
+
+func (x *ListFeedsRequest) GetKeyword() string {
+	if x != nil {
+		return x.Keyword
+	}
+	return ""
+}
+
+func (x *ListFeedsRequest) GetStatus() int32 {
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return 0
+}
+
+func (x *ListFeedsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListFeedsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+// GetFeedRequest is the request for GetFeed.
+type GetFeedRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Required. Business feed ID.
+	Id            int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFeedRequest) Reset() {
+	*x = GetFeedRequest{}
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFeedRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFeedRequest) ProtoMessage() {}
+
+func (x *GetFeedRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_planstar_admin_v1_console_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFeedRequest.ProtoReflect.Descriptor instead.
+func (*GetFeedRequest) Descriptor() ([]byte, []int) {
+	return file_planstar_admin_v1_console_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *GetFeedRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
 var File_planstar_admin_v1_console_proto protoreflect.FileDescriptor
 
 const file_planstar_admin_v1_console_proto_rawDesc = "" +
@@ -1392,7 +4641,299 @@ const file_planstar_admin_v1_console_proto_rawDesc = "" +
 	"\x13HandleReportRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x12\n" +
-	"\x04note\x18\x03 \x01(\tR\x04note2\xe5\x06\n" +
+	"\x04note\x18\x03 \x01(\tR\x04note\">\n" +
+	"\x14SetFeedStatusRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\x05R\x06status\"?\n" +
+	"\x15SetGoodsStatusRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\x05R\x06status\"B\n" +
+	"\x18SetGoodsSkuStatusRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\x05R\x06status\"5\n" +
+	"\vStatusReply\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\x05R\x06status\"A\n" +
+	"\x13ReviewRefundRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1a\n" +
+	"\bdecision\x18\x02 \x01(\tR\bdecision\"\xc3\x01\n" +
+	"\fRefundReview\x12\x1b\n" +
+	"\trefund_id\x18\x01 \x01(\x03R\brefundId\x12\x1b\n" +
+	"\trefund_no\x18\x02 \x01(\tR\brefundNo\x12\x19\n" +
+	"\border_id\x18\x03 \x01(\x03R\aorderId\x12\x16\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\x12!\n" +
+	"\forder_status\x18\x05 \x01(\x05R\vorderStatus\x12#\n" +
+	"\rrefund_amount\x18\x06 \x01(\x03R\frefundAmount\";\n" +
+	"\vStatusCount\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\x05R\x06status\x12\x14\n" +
+	"\x05count\x18\x02 \x01(\x03R\x05count\"6\n" +
+	"\n" +
+	"DailyCount\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\x14\n" +
+	"\x05count\x18\x02 \x01(\x03R\x05count\"X\n" +
+	"\vTrendSeries\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x125\n" +
+	"\x06points\x18\x02 \x03(\v2\x1d.planstar.admin.v1.DailyCountR\x06points\"\x90\a\n" +
+	"\tDashboard\x12\x1f\n" +
+	"\vusers_total\x18\x01 \x01(\x03R\n" +
+	"usersTotal\x12%\n" +
+	"\x0eprojects_total\x18\x02 \x01(\x03R\rprojectsTotal\x12[\n" +
+	"\x1aprojects_by_publish_status\x18\x03 \x03(\v2\x1e.planstar.admin.v1.StatusCountR\x17projectsByPublishStatus\x12)\n" +
+	"\x10projects_ongoing\x18\x04 \x01(\x03R\x0fprojectsOngoing\x12!\n" +
+	"\fraised_total\x18\x05 \x01(\x03R\vraisedTotal\x12!\n" +
+	"\fpledges_paid\x18\x06 \x01(\x03R\vpledgesPaid\x12%\n" +
+	"\x0epledged_amount\x18\a \x01(\x03R\rpledgedAmount\x12\x1f\n" +
+	"\videas_total\x18\b \x01(\x03R\n" +
+	"ideasTotal\x12'\n" +
+	"\x0fideas_published\x18\t \x01(\x03R\x0eideasPublished\x12\x1f\n" +
+	"\vvotes_total\x18\n" +
+	" \x01(\x03R\n" +
+	"votesTotal\x12#\n" +
+	"\rvotes_support\x18\v \x01(\x03R\fvotesSupport\x12!\n" +
+	"\fvotes_oppose\x18\f \x01(\x03R\vvotesOppose\x12!\n" +
+	"\forders_total\x18\r \x01(\x03R\vordersTotal\x12\x1f\n" +
+	"\vorders_paid\x18\x0e \x01(\x03R\n" +
+	"ordersPaid\x12\x10\n" +
+	"\x03gmv\x18\x0f \x01(\x03R\x03gmv\x12'\n" +
+	"\x0frefunds_pending\x18\x10 \x01(\x03R\x0erefundsPending\x12'\n" +
+	"\x0freports_pending\x18\x11 \x01(\x03R\x0ereportsPending\x12\"\n" +
+	"\rgoods_on_sale\x18\x12 \x01(\x03R\vgoodsOnSale\x12*\n" +
+	"\x11goods_orders_paid\x18\x13 \x01(\x03R\x0fgoodsOrdersPaid\x12\x1f\n" +
+	"\vcoins_spent\x18\x14 \x01(\x03R\n" +
+	"coinsSpent\x12\x1f\n" +
+	"\vfeeds_total\x18\x15 \x01(\x03R\n" +
+	"feedsTotal\x12!\n" +
+	"\ffeeds_hidden\x18\x16 \x01(\x03R\vfeedsHidden\x126\n" +
+	"\x06trends\x18\x17 \x03(\v2\x1e.planstar.admin.v1.TrendSeriesR\x06trends\"\x15\n" +
+	"\x13GetDashboardRequest\"\x87\x02\n" +
+	"\bAuditLog\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
+	"\badmin_id\x18\x02 \x01(\tR\aadminId\x12\x14\n" +
+	"\x05actor\x18\x03 \x01(\tR\x05actor\x12\x16\n" +
+	"\x06action\x18\x04 \x01(\tR\x06action\x12\x16\n" +
+	"\x06target\x18\x05 \x01(\tR\x06target\x12\x16\n" +
+	"\x06result\x18\x06 \x01(\tR\x06result\x12\x16\n" +
+	"\x06detail\x18\a \x01(\tR\x06detail\x12\x1f\n" +
+	"\vremote_addr\x18\b \x01(\tR\n" +
+	"remoteAddr\x129\n" +
+	"\n" +
+	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"f\n" +
+	"\vAuditLogSet\x12/\n" +
+	"\x04logs\x18\x01 \x03(\v2\x1b.planstar.admin.v1.AuditLogR\x04logs\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x9c\x01\n" +
+	"\x14ListAuditLogsRequest\x12\x18\n" +
+	"\akeyword\x18\x01 \x01(\tR\akeyword\x12\x16\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\x12\x16\n" +
+	"\x06result\x18\x03 \x01(\tR\x06result\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x05 \x01(\tR\tpageToken\"\xbb\x03\n" +
+	"\x04Idea\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12\x18\n" +
+	"\asummary\x18\x04 \x01(\tR\asummary\x12\x14\n" +
+	"\x05cover\x18\x05 \x01(\tR\x05cover\x12\x1f\n" +
+	"\vcategory_id\x18\x06 \x01(\x03R\n" +
+	"categoryId\x12#\n" +
+	"\rcategory_name\x18\a \x01(\tR\fcategoryName\x12\x14\n" +
+	"\x05stage\x18\b \x01(\x05R\x05stage\x12%\n" +
+	"\x0epublish_status\x18\t \x01(\x05R\rpublishStatus\x12\x16\n" +
+	"\x06status\x18\n" +
+	" \x01(\x05R\x06status\x12#\n" +
+	"\rsupport_count\x18\v \x01(\x05R\fsupportCount\x12!\n" +
+	"\foppose_count\x18\f \x01(\x05R\vopposeCount\x12&\n" +
+	"\x0fcoin_intent_sum\x18\r \x01(\x03R\rcoinIntentSum\x129\n" +
+	"\n" +
+	"created_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"`\n" +
+	"\aIdeaSet\x12-\n" +
+	"\x05ideas\x18\x01 \x03(\v2\x17.planstar.admin.v1.IdeaR\x05ideas\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x83\x02\n" +
+	"\bIdeaVote\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
+	"\aidea_id\x18\x02 \x01(\x03R\x06ideaId\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\x03R\x06userId\x12\x1b\n" +
+	"\tvote_type\x18\x04 \x01(\x05R\bvoteType\x12\x1b\n" +
+	"\tcoin_tier\x18\x05 \x01(\x05R\bcoinTier\x12\x1f\n" +
+	"\vreason_code\x18\x06 \x01(\tR\n" +
+	"reasonCode\x12\x1f\n" +
+	"\vreason_text\x18\a \x01(\tR\n" +
+	"reasonText\x129\n" +
+	"\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x84\x02\n" +
+	"\n" +
+	"IdeaDetail\x12+\n" +
+	"\x04idea\x18\x01 \x01(\v2\x17.planstar.admin.v1.IdeaR\x04idea\x12 \n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1f\n" +
+	"\vvotes_total\x18\x03 \x01(\x03R\n" +
+	"votesTotal\x12#\n" +
+	"\rvotes_support\x18\x04 \x01(\x03R\fvotesSupport\x12!\n" +
+	"\fvotes_oppose\x18\x05 \x01(\x03R\vvotesOppose\x12>\n" +
+	"\frecent_votes\x18\x06 \x03(\v2\x1b.planstar.admin.v1.IdeaVoteR\vrecentVotes\"\xf5\x01\n" +
+	"\x05Goods\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
+	"\bgoods_sn\x18\x02 \x01(\tR\agoodsSn\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x14\n" +
+	"\x05brief\x18\x04 \x01(\tR\x05brief\x12\x14\n" +
+	"\x05cover\x18\x05 \x01(\tR\x05cover\x12\x1a\n" +
+	"\bcategory\x18\x06 \x01(\tR\bcategory\x12\x16\n" +
+	"\x06status\x18\a \x01(\x05R\x06status\x12\x12\n" +
+	"\x04sort\x18\b \x01(\x05R\x04sort\x129\n" +
+	"\n" +
+	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"b\n" +
+	"\bGoodsSet\x12.\n" +
+	"\x05goods\x18\x01 \x03(\v2\x18.planstar.admin.v1.GoodsR\x05goods\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xb3\x01\n" +
+	"\bGoodsSku\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
+	"\bgoods_id\x18\x02 \x01(\x03R\agoodsId\x12\x19\n" +
+	"\bsku_name\x18\x03 \x01(\tR\askuName\x12\x1f\n" +
+	"\vprice_coins\x18\x04 \x01(\x05R\n" +
+	"priceCoins\x12\x14\n" +
+	"\x05stock\x18\x05 \x01(\x05R\x05stock\x12\x12\n" +
+	"\x04sold\x18\x06 \x01(\x05R\x04sold\x12\x16\n" +
+	"\x06status\x18\a \x01(\x05R\x06status\"\x90\x01\n" +
+	"\vGoodsDetail\x12.\n" +
+	"\x05goods\x18\x01 \x01(\v2\x18.planstar.admin.v1.GoodsR\x05goods\x12 \n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x12/\n" +
+	"\x04skus\x18\x03 \x03(\v2\x1b.planstar.admin.v1.GoodsSkuR\x04skus\"\x91\x02\n" +
+	"\n" +
+	"GoodsOrder\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
+	"\border_no\x18\x02 \x01(\tR\aorderNo\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\x03R\x06userId\x12\x19\n" +
+	"\bgoods_id\x18\x04 \x01(\x03R\agoodsId\x12\x15\n" +
+	"\x06sku_id\x18\x05 \x01(\x03R\x05skuId\x12\x19\n" +
+	"\bsku_name\x18\x06 \x01(\tR\askuName\x12\x1f\n" +
+	"\vprice_coins\x18\a \x01(\x05R\n" +
+	"priceCoins\x12\x16\n" +
+	"\x06status\x18\b \x01(\tR\x06status\x129\n" +
+	"\n" +
+	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"n\n" +
+	"\rGoodsOrderSet\x125\n" +
+	"\x06orders\x18\x01 \x03(\v2\x1d.planstar.admin.v1.GoodsOrderR\x06orders\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x99\x03\n" +
+	"\bPayOrder\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x15\n" +
+	"\x06pay_no\x18\x02 \x01(\tR\x05payNo\x12\x19\n" +
+	"\border_no\x18\x03 \x01(\tR\aorderNo\x12\x19\n" +
+	"\border_id\x18\x04 \x01(\x03R\aorderId\x12\x17\n" +
+	"\auser_id\x18\x05 \x01(\x03R\x06userId\x12\x18\n" +
+	"\achannel\x18\x06 \x01(\tR\achannel\x12\x16\n" +
+	"\x06amount\x18\a \x01(\x03R\x06amount\x12\x16\n" +
+	"\x06status\x18\b \x01(\tR\x06status\x12$\n" +
+	"\x0ethird_trade_no\x18\t \x01(\tR\fthirdTradeNo\x123\n" +
+	"\apaid_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\x06paidAt\x127\n" +
+	"\texpire_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\bexpireAt\x129\n" +
+	"\n" +
+	"created_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"q\n" +
+	"\vPayOrderSet\x12:\n" +
+	"\n" +
+	"pay_orders\x18\x01 \x03(\v2\x1b.planstar.admin.v1.PayOrderR\tpayOrders\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xfa\x02\n" +
+	"\x06Refund\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1b\n" +
+	"\trefund_no\x18\x02 \x01(\tR\brefundNo\x12\x19\n" +
+	"\border_id\x18\x03 \x01(\x03R\aorderId\x12\x19\n" +
+	"\border_no\x18\x04 \x01(\tR\aorderNo\x12\x17\n" +
+	"\auser_id\x18\x05 \x01(\x03R\x06userId\x12\x1f\n" +
+	"\vreason_code\x18\x06 \x01(\tR\n" +
+	"reasonCode\x12\x1f\n" +
+	"\vreason_text\x18\a \x01(\tR\n" +
+	"reasonText\x12+\n" +
+	"\x11refundable_amount\x18\b \x01(\x03R\x10refundableAmount\x12\x16\n" +
+	"\x06status\x18\t \x01(\tR\x06status\x122\n" +
+	"\x15expected_arrival_days\x18\n" +
+	" \x01(\x05R\x13expectedArrivalDays\x129\n" +
+	"\n" +
+	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"h\n" +
+	"\tRefundSet\x123\n" +
+	"\arefunds\x18\x01 \x03(\v2\x19.planstar.admin.v1.RefundR\arefunds\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xc3\x02\n" +
+	"\vOrderDetail\x12.\n" +
+	"\x05order\x18\x01 \x01(\v2\x18.planstar.admin.v1.OrderR\x05order\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12!\n" +
+	"\ftotal_amount\x18\x03 \x01(\x03R\vtotalAmount\x12#\n" +
+	"\rrefund_amount\x18\x04 \x01(\x03R\frefundAmount\x125\n" +
+	"\bpay_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\apayTime\x12:\n" +
+	"\n" +
+	"pay_orders\x18\x06 \x03(\v2\x1b.planstar.admin.v1.PayOrderR\tpayOrders\x123\n" +
+	"\arefunds\x18\a \x03(\v2\x19.planstar.admin.v1.RefundR\arefunds\"\xb2\x02\n" +
+	"\x04Feed\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
+	"\x04type\x18\x02 \x01(\x05R\x04type\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\x03R\x06userId\x12\x14\n" +
+	"\x05title\x18\x04 \x01(\tR\x05title\x12\x18\n" +
+	"\acontent\x18\x05 \x01(\tR\acontent\x12\x14\n" +
+	"\x05likes\x18\x06 \x01(\x05R\x05likes\x12\x1f\n" +
+	"\vreply_count\x18\a \x01(\x05R\n" +
+	"replyCount\x12\x14\n" +
+	"\x05views\x18\b \x01(\x05R\x05views\x12\x16\n" +
+	"\x06status\x18\t \x01(\x05R\x06status\x12\x1d\n" +
+	"\n" +
+	"is_quality\x18\n" +
+	" \x01(\x05R\tisQuality\x129\n" +
+	"\n" +
+	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"`\n" +
+	"\aFeedSet\x12-\n" +
+	"\x05feeds\x18\x01 \x03(\v2\x17.planstar.admin.v1.FeedR\x05feeds\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x9e\x01\n" +
+	"\n" +
+	"FeedDetail\x12+\n" +
+	"\x04feed\x18\x01 \x01(\v2\x17.planstar.admin.v1.FeedR\x04feed\x12\x16\n" +
+	"\x06images\x18\x02 \x03(\tR\x06images\x12\x16\n" +
+	"\x06videos\x18\x03 \x03(\tR\x06videos\x12\x12\n" +
+	"\x04tags\x18\x04 \x03(\tR\x04tags\x12\x1f\n" +
+	"\vauthor_name\x18\x05 \x01(\tR\n" +
+	"authorName\"\xa7\x01\n" +
+	"\x10ListIdeasRequest\x12\x18\n" +
+	"\akeyword\x18\x01 \x01(\tR\akeyword\x12*\n" +
+	"\x0epublish_status\x18\x02 \x01(\x05H\x00R\rpublishStatus\x88\x01\x01\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x04 \x01(\tR\tpageTokenB\x11\n" +
+	"\x0f_publish_status\" \n" +
+	"\x0eGetIdeaRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"\x90\x01\n" +
+	"\x10ListGoodsRequest\x12\x18\n" +
+	"\akeyword\x18\x01 \x01(\tR\akeyword\x12\x1b\n" +
+	"\x06status\x18\x02 \x01(\x05H\x00R\x06status\x88\x01\x01\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x04 \x01(\tR\tpageTokenB\t\n" +
+	"\a_status\"!\n" +
+	"\x0fGetGoodsRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"\x86\x01\n" +
+	"\x16ListGoodsOrdersRequest\x12\x18\n" +
+	"\akeyword\x18\x01 \x01(\tR\akeyword\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x04 \x01(\tR\tpageToken\"!\n" +
+	"\x0fGetOrderRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"\x84\x01\n" +
+	"\x14ListPayOrdersRequest\x12\x18\n" +
+	"\akeyword\x18\x01 \x01(\tR\akeyword\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x04 \x01(\tR\tpageToken\"\x82\x01\n" +
+	"\x12ListRefundsRequest\x12\x18\n" +
+	"\akeyword\x18\x01 \x01(\tR\akeyword\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x04 \x01(\tR\tpageToken\"\x90\x01\n" +
+	"\x10ListFeedsRequest\x12\x18\n" +
+	"\akeyword\x18\x01 \x01(\tR\akeyword\x12\x1b\n" +
+	"\x06status\x18\x02 \x01(\x05H\x00R\x06status\x88\x01\x01\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x04 \x01(\tR\tpageTokenB\t\n" +
+	"\a_status\" \n" +
+	"\x0eGetFeedRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id2\xed\x15\n" +
 	"\x0eConsoleService\x12h\n" +
 	"\tListUsers\x12#.planstar.admin.v1.ListUsersRequest\x1a\x1a.planstar.admin.v1.UserSet\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/planstar/users\x12\x82\x01\n" +
 	"\x10UpdateUserStatus\x12*.planstar.admin.v1.UpdateUserStatusRequest\x1a\x17.planstar.admin.v1.User\")\x82\xd3\xe4\x93\x02#:\x01*\x1a\x1e/v1/planstar/users/{id}/status\x12t\n" +
@@ -1401,7 +4942,23 @@ const file_planstar_admin_v1_console_proto_rawDesc = "" +
 	"\n" +
 	"ListOrders\x12$.planstar.admin.v1.ListOrdersRequest\x1a\x1b.planstar.admin.v1.OrderSet\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/planstar/orders\x12p\n" +
 	"\vListReports\x12%.planstar.admin.v1.ListReportsRequest\x1a\x1c.planstar.admin.v1.ReportSet\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/planstar/reports\x12~\n" +
-	"\fHandleReport\x12&.planstar.admin.v1.HandleReportRequest\x1a\x19.planstar.admin.v1.Report\"+\x82\xd3\xe4\x93\x02%:\x01*\" /v1/planstar/reports/{id}/handleBB\n" +
+	"\fHandleReport\x12&.planstar.admin.v1.HandleReportRequest\x1a\x19.planstar.admin.v1.Report\"+\x82\xd3\xe4\x93\x02%:\x01*\" /v1/planstar/reports/{id}/handle\x12t\n" +
+	"\fGetDashboard\x12&.planstar.admin.v1.GetDashboardRequest\x1a\x1c.planstar.admin.v1.Dashboard\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/planstar/dashboard\x12y\n" +
+	"\rListAuditLogs\x12'.planstar.admin.v1.ListAuditLogsRequest\x1a\x1e.planstar.admin.v1.AuditLogSet\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/planstar/audit-logs\x12h\n" +
+	"\tListIdeas\x12#.planstar.admin.v1.ListIdeasRequest\x1a\x1a.planstar.admin.v1.IdeaSet\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/planstar/ideas\x12l\n" +
+	"\aGetIdea\x12!.planstar.admin.v1.GetIdeaRequest\x1a\x1d.planstar.admin.v1.IdeaDetail\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/planstar/ideas/{id}\x12i\n" +
+	"\tListGoods\x12#.planstar.admin.v1.ListGoodsRequest\x1a\x1b.planstar.admin.v1.GoodsSet\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/planstar/goods\x12o\n" +
+	"\bGetGoods\x12\".planstar.admin.v1.GetGoodsRequest\x1a\x1e.planstar.admin.v1.GoodsDetail\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/planstar/goods/{id}\x12\x81\x01\n" +
+	"\x0fListGoodsOrders\x12).planstar.admin.v1.ListGoodsOrdersRequest\x1a .planstar.admin.v1.GoodsOrderSet\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/planstar/goods-orders\x12p\n" +
+	"\bGetOrder\x12\".planstar.admin.v1.GetOrderRequest\x1a\x1e.planstar.admin.v1.OrderDetail\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/planstar/orders/{id}\x12y\n" +
+	"\rListPayOrders\x12'.planstar.admin.v1.ListPayOrdersRequest\x1a\x1e.planstar.admin.v1.PayOrderSet\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/planstar/pay-orders\x12p\n" +
+	"\vListRefunds\x12%.planstar.admin.v1.ListRefundsRequest\x1a\x1c.planstar.admin.v1.RefundSet\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/planstar/refunds\x12h\n" +
+	"\tListFeeds\x12#.planstar.admin.v1.ListFeedsRequest\x1a\x1a.planstar.admin.v1.FeedSet\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/planstar/feeds\x12l\n" +
+	"\aGetFeed\x12!.planstar.admin.v1.GetFeedRequest\x1a\x1d.planstar.admin.v1.FeedDetail\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/planstar/feeds/{id}\x12\x83\x01\n" +
+	"\rSetFeedStatus\x12'.planstar.admin.v1.SetFeedStatusRequest\x1a\x1e.planstar.admin.v1.StatusReply\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/v1/planstar/feeds/{id}/status\x12\x85\x01\n" +
+	"\x0eSetGoodsStatus\x12(.planstar.admin.v1.SetGoodsStatusRequest\x1a\x1e.planstar.admin.v1.StatusReply\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/v1/planstar/goods/{id}/status\x12\x90\x01\n" +
+	"\x11SetGoodsSkuStatus\x12+.planstar.admin.v1.SetGoodsSkuStatusRequest\x1a\x1e.planstar.admin.v1.StatusReply\".\x82\xd3\xe4\x93\x02(:\x01*\"#/v1/planstar/goods-skus/{id}/status\x12\x84\x01\n" +
+	"\fReviewRefund\x12&.planstar.admin.v1.ReviewRefundRequest\x1a\x1f.planstar.admin.v1.RefundReview\"+\x82\xd3\xe4\x93\x02%:\x01*\" /v1/planstar/refunds/{id}/reviewBB\n" +
 	"\x15api.planstar.admin.v1P\x01Z'planstar/admin/api/planstar/admin/v1;v1b\x06proto3"
 
 var (
@@ -1416,59 +4973,162 @@ func file_planstar_admin_v1_console_proto_rawDescGZIP() []byte {
 	return file_planstar_admin_v1_console_proto_rawDescData
 }
 
-var file_planstar_admin_v1_console_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_planstar_admin_v1_console_proto_msgTypes = make([]protoimpl.MessageInfo, 59)
 var file_planstar_admin_v1_console_proto_goTypes = []any{
-	(*User)(nil),                    // 0: planstar.admin.v1.User
-	(*UserSet)(nil),                 // 1: planstar.admin.v1.UserSet
-	(*Project)(nil),                 // 2: planstar.admin.v1.Project
-	(*ProjectSet)(nil),              // 3: planstar.admin.v1.ProjectSet
-	(*Order)(nil),                   // 4: planstar.admin.v1.Order
-	(*OrderSet)(nil),                // 5: planstar.admin.v1.OrderSet
-	(*Report)(nil),                  // 6: planstar.admin.v1.Report
-	(*ReportSet)(nil),               // 7: planstar.admin.v1.ReportSet
-	(*BlacklistHit)(nil),            // 8: planstar.admin.v1.BlacklistHit
-	(*ReviewProjectReply)(nil),      // 9: planstar.admin.v1.ReviewProjectReply
-	(*ListUsersRequest)(nil),        // 10: planstar.admin.v1.ListUsersRequest
-	(*UpdateUserStatusRequest)(nil), // 11: planstar.admin.v1.UpdateUserStatusRequest
-	(*ListProjectsRequest)(nil),     // 12: planstar.admin.v1.ListProjectsRequest
-	(*ReviewProjectRequest)(nil),    // 13: planstar.admin.v1.ReviewProjectRequest
-	(*ListOrdersRequest)(nil),       // 14: planstar.admin.v1.ListOrdersRequest
-	(*ListReportsRequest)(nil),      // 15: planstar.admin.v1.ListReportsRequest
-	(*HandleReportRequest)(nil),     // 16: planstar.admin.v1.HandleReportRequest
-	(*timestamppb.Timestamp)(nil),   // 17: google.protobuf.Timestamp
+	(*User)(nil),                     // 0: planstar.admin.v1.User
+	(*UserSet)(nil),                  // 1: planstar.admin.v1.UserSet
+	(*Project)(nil),                  // 2: planstar.admin.v1.Project
+	(*ProjectSet)(nil),               // 3: planstar.admin.v1.ProjectSet
+	(*Order)(nil),                    // 4: planstar.admin.v1.Order
+	(*OrderSet)(nil),                 // 5: planstar.admin.v1.OrderSet
+	(*Report)(nil),                   // 6: planstar.admin.v1.Report
+	(*ReportSet)(nil),                // 7: planstar.admin.v1.ReportSet
+	(*BlacklistHit)(nil),             // 8: planstar.admin.v1.BlacklistHit
+	(*ReviewProjectReply)(nil),       // 9: planstar.admin.v1.ReviewProjectReply
+	(*ListUsersRequest)(nil),         // 10: planstar.admin.v1.ListUsersRequest
+	(*UpdateUserStatusRequest)(nil),  // 11: planstar.admin.v1.UpdateUserStatusRequest
+	(*ListProjectsRequest)(nil),      // 12: planstar.admin.v1.ListProjectsRequest
+	(*ReviewProjectRequest)(nil),     // 13: planstar.admin.v1.ReviewProjectRequest
+	(*ListOrdersRequest)(nil),        // 14: planstar.admin.v1.ListOrdersRequest
+	(*ListReportsRequest)(nil),       // 15: planstar.admin.v1.ListReportsRequest
+	(*HandleReportRequest)(nil),      // 16: planstar.admin.v1.HandleReportRequest
+	(*SetFeedStatusRequest)(nil),     // 17: planstar.admin.v1.SetFeedStatusRequest
+	(*SetGoodsStatusRequest)(nil),    // 18: planstar.admin.v1.SetGoodsStatusRequest
+	(*SetGoodsSkuStatusRequest)(nil), // 19: planstar.admin.v1.SetGoodsSkuStatusRequest
+	(*StatusReply)(nil),              // 20: planstar.admin.v1.StatusReply
+	(*ReviewRefundRequest)(nil),      // 21: planstar.admin.v1.ReviewRefundRequest
+	(*RefundReview)(nil),             // 22: planstar.admin.v1.RefundReview
+	(*StatusCount)(nil),              // 23: planstar.admin.v1.StatusCount
+	(*DailyCount)(nil),               // 24: planstar.admin.v1.DailyCount
+	(*TrendSeries)(nil),              // 25: planstar.admin.v1.TrendSeries
+	(*Dashboard)(nil),                // 26: planstar.admin.v1.Dashboard
+	(*GetDashboardRequest)(nil),      // 27: planstar.admin.v1.GetDashboardRequest
+	(*AuditLog)(nil),                 // 28: planstar.admin.v1.AuditLog
+	(*AuditLogSet)(nil),              // 29: planstar.admin.v1.AuditLogSet
+	(*ListAuditLogsRequest)(nil),     // 30: planstar.admin.v1.ListAuditLogsRequest
+	(*Idea)(nil),                     // 31: planstar.admin.v1.Idea
+	(*IdeaSet)(nil),                  // 32: planstar.admin.v1.IdeaSet
+	(*IdeaVote)(nil),                 // 33: planstar.admin.v1.IdeaVote
+	(*IdeaDetail)(nil),               // 34: planstar.admin.v1.IdeaDetail
+	(*Goods)(nil),                    // 35: planstar.admin.v1.Goods
+	(*GoodsSet)(nil),                 // 36: planstar.admin.v1.GoodsSet
+	(*GoodsSku)(nil),                 // 37: planstar.admin.v1.GoodsSku
+	(*GoodsDetail)(nil),              // 38: planstar.admin.v1.GoodsDetail
+	(*GoodsOrder)(nil),               // 39: planstar.admin.v1.GoodsOrder
+	(*GoodsOrderSet)(nil),            // 40: planstar.admin.v1.GoodsOrderSet
+	(*PayOrder)(nil),                 // 41: planstar.admin.v1.PayOrder
+	(*PayOrderSet)(nil),              // 42: planstar.admin.v1.PayOrderSet
+	(*Refund)(nil),                   // 43: planstar.admin.v1.Refund
+	(*RefundSet)(nil),                // 44: planstar.admin.v1.RefundSet
+	(*OrderDetail)(nil),              // 45: planstar.admin.v1.OrderDetail
+	(*Feed)(nil),                     // 46: planstar.admin.v1.Feed
+	(*FeedSet)(nil),                  // 47: planstar.admin.v1.FeedSet
+	(*FeedDetail)(nil),               // 48: planstar.admin.v1.FeedDetail
+	(*ListIdeasRequest)(nil),         // 49: planstar.admin.v1.ListIdeasRequest
+	(*GetIdeaRequest)(nil),           // 50: planstar.admin.v1.GetIdeaRequest
+	(*ListGoodsRequest)(nil),         // 51: planstar.admin.v1.ListGoodsRequest
+	(*GetGoodsRequest)(nil),          // 52: planstar.admin.v1.GetGoodsRequest
+	(*ListGoodsOrdersRequest)(nil),   // 53: planstar.admin.v1.ListGoodsOrdersRequest
+	(*GetOrderRequest)(nil),          // 54: planstar.admin.v1.GetOrderRequest
+	(*ListPayOrdersRequest)(nil),     // 55: planstar.admin.v1.ListPayOrdersRequest
+	(*ListRefundsRequest)(nil),       // 56: planstar.admin.v1.ListRefundsRequest
+	(*ListFeedsRequest)(nil),         // 57: planstar.admin.v1.ListFeedsRequest
+	(*GetFeedRequest)(nil),           // 58: planstar.admin.v1.GetFeedRequest
+	(*timestamppb.Timestamp)(nil),    // 59: google.protobuf.Timestamp
 }
 var file_planstar_admin_v1_console_proto_depIdxs = []int32{
-	17, // 0: planstar.admin.v1.User.created_at:type_name -> google.protobuf.Timestamp
-	17, // 1: planstar.admin.v1.User.updated_at:type_name -> google.protobuf.Timestamp
+	59, // 0: planstar.admin.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	59, // 1: planstar.admin.v1.User.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 2: planstar.admin.v1.UserSet.users:type_name -> planstar.admin.v1.User
-	17, // 3: planstar.admin.v1.Project.created_at:type_name -> google.protobuf.Timestamp
+	59, // 3: planstar.admin.v1.Project.created_at:type_name -> google.protobuf.Timestamp
 	2,  // 4: planstar.admin.v1.ProjectSet.projects:type_name -> planstar.admin.v1.Project
-	17, // 5: planstar.admin.v1.Order.created_at:type_name -> google.protobuf.Timestamp
+	59, // 5: planstar.admin.v1.Order.created_at:type_name -> google.protobuf.Timestamp
 	4,  // 6: planstar.admin.v1.OrderSet.orders:type_name -> planstar.admin.v1.Order
-	17, // 7: planstar.admin.v1.Report.handle_time:type_name -> google.protobuf.Timestamp
-	17, // 8: planstar.admin.v1.Report.created_at:type_name -> google.protobuf.Timestamp
+	59, // 7: planstar.admin.v1.Report.handle_time:type_name -> google.protobuf.Timestamp
+	59, // 8: planstar.admin.v1.Report.created_at:type_name -> google.protobuf.Timestamp
 	6,  // 9: planstar.admin.v1.ReportSet.reports:type_name -> planstar.admin.v1.Report
 	2,  // 10: planstar.admin.v1.ReviewProjectReply.project:type_name -> planstar.admin.v1.Project
 	8,  // 11: planstar.admin.v1.ReviewProjectReply.hits:type_name -> planstar.admin.v1.BlacklistHit
-	10, // 12: planstar.admin.v1.ConsoleService.ListUsers:input_type -> planstar.admin.v1.ListUsersRequest
-	11, // 13: planstar.admin.v1.ConsoleService.UpdateUserStatus:input_type -> planstar.admin.v1.UpdateUserStatusRequest
-	12, // 14: planstar.admin.v1.ConsoleService.ListProjects:input_type -> planstar.admin.v1.ListProjectsRequest
-	13, // 15: planstar.admin.v1.ConsoleService.ReviewProject:input_type -> planstar.admin.v1.ReviewProjectRequest
-	14, // 16: planstar.admin.v1.ConsoleService.ListOrders:input_type -> planstar.admin.v1.ListOrdersRequest
-	15, // 17: planstar.admin.v1.ConsoleService.ListReports:input_type -> planstar.admin.v1.ListReportsRequest
-	16, // 18: planstar.admin.v1.ConsoleService.HandleReport:input_type -> planstar.admin.v1.HandleReportRequest
-	1,  // 19: planstar.admin.v1.ConsoleService.ListUsers:output_type -> planstar.admin.v1.UserSet
-	0,  // 20: planstar.admin.v1.ConsoleService.UpdateUserStatus:output_type -> planstar.admin.v1.User
-	3,  // 21: planstar.admin.v1.ConsoleService.ListProjects:output_type -> planstar.admin.v1.ProjectSet
-	9,  // 22: planstar.admin.v1.ConsoleService.ReviewProject:output_type -> planstar.admin.v1.ReviewProjectReply
-	5,  // 23: planstar.admin.v1.ConsoleService.ListOrders:output_type -> planstar.admin.v1.OrderSet
-	7,  // 24: planstar.admin.v1.ConsoleService.ListReports:output_type -> planstar.admin.v1.ReportSet
-	6,  // 25: planstar.admin.v1.ConsoleService.HandleReport:output_type -> planstar.admin.v1.Report
-	19, // [19:26] is the sub-list for method output_type
-	12, // [12:19] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	24, // 12: planstar.admin.v1.TrendSeries.points:type_name -> planstar.admin.v1.DailyCount
+	23, // 13: planstar.admin.v1.Dashboard.projects_by_publish_status:type_name -> planstar.admin.v1.StatusCount
+	25, // 14: planstar.admin.v1.Dashboard.trends:type_name -> planstar.admin.v1.TrendSeries
+	59, // 15: planstar.admin.v1.AuditLog.created_at:type_name -> google.protobuf.Timestamp
+	28, // 16: planstar.admin.v1.AuditLogSet.logs:type_name -> planstar.admin.v1.AuditLog
+	59, // 17: planstar.admin.v1.Idea.created_at:type_name -> google.protobuf.Timestamp
+	31, // 18: planstar.admin.v1.IdeaSet.ideas:type_name -> planstar.admin.v1.Idea
+	59, // 19: planstar.admin.v1.IdeaVote.created_at:type_name -> google.protobuf.Timestamp
+	31, // 20: planstar.admin.v1.IdeaDetail.idea:type_name -> planstar.admin.v1.Idea
+	33, // 21: planstar.admin.v1.IdeaDetail.recent_votes:type_name -> planstar.admin.v1.IdeaVote
+	59, // 22: planstar.admin.v1.Goods.created_at:type_name -> google.protobuf.Timestamp
+	35, // 23: planstar.admin.v1.GoodsSet.goods:type_name -> planstar.admin.v1.Goods
+	35, // 24: planstar.admin.v1.GoodsDetail.goods:type_name -> planstar.admin.v1.Goods
+	37, // 25: planstar.admin.v1.GoodsDetail.skus:type_name -> planstar.admin.v1.GoodsSku
+	59, // 26: planstar.admin.v1.GoodsOrder.created_at:type_name -> google.protobuf.Timestamp
+	39, // 27: planstar.admin.v1.GoodsOrderSet.orders:type_name -> planstar.admin.v1.GoodsOrder
+	59, // 28: planstar.admin.v1.PayOrder.paid_at:type_name -> google.protobuf.Timestamp
+	59, // 29: planstar.admin.v1.PayOrder.expire_at:type_name -> google.protobuf.Timestamp
+	59, // 30: planstar.admin.v1.PayOrder.created_at:type_name -> google.protobuf.Timestamp
+	41, // 31: planstar.admin.v1.PayOrderSet.pay_orders:type_name -> planstar.admin.v1.PayOrder
+	59, // 32: planstar.admin.v1.Refund.created_at:type_name -> google.protobuf.Timestamp
+	43, // 33: planstar.admin.v1.RefundSet.refunds:type_name -> planstar.admin.v1.Refund
+	4,  // 34: planstar.admin.v1.OrderDetail.order:type_name -> planstar.admin.v1.Order
+	59, // 35: planstar.admin.v1.OrderDetail.pay_time:type_name -> google.protobuf.Timestamp
+	41, // 36: planstar.admin.v1.OrderDetail.pay_orders:type_name -> planstar.admin.v1.PayOrder
+	43, // 37: planstar.admin.v1.OrderDetail.refunds:type_name -> planstar.admin.v1.Refund
+	59, // 38: planstar.admin.v1.Feed.created_at:type_name -> google.protobuf.Timestamp
+	46, // 39: planstar.admin.v1.FeedSet.feeds:type_name -> planstar.admin.v1.Feed
+	46, // 40: planstar.admin.v1.FeedDetail.feed:type_name -> planstar.admin.v1.Feed
+	10, // 41: planstar.admin.v1.ConsoleService.ListUsers:input_type -> planstar.admin.v1.ListUsersRequest
+	11, // 42: planstar.admin.v1.ConsoleService.UpdateUserStatus:input_type -> planstar.admin.v1.UpdateUserStatusRequest
+	12, // 43: planstar.admin.v1.ConsoleService.ListProjects:input_type -> planstar.admin.v1.ListProjectsRequest
+	13, // 44: planstar.admin.v1.ConsoleService.ReviewProject:input_type -> planstar.admin.v1.ReviewProjectRequest
+	14, // 45: planstar.admin.v1.ConsoleService.ListOrders:input_type -> planstar.admin.v1.ListOrdersRequest
+	15, // 46: planstar.admin.v1.ConsoleService.ListReports:input_type -> planstar.admin.v1.ListReportsRequest
+	16, // 47: planstar.admin.v1.ConsoleService.HandleReport:input_type -> planstar.admin.v1.HandleReportRequest
+	27, // 48: planstar.admin.v1.ConsoleService.GetDashboard:input_type -> planstar.admin.v1.GetDashboardRequest
+	30, // 49: planstar.admin.v1.ConsoleService.ListAuditLogs:input_type -> planstar.admin.v1.ListAuditLogsRequest
+	49, // 50: planstar.admin.v1.ConsoleService.ListIdeas:input_type -> planstar.admin.v1.ListIdeasRequest
+	50, // 51: planstar.admin.v1.ConsoleService.GetIdea:input_type -> planstar.admin.v1.GetIdeaRequest
+	51, // 52: planstar.admin.v1.ConsoleService.ListGoods:input_type -> planstar.admin.v1.ListGoodsRequest
+	52, // 53: planstar.admin.v1.ConsoleService.GetGoods:input_type -> planstar.admin.v1.GetGoodsRequest
+	53, // 54: planstar.admin.v1.ConsoleService.ListGoodsOrders:input_type -> planstar.admin.v1.ListGoodsOrdersRequest
+	54, // 55: planstar.admin.v1.ConsoleService.GetOrder:input_type -> planstar.admin.v1.GetOrderRequest
+	55, // 56: planstar.admin.v1.ConsoleService.ListPayOrders:input_type -> planstar.admin.v1.ListPayOrdersRequest
+	56, // 57: planstar.admin.v1.ConsoleService.ListRefunds:input_type -> planstar.admin.v1.ListRefundsRequest
+	57, // 58: planstar.admin.v1.ConsoleService.ListFeeds:input_type -> planstar.admin.v1.ListFeedsRequest
+	58, // 59: planstar.admin.v1.ConsoleService.GetFeed:input_type -> planstar.admin.v1.GetFeedRequest
+	17, // 60: planstar.admin.v1.ConsoleService.SetFeedStatus:input_type -> planstar.admin.v1.SetFeedStatusRequest
+	18, // 61: planstar.admin.v1.ConsoleService.SetGoodsStatus:input_type -> planstar.admin.v1.SetGoodsStatusRequest
+	19, // 62: planstar.admin.v1.ConsoleService.SetGoodsSkuStatus:input_type -> planstar.admin.v1.SetGoodsSkuStatusRequest
+	21, // 63: planstar.admin.v1.ConsoleService.ReviewRefund:input_type -> planstar.admin.v1.ReviewRefundRequest
+	1,  // 64: planstar.admin.v1.ConsoleService.ListUsers:output_type -> planstar.admin.v1.UserSet
+	0,  // 65: planstar.admin.v1.ConsoleService.UpdateUserStatus:output_type -> planstar.admin.v1.User
+	3,  // 66: planstar.admin.v1.ConsoleService.ListProjects:output_type -> planstar.admin.v1.ProjectSet
+	9,  // 67: planstar.admin.v1.ConsoleService.ReviewProject:output_type -> planstar.admin.v1.ReviewProjectReply
+	5,  // 68: planstar.admin.v1.ConsoleService.ListOrders:output_type -> planstar.admin.v1.OrderSet
+	7,  // 69: planstar.admin.v1.ConsoleService.ListReports:output_type -> planstar.admin.v1.ReportSet
+	6,  // 70: planstar.admin.v1.ConsoleService.HandleReport:output_type -> planstar.admin.v1.Report
+	26, // 71: planstar.admin.v1.ConsoleService.GetDashboard:output_type -> planstar.admin.v1.Dashboard
+	29, // 72: planstar.admin.v1.ConsoleService.ListAuditLogs:output_type -> planstar.admin.v1.AuditLogSet
+	32, // 73: planstar.admin.v1.ConsoleService.ListIdeas:output_type -> planstar.admin.v1.IdeaSet
+	34, // 74: planstar.admin.v1.ConsoleService.GetIdea:output_type -> planstar.admin.v1.IdeaDetail
+	36, // 75: planstar.admin.v1.ConsoleService.ListGoods:output_type -> planstar.admin.v1.GoodsSet
+	38, // 76: planstar.admin.v1.ConsoleService.GetGoods:output_type -> planstar.admin.v1.GoodsDetail
+	40, // 77: planstar.admin.v1.ConsoleService.ListGoodsOrders:output_type -> planstar.admin.v1.GoodsOrderSet
+	45, // 78: planstar.admin.v1.ConsoleService.GetOrder:output_type -> planstar.admin.v1.OrderDetail
+	42, // 79: planstar.admin.v1.ConsoleService.ListPayOrders:output_type -> planstar.admin.v1.PayOrderSet
+	44, // 80: planstar.admin.v1.ConsoleService.ListRefunds:output_type -> planstar.admin.v1.RefundSet
+	47, // 81: planstar.admin.v1.ConsoleService.ListFeeds:output_type -> planstar.admin.v1.FeedSet
+	48, // 82: planstar.admin.v1.ConsoleService.GetFeed:output_type -> planstar.admin.v1.FeedDetail
+	20, // 83: planstar.admin.v1.ConsoleService.SetFeedStatus:output_type -> planstar.admin.v1.StatusReply
+	20, // 84: planstar.admin.v1.ConsoleService.SetGoodsStatus:output_type -> planstar.admin.v1.StatusReply
+	20, // 85: planstar.admin.v1.ConsoleService.SetGoodsSkuStatus:output_type -> planstar.admin.v1.StatusReply
+	22, // 86: planstar.admin.v1.ConsoleService.ReviewRefund:output_type -> planstar.admin.v1.RefundReview
+	64, // [64:87] is the sub-list for method output_type
+	41, // [41:64] is the sub-list for method input_type
+	41, // [41:41] is the sub-list for extension type_name
+	41, // [41:41] is the sub-list for extension extendee
+	0,  // [0:41] is the sub-list for field type_name
 }
 
 func init() { file_planstar_admin_v1_console_proto_init() }
@@ -1479,13 +5139,16 @@ func file_planstar_admin_v1_console_proto_init() {
 	file_planstar_admin_v1_console_proto_msgTypes[10].OneofWrappers = []any{}
 	file_planstar_admin_v1_console_proto_msgTypes[12].OneofWrappers = []any{}
 	file_planstar_admin_v1_console_proto_msgTypes[14].OneofWrappers = []any{}
+	file_planstar_admin_v1_console_proto_msgTypes[49].OneofWrappers = []any{}
+	file_planstar_admin_v1_console_proto_msgTypes[51].OneofWrappers = []any{}
+	file_planstar_admin_v1_console_proto_msgTypes[57].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_planstar_admin_v1_console_proto_rawDesc), len(file_planstar_admin_v1_console_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   59,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

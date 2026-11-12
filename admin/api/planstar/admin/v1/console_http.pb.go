@@ -17,27 +17,75 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationConsoleServiceGetDashboard = "/planstar.admin.v1.ConsoleService/GetDashboard"
+const OperationConsoleServiceGetFeed = "/planstar.admin.v1.ConsoleService/GetFeed"
+const OperationConsoleServiceGetGoods = "/planstar.admin.v1.ConsoleService/GetGoods"
+const OperationConsoleServiceGetIdea = "/planstar.admin.v1.ConsoleService/GetIdea"
+const OperationConsoleServiceGetOrder = "/planstar.admin.v1.ConsoleService/GetOrder"
 const OperationConsoleServiceHandleReport = "/planstar.admin.v1.ConsoleService/HandleReport"
+const OperationConsoleServiceListAuditLogs = "/planstar.admin.v1.ConsoleService/ListAuditLogs"
+const OperationConsoleServiceListFeeds = "/planstar.admin.v1.ConsoleService/ListFeeds"
+const OperationConsoleServiceListGoods = "/planstar.admin.v1.ConsoleService/ListGoods"
+const OperationConsoleServiceListGoodsOrders = "/planstar.admin.v1.ConsoleService/ListGoodsOrders"
+const OperationConsoleServiceListIdeas = "/planstar.admin.v1.ConsoleService/ListIdeas"
 const OperationConsoleServiceListOrders = "/planstar.admin.v1.ConsoleService/ListOrders"
+const OperationConsoleServiceListPayOrders = "/planstar.admin.v1.ConsoleService/ListPayOrders"
 const OperationConsoleServiceListProjects = "/planstar.admin.v1.ConsoleService/ListProjects"
+const OperationConsoleServiceListRefunds = "/planstar.admin.v1.ConsoleService/ListRefunds"
 const OperationConsoleServiceListReports = "/planstar.admin.v1.ConsoleService/ListReports"
 const OperationConsoleServiceListUsers = "/planstar.admin.v1.ConsoleService/ListUsers"
 const OperationConsoleServiceReviewProject = "/planstar.admin.v1.ConsoleService/ReviewProject"
+const OperationConsoleServiceReviewRefund = "/planstar.admin.v1.ConsoleService/ReviewRefund"
+const OperationConsoleServiceSetFeedStatus = "/planstar.admin.v1.ConsoleService/SetFeedStatus"
+const OperationConsoleServiceSetGoodsSkuStatus = "/planstar.admin.v1.ConsoleService/SetGoodsSkuStatus"
+const OperationConsoleServiceSetGoodsStatus = "/planstar.admin.v1.ConsoleService/SetGoodsStatus"
 const OperationConsoleServiceUpdateUserStatus = "/planstar.admin.v1.ConsoleService/UpdateUserStatus"
 
 type ConsoleServiceHTTPServer interface {
+	// GetDashboard GetDashboard aggregates read-only business metrics for the overview page.
+	GetDashboard(context.Context, *GetDashboardRequest) (*Dashboard, error)
+	// GetFeed GetFeed returns one feed with its media and author snapshot.
+	GetFeed(context.Context, *GetFeedRequest) (*FeedDetail, error)
+	// GetGoods GetGoods returns one goods item with its SKUs.
+	GetGoods(context.Context, *GetGoodsRequest) (*GoodsDetail, error)
+	// GetIdea GetIdea returns one idea with its vote aggregation and recent votes.
+	GetIdea(context.Context, *GetIdeaRequest) (*IdeaDetail, error)
+	// GetOrder GetOrder returns one unified order with its payments and refunds.
+	GetOrder(context.Context, *GetOrderRequest) (*OrderDetail, error)
 	// HandleReport HandleReport accepts or rejects a report through the ops service.
 	HandleReport(context.Context, *HandleReportRequest) (*Report, error)
+	// ListAuditLogs ListAuditLogs pages the console write audit trail (admin role only).
+	ListAuditLogs(context.Context, *ListAuditLogsRequest) (*AuditLogSet, error)
+	// ListFeeds ListFeeds lists community feeds.
+	ListFeeds(context.Context, *ListFeedsRequest) (*FeedSet, error)
+	// ListGoods ListGoods lists shop goods.
+	ListGoods(context.Context, *ListGoodsRequest) (*GoodsSet, error)
+	// ListGoodsOrders ListGoodsOrders lists coin purchases.
+	ListGoodsOrders(context.Context, *ListGoodsOrdersRequest) (*GoodsOrderSet, error)
+	// ListIdeas ListIdeas lists community ideas.
+	ListIdeas(context.Context, *ListIdeasRequest) (*IdeaSet, error)
 	// ListOrders ListOrders lists unified orders.
 	ListOrders(context.Context, *ListOrdersRequest) (*OrderSet, error)
+	// ListPayOrders ListPayOrders lists payment attempts.
+	ListPayOrders(context.Context, *ListPayOrdersRequest) (*PayOrderSet, error)
 	// ListProjects ListProjects lists projects for moderation.
 	ListProjects(context.Context, *ListProjectsRequest) (*ProjectSet, error)
+	// ListRefunds ListRefunds lists refund requests.
+	ListRefunds(context.Context, *ListRefundsRequest) (*RefundSet, error)
 	// ListReports ListReports lists moderation reports.
 	ListReports(context.Context, *ListReportsRequest) (*ReportSet, error)
 	// ListUsers ListUsers lists business users.
 	ListUsers(context.Context, *ListUsersRequest) (*UserSet, error)
 	// ReviewProject ReviewProject approves or rejects a project through the ops service.
 	ReviewProject(context.Context, *ReviewProjectRequest) (*ReviewProjectReply, error)
+	// ReviewRefund ReviewRefund approves or rejects a refund through the ops service.
+	ReviewRefund(context.Context, *ReviewRefundRequest) (*RefundReview, error)
+	// SetFeedStatus SetFeedStatus hides or shows a community feed through the ops service.
+	SetFeedStatus(context.Context, *SetFeedStatusRequest) (*StatusReply, error)
+	// SetGoodsSkuStatus SetGoodsSkuStatus puts a goods SKU on or off shelf through the ops service.
+	SetGoodsSkuStatus(context.Context, *SetGoodsSkuStatusRequest) (*StatusReply, error)
+	// SetGoodsStatus SetGoodsStatus puts a shop goods on or off shelf through the ops service.
+	SetGoodsStatus(context.Context, *SetGoodsStatusRequest) (*StatusReply, error)
 	// UpdateUserStatus UpdateUserStatus updates the account status of a business user.
 	UpdateUserStatus(context.Context, *UpdateUserStatusRequest) (*User, error)
 }
@@ -51,6 +99,22 @@ func RegisterConsoleServiceHTTPServer(s *http.Server, srv ConsoleServiceHTTPServ
 	r.Handle("GET", "/v1/planstar/orders", _ConsoleService_ListOrders0_HTTP_Handler(srv))
 	r.Handle("GET", "/v1/planstar/reports", _ConsoleService_ListReports0_HTTP_Handler(srv))
 	r.Handle("POST", "/v1/planstar/reports/{id}/handle", _ConsoleService_HandleReport0_HTTP_Handler(srv))
+	r.Handle("GET", "/v1/planstar/dashboard", _ConsoleService_GetDashboard0_HTTP_Handler(srv))
+	r.Handle("GET", "/v1/planstar/audit-logs", _ConsoleService_ListAuditLogs0_HTTP_Handler(srv))
+	r.Handle("GET", "/v1/planstar/ideas", _ConsoleService_ListIdeas0_HTTP_Handler(srv))
+	r.Handle("GET", "/v1/planstar/ideas/{id}", _ConsoleService_GetIdea0_HTTP_Handler(srv))
+	r.Handle("GET", "/v1/planstar/goods", _ConsoleService_ListGoods0_HTTP_Handler(srv))
+	r.Handle("GET", "/v1/planstar/goods/{id}", _ConsoleService_GetGoods0_HTTP_Handler(srv))
+	r.Handle("GET", "/v1/planstar/goods-orders", _ConsoleService_ListGoodsOrders0_HTTP_Handler(srv))
+	r.Handle("GET", "/v1/planstar/orders/{id}", _ConsoleService_GetOrder0_HTTP_Handler(srv))
+	r.Handle("GET", "/v1/planstar/pay-orders", _ConsoleService_ListPayOrders0_HTTP_Handler(srv))
+	r.Handle("GET", "/v1/planstar/refunds", _ConsoleService_ListRefunds0_HTTP_Handler(srv))
+	r.Handle("GET", "/v1/planstar/feeds", _ConsoleService_ListFeeds0_HTTP_Handler(srv))
+	r.Handle("GET", "/v1/planstar/feeds/{id}", _ConsoleService_GetFeed0_HTTP_Handler(srv))
+	r.Handle("POST", "/v1/planstar/feeds/{id}/status", _ConsoleService_SetFeedStatus0_HTTP_Handler(srv))
+	r.Handle("POST", "/v1/planstar/goods/{id}/status", _ConsoleService_SetGoodsStatus0_HTTP_Handler(srv))
+	r.Handle("POST", "/v1/planstar/goods-skus/{id}/status", _ConsoleService_SetGoodsSkuStatus0_HTTP_Handler(srv))
+	r.Handle("POST", "/v1/planstar/refunds/{id}/review", _ConsoleService_ReviewRefund0_HTTP_Handler(srv))
 }
 
 func _ConsoleService_ListUsers0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
@@ -195,19 +259,379 @@ func _ConsoleService_HandleReport0_HTTP_Handler(srv ConsoleServiceHTTPServer) fu
 	}
 }
 
+func _ConsoleService_GetDashboard0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetDashboardRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceGetDashboard)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetDashboard(ctx, req.(*GetDashboardRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*Dashboard)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_ListAuditLogs0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListAuditLogsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceListAuditLogs)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListAuditLogs(ctx, req.(*ListAuditLogsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*AuditLogSet)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_ListIdeas0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListIdeasRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceListIdeas)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListIdeas(ctx, req.(*ListIdeasRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*IdeaSet)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_GetIdea0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetIdeaRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceGetIdea)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetIdea(ctx, req.(*GetIdeaRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*IdeaDetail)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_ListGoods0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListGoodsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceListGoods)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListGoods(ctx, req.(*ListGoodsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GoodsSet)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_GetGoods0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetGoodsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceGetGoods)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetGoods(ctx, req.(*GetGoodsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GoodsDetail)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_ListGoodsOrders0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListGoodsOrdersRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceListGoodsOrders)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListGoodsOrders(ctx, req.(*ListGoodsOrdersRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GoodsOrderSet)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_GetOrder0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetOrderRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceGetOrder)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetOrder(ctx, req.(*GetOrderRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*OrderDetail)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_ListPayOrders0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListPayOrdersRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceListPayOrders)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListPayOrders(ctx, req.(*ListPayOrdersRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*PayOrderSet)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_ListRefunds0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListRefundsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceListRefunds)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListRefunds(ctx, req.(*ListRefundsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RefundSet)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_ListFeeds0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListFeedsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceListFeeds)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListFeeds(ctx, req.(*ListFeedsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*FeedSet)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_GetFeed0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetFeedRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceGetFeed)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetFeed(ctx, req.(*GetFeedRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*FeedDetail)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_SetFeedStatus0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SetFeedStatusRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceSetFeedStatus)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetFeedStatus(ctx, req.(*SetFeedStatusRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*StatusReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_SetGoodsStatus0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SetGoodsStatusRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceSetGoodsStatus)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetGoodsStatus(ctx, req.(*SetGoodsStatusRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*StatusReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_SetGoodsSkuStatus0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SetGoodsSkuStatusRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceSetGoodsSkuStatus)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetGoodsSkuStatus(ctx, req.(*SetGoodsSkuStatusRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*StatusReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ConsoleService_ReviewRefund0_HTTP_Handler(srv ConsoleServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ReviewRefundRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConsoleServiceReviewRefund)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ReviewRefund(ctx, req.(*ReviewRefundRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RefundReview)
+		return ctx.Result(200, reply)
+	}
+}
+
 type ConsoleServiceHTTPClient interface {
+	// GetDashboard GetDashboard aggregates read-only business metrics for the overview page.
+	GetDashboard(ctx context.Context, req *GetDashboardRequest, opts ...http.CallOption) (rsp *Dashboard, err error)
+	// GetFeed GetFeed returns one feed with its media and author snapshot.
+	GetFeed(ctx context.Context, req *GetFeedRequest, opts ...http.CallOption) (rsp *FeedDetail, err error)
+	// GetGoods GetGoods returns one goods item with its SKUs.
+	GetGoods(ctx context.Context, req *GetGoodsRequest, opts ...http.CallOption) (rsp *GoodsDetail, err error)
+	// GetIdea GetIdea returns one idea with its vote aggregation and recent votes.
+	GetIdea(ctx context.Context, req *GetIdeaRequest, opts ...http.CallOption) (rsp *IdeaDetail, err error)
+	// GetOrder GetOrder returns one unified order with its payments and refunds.
+	GetOrder(ctx context.Context, req *GetOrderRequest, opts ...http.CallOption) (rsp *OrderDetail, err error)
 	// HandleReport HandleReport accepts or rejects a report through the ops service.
 	HandleReport(ctx context.Context, req *HandleReportRequest, opts ...http.CallOption) (rsp *Report, err error)
+	// ListAuditLogs ListAuditLogs pages the console write audit trail (admin role only).
+	ListAuditLogs(ctx context.Context, req *ListAuditLogsRequest, opts ...http.CallOption) (rsp *AuditLogSet, err error)
+	// ListFeeds ListFeeds lists community feeds.
+	ListFeeds(ctx context.Context, req *ListFeedsRequest, opts ...http.CallOption) (rsp *FeedSet, err error)
+	// ListGoods ListGoods lists shop goods.
+	ListGoods(ctx context.Context, req *ListGoodsRequest, opts ...http.CallOption) (rsp *GoodsSet, err error)
+	// ListGoodsOrders ListGoodsOrders lists coin purchases.
+	ListGoodsOrders(ctx context.Context, req *ListGoodsOrdersRequest, opts ...http.CallOption) (rsp *GoodsOrderSet, err error)
+	// ListIdeas ListIdeas lists community ideas.
+	ListIdeas(ctx context.Context, req *ListIdeasRequest, opts ...http.CallOption) (rsp *IdeaSet, err error)
 	// ListOrders ListOrders lists unified orders.
 	ListOrders(ctx context.Context, req *ListOrdersRequest, opts ...http.CallOption) (rsp *OrderSet, err error)
+	// ListPayOrders ListPayOrders lists payment attempts.
+	ListPayOrders(ctx context.Context, req *ListPayOrdersRequest, opts ...http.CallOption) (rsp *PayOrderSet, err error)
 	// ListProjects ListProjects lists projects for moderation.
 	ListProjects(ctx context.Context, req *ListProjectsRequest, opts ...http.CallOption) (rsp *ProjectSet, err error)
+	// ListRefunds ListRefunds lists refund requests.
+	ListRefunds(ctx context.Context, req *ListRefundsRequest, opts ...http.CallOption) (rsp *RefundSet, err error)
 	// ListReports ListReports lists moderation reports.
 	ListReports(ctx context.Context, req *ListReportsRequest, opts ...http.CallOption) (rsp *ReportSet, err error)
 	// ListUsers ListUsers lists business users.
 	ListUsers(ctx context.Context, req *ListUsersRequest, opts ...http.CallOption) (rsp *UserSet, err error)
 	// ReviewProject ReviewProject approves or rejects a project through the ops service.
 	ReviewProject(ctx context.Context, req *ReviewProjectRequest, opts ...http.CallOption) (rsp *ReviewProjectReply, err error)
+	// ReviewRefund ReviewRefund approves or rejects a refund through the ops service.
+	ReviewRefund(ctx context.Context, req *ReviewRefundRequest, opts ...http.CallOption) (rsp *RefundReview, err error)
+	// SetFeedStatus SetFeedStatus hides or shows a community feed through the ops service.
+	SetFeedStatus(ctx context.Context, req *SetFeedStatusRequest, opts ...http.CallOption) (rsp *StatusReply, err error)
+	// SetGoodsSkuStatus SetGoodsSkuStatus puts a goods SKU on or off shelf through the ops service.
+	SetGoodsSkuStatus(ctx context.Context, req *SetGoodsSkuStatusRequest, opts ...http.CallOption) (rsp *StatusReply, err error)
+	// SetGoodsStatus SetGoodsStatus puts a shop goods on or off shelf through the ops service.
+	SetGoodsStatus(ctx context.Context, req *SetGoodsStatusRequest, opts ...http.CallOption) (rsp *StatusReply, err error)
 	// UpdateUserStatus UpdateUserStatus updates the account status of a business user.
 	UpdateUserStatus(ctx context.Context, req *UpdateUserStatusRequest, opts ...http.CallOption) (rsp *User, err error)
 }
@@ -218,6 +642,91 @@ type ConsoleServiceHTTPClientImpl struct {
 
 func NewConsoleServiceHTTPClient(client *http.Client) ConsoleServiceHTTPClient {
 	return &ConsoleServiceHTTPClientImpl{client}
+}
+
+// GetDashboard GetDashboard aggregates read-only business metrics for the overview page.
+func (c *ConsoleServiceHTTPClientImpl) GetDashboard(ctx context.Context, in *GetDashboardRequest, opts ...http.CallOption) (*Dashboard, error) {
+	var out Dashboard
+	pattern := "/v1/planstar/dashboard"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationConsoleServiceGetDashboard),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetFeed GetFeed returns one feed with its media and author snapshot.
+func (c *ConsoleServiceHTTPClientImpl) GetFeed(ctx context.Context, in *GetFeedRequest, opts ...http.CallOption) (*FeedDetail, error) {
+	var out FeedDetail
+	pattern := "/v1/planstar/feeds/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationConsoleServiceGetFeed),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetGoods GetGoods returns one goods item with its SKUs.
+func (c *ConsoleServiceHTTPClientImpl) GetGoods(ctx context.Context, in *GetGoodsRequest, opts ...http.CallOption) (*GoodsDetail, error) {
+	var out GoodsDetail
+	pattern := "/v1/planstar/goods/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationConsoleServiceGetGoods),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetIdea GetIdea returns one idea with its vote aggregation and recent votes.
+func (c *ConsoleServiceHTTPClientImpl) GetIdea(ctx context.Context, in *GetIdeaRequest, opts ...http.CallOption) (*IdeaDetail, error) {
+	var out IdeaDetail
+	pattern := "/v1/planstar/ideas/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationConsoleServiceGetIdea),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetOrder GetOrder returns one unified order with its payments and refunds.
+func (c *ConsoleServiceHTTPClientImpl) GetOrder(ctx context.Context, in *GetOrderRequest, opts ...http.CallOption) (*OrderDetail, error) {
+	var out OrderDetail
+	pattern := "/v1/planstar/orders/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationConsoleServiceGetOrder),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // HandleReport HandleReport accepts or rejects a report through the ops service.
@@ -232,6 +741,91 @@ func (c *ConsoleServiceHTTPClientImpl) HandleReport(ctx context.Context, in *Han
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListAuditLogs ListAuditLogs pages the console write audit trail (admin role only).
+func (c *ConsoleServiceHTTPClientImpl) ListAuditLogs(ctx context.Context, in *ListAuditLogsRequest, opts ...http.CallOption) (*AuditLogSet, error) {
+	var out AuditLogSet
+	pattern := "/v1/planstar/audit-logs"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationConsoleServiceListAuditLogs),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListFeeds ListFeeds lists community feeds.
+func (c *ConsoleServiceHTTPClientImpl) ListFeeds(ctx context.Context, in *ListFeedsRequest, opts ...http.CallOption) (*FeedSet, error) {
+	var out FeedSet
+	pattern := "/v1/planstar/feeds"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationConsoleServiceListFeeds),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListGoods ListGoods lists shop goods.
+func (c *ConsoleServiceHTTPClientImpl) ListGoods(ctx context.Context, in *ListGoodsRequest, opts ...http.CallOption) (*GoodsSet, error) {
+	var out GoodsSet
+	pattern := "/v1/planstar/goods"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationConsoleServiceListGoods),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListGoodsOrders ListGoodsOrders lists coin purchases.
+func (c *ConsoleServiceHTTPClientImpl) ListGoodsOrders(ctx context.Context, in *ListGoodsOrdersRequest, opts ...http.CallOption) (*GoodsOrderSet, error) {
+	var out GoodsOrderSet
+	pattern := "/v1/planstar/goods-orders"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationConsoleServiceListGoodsOrders),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListIdeas ListIdeas lists community ideas.
+func (c *ConsoleServiceHTTPClientImpl) ListIdeas(ctx context.Context, in *ListIdeasRequest, opts ...http.CallOption) (*IdeaSet, error) {
+	var out IdeaSet
+	pattern := "/v1/planstar/ideas"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationConsoleServiceListIdeas),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -255,6 +849,23 @@ func (c *ConsoleServiceHTTPClientImpl) ListOrders(ctx context.Context, in *ListO
 	return &out, nil
 }
 
+// ListPayOrders ListPayOrders lists payment attempts.
+func (c *ConsoleServiceHTTPClientImpl) ListPayOrders(ctx context.Context, in *ListPayOrdersRequest, opts ...http.CallOption) (*PayOrderSet, error) {
+	var out PayOrderSet
+	pattern := "/v1/planstar/pay-orders"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationConsoleServiceListPayOrders),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // ListProjects ListProjects lists projects for moderation.
 func (c *ConsoleServiceHTTPClientImpl) ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...http.CallOption) (*ProjectSet, error) {
 	var out ProjectSet
@@ -263,6 +874,23 @@ func (c *ConsoleServiceHTTPClientImpl) ListProjects(ctx context.Context, in *Lis
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationConsoleServiceListProjects),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListRefunds ListRefunds lists refund requests.
+func (c *ConsoleServiceHTTPClientImpl) ListRefunds(ctx context.Context, in *ListRefundsRequest, opts ...http.CallOption) (*RefundSet, error) {
+	var out RefundSet
+	pattern := "/v1/planstar/refunds"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationConsoleServiceListRefunds),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
@@ -315,6 +943,78 @@ func (c *ConsoleServiceHTTPClientImpl) ReviewProject(ctx context.Context, in *Re
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationConsoleServiceReviewProject),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ReviewRefund ReviewRefund approves or rejects a refund through the ops service.
+func (c *ConsoleServiceHTTPClientImpl) ReviewRefund(ctx context.Context, in *ReviewRefundRequest, opts ...http.CallOption) (*RefundReview, error) {
+	var out RefundReview
+	pattern := "/v1/planstar/refunds/{id}/review"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationConsoleServiceReviewRefund),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// SetFeedStatus SetFeedStatus hides or shows a community feed through the ops service.
+func (c *ConsoleServiceHTTPClientImpl) SetFeedStatus(ctx context.Context, in *SetFeedStatusRequest, opts ...http.CallOption) (*StatusReply, error) {
+	var out StatusReply
+	pattern := "/v1/planstar/feeds/{id}/status"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationConsoleServiceSetFeedStatus),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// SetGoodsSkuStatus SetGoodsSkuStatus puts a goods SKU on or off shelf through the ops service.
+func (c *ConsoleServiceHTTPClientImpl) SetGoodsSkuStatus(ctx context.Context, in *SetGoodsSkuStatusRequest, opts ...http.CallOption) (*StatusReply, error) {
+	var out StatusReply
+	pattern := "/v1/planstar/goods-skus/{id}/status"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationConsoleServiceSetGoodsSkuStatus),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// SetGoodsStatus SetGoodsStatus puts a shop goods on or off shelf through the ops service.
+func (c *ConsoleServiceHTTPClientImpl) SetGoodsStatus(ctx context.Context, in *SetGoodsStatusRequest, opts ...http.CallOption) (*StatusReply, error) {
+	var out StatusReply
+	pattern := "/v1/planstar/goods/{id}/status"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationConsoleServiceSetGoodsStatus),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

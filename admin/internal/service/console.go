@@ -332,3 +332,105 @@ func (s *ConsoleService) HandleReport(ctx context.Context, req *consolev1.Handle
 	s.auditWrite(ctx, a, "report.handle", target, "success", req.Status)
 	return convertConsoleReport(report), nil
 }
+
+func (s *ConsoleService) admin(ctx context.Context) (*auth.Auth, error) {
+	a, ok := auth.FromContext(ctx)
+	if !ok {
+		return nil, auth.ErrUnauthenticated
+	}
+	if !a.HasAdminAccess() {
+		return nil, auth.ErrPermissionDenied
+	}
+	return a, nil
+}
+
+// GetDashboard aggregates read-only business metrics for the overview page.
+func (s *ConsoleService) GetDashboard(ctx context.Context, req *consolev1.GetDashboardRequest) (*consolev1.Dashboard, error) {
+	if _, err := s.viewer(ctx); err != nil {
+		return nil, err
+	}
+	dashboard, err := s.uc.Dashboard(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return convertDashboard(dashboard), nil
+}
+
+func convertDashboard(d *biz.Dashboard) *consolev1.Dashboard {
+	out := &consolev1.Dashboard{
+		UsersTotal:      d.UsersTotal,
+		ProjectsTotal:   d.ProjectsTotal,
+		ProjectsOngoing: d.ProjectsOngoing,
+		RaisedTotal:     d.RaisedTotal,
+		PledgesPaid:     d.PledgesPaid,
+		PledgedAmount:   d.PledgedAmount,
+		IdeasTotal:      d.IdeasTotal,
+		IdeasPublished:  d.IdeasPublished,
+		VotesTotal:      d.VotesTotal,
+		VotesSupport:    d.VotesSupport,
+		VotesOppose:     d.VotesOppose,
+		OrdersTotal:     d.OrdersTotal,
+		OrdersPaid:      d.OrdersPaid,
+		Gmv:             d.GMV,
+		RefundsPending:  d.RefundsPending,
+		ReportsPending:  d.ReportsPending,
+		GoodsOnSale:     d.GoodsOnSale,
+		GoodsOrdersPaid: d.GoodsOrdersPaid,
+		CoinsSpent:      d.CoinsSpent,
+		FeedsTotal:      d.FeedsTotal,
+		FeedsHidden:     d.FeedsHidden,
+	}
+	for _, bucket := range d.ProjectsByPublishStatus {
+		out.ProjectsByPublishStatus = append(out.ProjectsByPublishStatus,
+			&consolev1.StatusCount{Status: bucket.Status, Count: bucket.Count})
+	}
+	for _, series := range d.Trends {
+		trend := &consolev1.TrendSeries{Name: series.Name, Points: make([]*consolev1.DailyCount, 0, len(series.Points))}
+		for _, point := range series.Points {
+			trend.Points = append(trend.Points, &consolev1.DailyCount{Date: point.Date, Count: point.Count})
+		}
+		out.Trends = append(out.Trends, trend)
+	}
+	return out
+}
+
+// ListAuditLogs pages the console write audit trail (admin role only).
+func (s *ConsoleService) ListAuditLogs(ctx context.Context, req *consolev1.ListAuditLogsRequest) (*consolev1.AuditLogSet, error) {
+	if _, err := s.admin(ctx); err != nil {
+		return nil, err
+	}
+	pageToken, err := pagination.ParsePageToken(req)
+	if err != nil {
+		return nil, err
+	}
+	limit := consolePageSize(req.PageSize)
+	req.PageSize = int32(limit)
+	logs, err := s.audit.List(ctx, biz.AuditQuery{
+		Keyword: req.Keyword,
+		Action:  req.Action,
+		Result:  req.Result,
+		Offset:  int(pageToken.Offset),
+		Limit:   limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	set := &consolev1.AuditLogSet{Logs: make([]*consolev1.AuditLog, 0, len(logs))}
+	if len(logs) >= limit {
+		set.NextPageToken = pageToken.Next(req).String()
+	}
+	for _, log := range logs {
+		set.Logs = append(set.Logs, &consolev1.AuditLog{
+			Id:         log.ID,
+			AdminId:    log.AdminID,
+			Actor:      log.Actor,
+			Action:     log.Action,
+			Target:     log.Target,
+			Result:     log.Result,
+			Detail:     log.Detail,
+			RemoteAddr: log.RemoteAddr,
+			CreatedAt:  timestamp(log.CreatedAt),
+		})
+	}
+	return set, nil
+}

@@ -206,6 +206,332 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /v1/planstar/audit-logs:
+        get:
+            tags:
+                - ConsoleService
+            description: ListAuditLogs pages the console write audit trail (admin role only).
+            operationId: ConsoleService_ListAuditLogs
+            parameters:
+                - name: keyword
+                  in: query
+                  description: Optional. Matches actor, action or target.
+                  schema:
+                    type: string
+                - name: action
+                  in: query
+                  description: Optional. Exact action filter, e.g. project.review.
+                  schema:
+                    type: string
+                - name: result
+                  in: query
+                  description: Optional. success / failure; empty lists every result.
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  description: Optional. Defaults to 20, capped at 200.
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  description: Optional. Token returned by the previous page.
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.AuditLogSet'
+    /v1/planstar/dashboard:
+        get:
+            tags:
+                - ConsoleService
+            description: GetDashboard aggregates read-only business metrics for the overview page.
+            operationId: ConsoleService_GetDashboard
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.Dashboard'
+    /v1/planstar/feeds:
+        get:
+            tags:
+                - ConsoleService
+            description: ListFeeds lists community feeds.
+            operationId: ConsoleService_ListFeeds
+            parameters:
+                - name: keyword
+                  in: query
+                  description: Optional. Matches feed title, content or feed ID.
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  description: Optional. 1 normal / 0 hidden; omit to list every status.
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.FeedSet'
+    /v1/planstar/feeds/{id}:
+        get:
+            tags:
+                - ConsoleService
+            description: GetFeed returns one feed with its media and author snapshot.
+            operationId: ConsoleService_GetFeed
+            parameters:
+                - name: id
+                  in: path
+                  description: Required. Business feed ID.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.FeedDetail'
+    /v1/planstar/feeds/{id}/status:
+        post:
+            tags:
+                - ConsoleService
+            description: SetFeedStatus hides or shows a community feed through the ops service.
+            operationId: ConsoleService_SetFeedStatus
+            parameters:
+                - name: id
+                  in: path
+                  description: Required. Community feed ID.
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/planstar.admin.v1.SetFeedStatusRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.StatusReply'
+    /v1/planstar/goods:
+        get:
+            tags:
+                - ConsoleService
+            description: ListGoods lists shop goods.
+            operationId: ConsoleService_ListGoods
+            parameters:
+                - name: keyword
+                  in: query
+                  description: Optional. Matches goods name, SN or goods ID.
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  description: Optional. 1 on sale / 0 off sale; omit to list every status.
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.GoodsSet'
+    /v1/planstar/goods-orders:
+        get:
+            tags:
+                - ConsoleService
+            description: ListGoodsOrders lists coin purchases.
+            operationId: ConsoleService_ListGoodsOrders
+            parameters:
+                - name: keyword
+                  in: query
+                  description: Optional. Matches order number or user ID.
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  description: Optional. paid / completed / cancelled; empty lists every status.
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.GoodsOrderSet'
+    /v1/planstar/goods-skus/{id}/status:
+        post:
+            tags:
+                - ConsoleService
+            description: SetGoodsSkuStatus puts a goods SKU on or off shelf through the ops service.
+            operationId: ConsoleService_SetGoodsSkuStatus
+            parameters:
+                - name: id
+                  in: path
+                  description: Required. Shop goods SKU ID.
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/planstar.admin.v1.SetGoodsSkuStatusRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.StatusReply'
+    /v1/planstar/goods/{id}:
+        get:
+            tags:
+                - ConsoleService
+            description: GetGoods returns one goods item with its SKUs.
+            operationId: ConsoleService_GetGoods
+            parameters:
+                - name: id
+                  in: path
+                  description: Required. Business goods ID.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.GoodsDetail'
+    /v1/planstar/goods/{id}/status:
+        post:
+            tags:
+                - ConsoleService
+            description: SetGoodsStatus puts a shop goods on or off shelf through the ops service.
+            operationId: ConsoleService_SetGoodsStatus
+            parameters:
+                - name: id
+                  in: path
+                  description: Required. Shop goods ID.
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/planstar.admin.v1.SetGoodsStatusRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.StatusReply'
+    /v1/planstar/ideas:
+        get:
+            tags:
+                - ConsoleService
+            description: ListIdeas lists community ideas.
+            operationId: ConsoleService_ListIdeas
+            parameters:
+                - name: keyword
+                  in: query
+                  description: Optional. Matches idea title, summary or idea ID.
+                  schema:
+                    type: string
+                - name: publishStatus
+                  in: query
+                  description: Optional. Publish status (0/1/2/3); omit to list every status.
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.IdeaSet'
+    /v1/planstar/ideas/{id}:
+        get:
+            tags:
+                - ConsoleService
+            description: GetIdea returns one idea with its vote aggregation and recent votes.
+            operationId: ConsoleService_GetIdea
+            parameters:
+                - name: id
+                  in: path
+                  description: Required. Business idea ID.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.IdeaDetail'
     /v1/planstar/orders:
         get:
             tags:
@@ -242,6 +568,59 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/planstar.admin.v1.OrderSet'
+    /v1/planstar/orders/{id}:
+        get:
+            tags:
+                - ConsoleService
+            description: GetOrder returns one unified order with its payments and refunds.
+            operationId: ConsoleService_GetOrder
+            parameters:
+                - name: id
+                  in: path
+                  description: Required. Business order ID.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.OrderDetail'
+    /v1/planstar/pay-orders:
+        get:
+            tags:
+                - ConsoleService
+            description: ListPayOrders lists payment attempts.
+            operationId: ConsoleService_ListPayOrders
+            parameters:
+                - name: keyword
+                  in: query
+                  description: Optional. Matches pay number, order number or user ID.
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  description: Optional. pending / success / failed / expired; empty lists every status.
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.PayOrderSet'
     /v1/planstar/projects:
         get:
             tags:
@@ -304,6 +683,65 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/planstar.admin.v1.ReviewProjectReply'
+    /v1/planstar/refunds:
+        get:
+            tags:
+                - ConsoleService
+            description: ListRefunds lists refund requests.
+            operationId: ConsoleService_ListRefunds
+            parameters:
+                - name: keyword
+                  in: query
+                  description: Optional. Matches refund number, order number or user ID.
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  description: Optional. applied / processing / success / rejected; empty lists every status.
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.RefundSet'
+    /v1/planstar/refunds/{id}/review:
+        post:
+            tags:
+                - ConsoleService
+            description: ReviewRefund approves or rejects a refund through the ops service.
+            operationId: ConsoleService_ReviewRefund
+            parameters:
+                - name: id
+                  in: path
+                  description: Required. Payment refund ID.
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/planstar.admin.v1.ReviewRefundRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/planstar.admin.v1.RefundReview'
     /v1/planstar/reports:
         get:
             tags:
@@ -504,6 +942,41 @@ components:
                 email:
                     type: string
             description: LoginRequest is the request message for the Login method.
+        planstar.admin.v1.AuditLog:
+            type: object
+            properties:
+                id:
+                    type: string
+                adminId:
+                    type: string
+                    description: Admin UUID; empty when the actor was not an authenticated admin.
+                actor:
+                    type: string
+                action:
+                    type: string
+                target:
+                    type: string
+                result:
+                    type: string
+                    description: success / failure.
+                detail:
+                    type: string
+                remoteAddr:
+                    type: string
+                createdAt:
+                    type: string
+                    format: date-time
+            description: AuditLog is one console write recorded in planstar_admin.admin_audit_log.
+        planstar.admin.v1.AuditLogSet:
+            type: object
+            properties:
+                logs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.AuditLog'
+                nextPageToken:
+                    type: string
+            description: AuditLogSet is a page of audit logs.
         planstar.admin.v1.BlacklistHit:
             type: object
             properties:
@@ -514,6 +987,255 @@ components:
                     type: string
                     description: Matched keyword or missing field name.
             description: BlacklistHit is one category-blacklist match reported by the ops service.
+        planstar.admin.v1.DailyCount:
+            type: object
+            properties:
+                date:
+                    type: string
+                count:
+                    type: string
+            description: DailyCount is one day of a trend series (date formatted YYYY-MM-DD).
+        planstar.admin.v1.Dashboard:
+            type: object
+            properties:
+                usersTotal:
+                    type: string
+                projectsTotal:
+                    type: string
+                projectsByPublishStatus:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.StatusCount'
+                    description: Buckets keyed by project.publish_status (0/1/2/3).
+                projectsOngoing:
+                    type: string
+                    description: Projects whose funding_status is ongoing.
+                raisedTotal:
+                    type: string
+                    description: Sum of raised_amount over published projects, in cents.
+                pledgesPaid:
+                    type: string
+                    description: Pledges in paid/confirmed/shipped/delivered.
+                pledgedAmount:
+                    type: string
+                    description: Sum of support_amount over paid pledges, in cents.
+                ideasTotal:
+                    type: string
+                ideasPublished:
+                    type: string
+                votesTotal:
+                    type: string
+                votesSupport:
+                    type: string
+                votesOppose:
+                    type: string
+                ordersTotal:
+                    type: string
+                ordersPaid:
+                    type: string
+                    description: Orders with a non-null pay_time.
+                gmv:
+                    type: string
+                    description: Sum of pay_amount over paid orders, in cents.
+                refundsPending:
+                    type: string
+                    description: order_refund rows in applied/processing.
+                reportsPending:
+                    type: string
+                    description: project_report rows still pending.
+                goodsOnSale:
+                    type: string
+                goodsOrdersPaid:
+                    type: string
+                    description: goods_order rows in paid/completed.
+                coinsSpent:
+                    type: string
+                    description: Sum of price_coins over paid/completed goods orders.
+                feedsTotal:
+                    type: string
+                feedsHidden:
+                    type: string
+                    description: Feeds whose status is not 1 (hidden).
+                trends:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.TrendSeries'
+            description: Dashboard aggregates read-only business metrics across the Planstar databases.
+        planstar.admin.v1.Feed:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Business feed ID (feed.feed_id).
+                type:
+                    type: integer
+                    description: Feed type (see dict_enum.FeedType).
+                    format: int32
+                userId:
+                    type: string
+                title:
+                    type: string
+                content:
+                    type: string
+                likes:
+                    type: integer
+                    format: int32
+                replyCount:
+                    type: integer
+                    format: int32
+                views:
+                    type: integer
+                    format: int32
+                status:
+                    type: integer
+                    description: 1 normal; anything else is hidden.
+                    format: int32
+                isQuality:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+                    format: date-time
+            description: Feed is a community post (planstar_community.feed).
+        planstar.admin.v1.FeedDetail:
+            type: object
+            properties:
+                feed:
+                    $ref: '#/components/schemas/planstar.admin.v1.Feed'
+                images:
+                    type: array
+                    items:
+                        type: string
+                videos:
+                    type: array
+                    items:
+                        type: string
+                tags:
+                    type: array
+                    items:
+                        type: string
+                authorName:
+                    type: string
+                    description: Author display name from the feed.user snapshot.
+            description: FeedDetail is a feed plus its media and author snapshot.
+        planstar.admin.v1.FeedSet:
+            type: object
+            properties:
+                feeds:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.Feed'
+                nextPageToken:
+                    type: string
+            description: FeedSet is a page of feeds.
+        planstar.admin.v1.Goods:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Business goods ID (goods.goods_id).
+                goodsSn:
+                    type: string
+                name:
+                    type: string
+                brief:
+                    type: string
+                cover:
+                    type: string
+                category:
+                    type: string
+                status:
+                    type: integer
+                    description: 1 on sale / 0 off sale.
+                    format: int32
+                sort:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+                    format: date-time
+            description: Goods is a shop item (planstar_shop.goods).
+        planstar.admin.v1.GoodsDetail:
+            type: object
+            properties:
+                goods:
+                    $ref: '#/components/schemas/planstar.admin.v1.Goods'
+                description:
+                    type: string
+                skus:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.GoodsSku'
+            description: GoodsDetail is a goods item plus its SKUs.
+        planstar.admin.v1.GoodsOrder:
+            type: object
+            properties:
+                id:
+                    type: string
+                orderNo:
+                    type: string
+                userId:
+                    type: string
+                goodsId:
+                    type: string
+                skuId:
+                    type: string
+                skuName:
+                    type: string
+                priceCoins:
+                    type: integer
+                    format: int32
+                status:
+                    type: string
+                    description: paid / completed / cancelled.
+                createdAt:
+                    type: string
+                    format: date-time
+            description: GoodsOrder is a coin purchase (planstar_shop.goods_order).
+        planstar.admin.v1.GoodsOrderSet:
+            type: object
+            properties:
+                orders:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.GoodsOrder'
+                nextPageToken:
+                    type: string
+            description: GoodsOrderSet is a page of goods orders.
+        planstar.admin.v1.GoodsSet:
+            type: object
+            properties:
+                goods:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.Goods'
+                nextPageToken:
+                    type: string
+            description: GoodsSet is a page of goods.
+        planstar.admin.v1.GoodsSku:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Business SKU ID (goods_sku.sku_id).
+                goodsId:
+                    type: string
+                skuName:
+                    type: string
+                priceCoins:
+                    type: integer
+                    format: int32
+                stock:
+                    type: integer
+                    format: int32
+                sold:
+                    type: integer
+                    format: int32
+                status:
+                    type: integer
+                    description: 1 on sale / 0 off sale.
+                    format: int32
+            description: GoodsSku is one sellable unit (planstar_shop.goods_sku).
         planstar.admin.v1.HandleReportRequest:
             type: object
             properties:
@@ -527,6 +1249,103 @@ components:
                     type: string
                     description: Optional. Resolution note; the ops service fills a default when empty.
             description: HandleReportRequest is the request for HandleReport.
+        planstar.admin.v1.Idea:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Business idea ID (project_idea.idea_id).
+                userId:
+                    type: string
+                title:
+                    type: string
+                summary:
+                    type: string
+                cover:
+                    type: string
+                categoryId:
+                    type: string
+                categoryName:
+                    type: string
+                    description: Category name resolved from project_category.name.
+                stage:
+                    type: integer
+                    description: 'Stage: 1 concept / 2 validated.'
+                    format: int32
+                publishStatus:
+                    type: integer
+                    description: 'Publish status: 0 draft, 1 published, 2 under review, 3 rejected.'
+                    format: int32
+                status:
+                    type: integer
+                    description: 'Visibility: 1 normal / 0 hidden.'
+                    format: int32
+                supportCount:
+                    type: integer
+                    format: int32
+                opposeCount:
+                    type: integer
+                    format: int32
+                coinIntentSum:
+                    type: string
+                    description: Sum of pledged coin intent.
+                createdAt:
+                    type: string
+                    format: date-time
+            description: Idea is a community idea (planstar_catalog.project_idea).
+        planstar.admin.v1.IdeaDetail:
+            type: object
+            properties:
+                idea:
+                    $ref: '#/components/schemas/planstar.admin.v1.Idea'
+                description:
+                    type: string
+                votesTotal:
+                    type: string
+                votesSupport:
+                    type: string
+                votesOppose:
+                    type: string
+                recentVotes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.IdeaVote'
+            description: IdeaDetail is an idea plus its vote aggregation and recent votes.
+        planstar.admin.v1.IdeaSet:
+            type: object
+            properties:
+                ideas:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.Idea'
+                nextPageToken:
+                    type: string
+            description: IdeaSet is a page of ideas.
+        planstar.admin.v1.IdeaVote:
+            type: object
+            properties:
+                id:
+                    type: string
+                ideaId:
+                    type: string
+                userId:
+                    type: string
+                voteType:
+                    type: integer
+                    description: 1 support / 2 oppose.
+                    format: int32
+                coinTier:
+                    type: integer
+                    description: 'Coin tier: 0/5/10/20.'
+                    format: int32
+                reasonCode:
+                    type: string
+                reasonText:
+                    type: string
+                createdAt:
+                    type: string
+                    format: date-time
+            description: IdeaVote is one vote on an idea (planstar_catalog.project_idea_vote).
         planstar.admin.v1.Order:
             type: object
             properties:
@@ -549,6 +1368,31 @@ components:
                     type: string
                     format: date-time
             description: Order is a unified order (planstar_order.order_info).
+        planstar.admin.v1.OrderDetail:
+            type: object
+            properties:
+                order:
+                    $ref: '#/components/schemas/planstar.admin.v1.Order'
+                title:
+                    type: string
+                totalAmount:
+                    type: string
+                    description: Order total in cents.
+                refundAmount:
+                    type: string
+                    description: Already-refunded amount in cents.
+                payTime:
+                    type: string
+                    format: date-time
+                payOrders:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.PayOrder'
+                refunds:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.Refund'
+            description: OrderDetail is a unified order plus its payment attempts and refunds.
         planstar.admin.v1.OrderSet:
             type: object
             properties:
@@ -559,6 +1403,50 @@ components:
                 nextPageToken:
                     type: string
             description: OrderSet is a page of orders.
+        planstar.admin.v1.PayOrder:
+            type: object
+            properties:
+                id:
+                    type: string
+                payNo:
+                    type: string
+                orderNo:
+                    type: string
+                orderId:
+                    type: string
+                userId:
+                    type: string
+                channel:
+                    type: string
+                    description: wechat / alipay / unionpay / balance.
+                amount:
+                    type: string
+                    description: Amount in cents.
+                status:
+                    type: string
+                    description: pending / success / failed / expired.
+                thirdTradeNo:
+                    type: string
+                paidAt:
+                    type: string
+                    format: date-time
+                expireAt:
+                    type: string
+                    format: date-time
+                createdAt:
+                    type: string
+                    format: date-time
+            description: PayOrder is a payment attempt (planstar_payment.pay_order).
+        planstar.admin.v1.PayOrderSet:
+            type: object
+            properties:
+                payOrders:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.PayOrder'
+                nextPageToken:
+                    type: string
+            description: PayOrderSet is a page of payment attempts.
         planstar.admin.v1.Project:
             type: object
             properties:
@@ -609,6 +1497,66 @@ components:
                 nextPageToken:
                     type: string
             description: ProjectSet is a page of projects.
+        planstar.admin.v1.Refund:
+            type: object
+            properties:
+                id:
+                    type: string
+                refundNo:
+                    type: string
+                orderId:
+                    type: string
+                orderNo:
+                    type: string
+                userId:
+                    type: string
+                reasonCode:
+                    type: string
+                reasonText:
+                    type: string
+                refundableAmount:
+                    type: string
+                    description: Refundable amount in cents.
+                status:
+                    type: string
+                    description: applied / processing / success / rejected.
+                expectedArrivalDays:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+                    format: date-time
+            description: Refund is a refund request (planstar_payment.order_refund).
+        planstar.admin.v1.RefundReview:
+            type: object
+            properties:
+                refundId:
+                    type: string
+                refundNo:
+                    type: string
+                orderId:
+                    type: string
+                status:
+                    type: string
+                    description: success or rejected.
+                orderStatus:
+                    type: integer
+                    description: Unified order status after the review.
+                    format: int32
+                refundAmount:
+                    type: string
+                    description: Refunded amount in cents.
+            description: RefundReview is the result of reviewing a refund.
+        planstar.admin.v1.RefundSet:
+            type: object
+            properties:
+                refunds:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.Refund'
+                nextPageToken:
+                    type: string
+            description: RefundSet is a page of refunds.
         planstar.admin.v1.Report:
             type: object
             properties:
@@ -679,6 +1627,78 @@ components:
                     type: string
                     description: Required. approve or reject.
             description: ReviewProjectRequest is the request for ReviewProject.
+        planstar.admin.v1.ReviewRefundRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Required. Payment refund ID.
+                decision:
+                    type: string
+                    description: Required. approve or reject.
+            description: ReviewRefundRequest is the request for ReviewRefund.
+        planstar.admin.v1.SetFeedStatusRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Required. Community feed ID.
+                status:
+                    type: integer
+                    description: Required. 0 hidden, 1 normal.
+                    format: int32
+            description: SetFeedStatusRequest is the request for SetFeedStatus.
+        planstar.admin.v1.SetGoodsSkuStatusRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Required. Shop goods SKU ID.
+                status:
+                    type: integer
+                    description: Required. 0 off shelf, 1 on shelf.
+                    format: int32
+            description: SetGoodsSkuStatusRequest is the request for SetGoodsSkuStatus.
+        planstar.admin.v1.SetGoodsStatusRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Required. Shop goods ID.
+                status:
+                    type: integer
+                    description: Required. 0 off shelf, 1 on shelf.
+                    format: int32
+            description: SetGoodsStatusRequest is the request for SetGoodsStatus.
+        planstar.admin.v1.StatusCount:
+            type: object
+            properties:
+                status:
+                    type: integer
+                    format: int32
+                count:
+                    type: string
+            description: StatusCount is one bucket of a grouped count.
+        planstar.admin.v1.StatusReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                status:
+                    type: integer
+                    format: int32
+            description: StatusReply echoes the id and status after a status write.
+        planstar.admin.v1.TrendSeries:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: 'Series key: orders / pledges / votes / new_users.'
+                points:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/planstar.admin.v1.DailyCount'
+            description: TrendSeries is a named daily series covering the last 14 days.
         planstar.admin.v1.UpdateUserStatusRequest:
             type: object
             properties:

@@ -3,6 +3,8 @@ package biz
 import (
 	"context"
 	"log/slog"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -21,6 +23,29 @@ type AuditEntry struct {
 // AuditRepo persists audit entries.
 type AuditRepo interface {
 	Record(context.Context, *AuditEntry) error
+	ListAuditLogs(context.Context, AuditQuery) ([]*AuditLog, error)
+}
+
+// AuditLog is one recorded console write read back for the audit page.
+type AuditLog struct {
+	ID         int64
+	AdminID    string
+	Actor      string
+	Action     string
+	Target     string
+	Result     string
+	Detail     string
+	RemoteAddr string
+	CreatedAt  time.Time
+}
+
+// AuditQuery filters and pages the audit trail. Empty Action/Result mean "all".
+type AuditQuery struct {
+	Keyword string
+	Action  string
+	Result  string
+	Offset  int
+	Limit   int
 }
 
 // AuditUsecase records write actions without ever blocking the main flow: a
@@ -66,4 +91,18 @@ func (uc *AuditUsecase) Record(ctx context.Context, entry *AuditEntry) {
 		slog.String("result", entry.Result),
 		slog.String("remote_addr", entry.RemoteAddr),
 	)
+}
+
+// List pages the audit trail for the console audit page.
+func (uc *AuditUsecase) List(ctx context.Context, q AuditQuery) ([]*AuditLog, error) {
+	q.Keyword = strings.TrimSpace(q.Keyword)
+	q.Action = strings.TrimSpace(q.Action)
+	q.Result = strings.TrimSpace(q.Result)
+	switch q.Result {
+	case "", "success", "failure":
+	default:
+		return nil, ErrInvalidResult
+	}
+	normalizeQuery(&q.Keyword, &q.Offset, &q.Limit)
+	return uc.repo.ListAuditLogs(ctx, q)
 }

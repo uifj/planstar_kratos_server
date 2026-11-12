@@ -198,6 +198,447 @@ message HandleReportRequest {
   string note = 3;
 }
 
+// SetFeedStatusRequest is the request for SetFeedStatus.
+message SetFeedStatusRequest {
+  // Required. Community feed ID.
+  int64 id = 1;
+  // Required. 0 hidden, 1 normal.
+  int32 status = 2;
+}
+
+// SetGoodsStatusRequest is the request for SetGoodsStatus.
+message SetGoodsStatusRequest {
+  // Required. Shop goods ID.
+  int64 id = 1;
+  // Required. 0 off shelf, 1 on shelf.
+  int32 status = 2;
+}
+
+// SetGoodsSkuStatusRequest is the request for SetGoodsSkuStatus.
+message SetGoodsSkuStatusRequest {
+  // Required. Shop goods SKU ID.
+  int64 id = 1;
+  // Required. 0 off shelf, 1 on shelf.
+  int32 status = 2;
+}
+
+// StatusReply echoes the id and status after a status write.
+message StatusReply {
+  int64 id = 1;
+  int32 status = 2;
+}
+
+// ReviewRefundRequest is the request for ReviewRefund.
+message ReviewRefundRequest {
+  // Required. Payment refund ID.
+  int64 id = 1;
+  // Required. approve or reject.
+  string decision = 2;
+}
+
+// RefundReview is the result of reviewing a refund.
+message RefundReview {
+  int64 refund_id = 1;
+  string refund_no = 2;
+  int64 order_id = 3;
+  // success or rejected.
+  string status = 4;
+  // Unified order status after the review.
+  int32 order_status = 5;
+  // Refunded amount in cents.
+  int64 refund_amount = 6;
+}
+
+// StatusCount is one bucket of a grouped count.
+message StatusCount {
+  int32 status = 1;
+  int64 count = 2;
+}
+
+// DailyCount is one day of a trend series (date formatted YYYY-MM-DD).
+message DailyCount {
+  string date = 1;
+  int64 count = 2;
+}
+
+// TrendSeries is a named daily series covering the last 14 days.
+message TrendSeries {
+  // Series key: orders / pledges / votes / new_users.
+  string name = 1;
+  repeated DailyCount points = 2;
+}
+
+// Dashboard aggregates read-only business metrics across the Planstar databases.
+message Dashboard {
+  int64 users_total = 1;
+  int64 projects_total = 2;
+  // Buckets keyed by project.publish_status (0/1/2/3).
+  repeated StatusCount projects_by_publish_status = 3;
+  // Projects whose funding_status is ongoing.
+  int64 projects_ongoing = 4;
+  // Sum of raised_amount over published projects, in cents.
+  int64 raised_total = 5;
+  // Pledges in paid/confirmed/shipped/delivered.
+  int64 pledges_paid = 6;
+  // Sum of support_amount over paid pledges, in cents.
+  int64 pledged_amount = 7;
+  int64 ideas_total = 8;
+  int64 ideas_published = 9;
+  int64 votes_total = 10;
+  int64 votes_support = 11;
+  int64 votes_oppose = 12;
+  int64 orders_total = 13;
+  // Orders with a non-null pay_time.
+  int64 orders_paid = 14;
+  // Sum of pay_amount over paid orders, in cents.
+  int64 gmv = 15;
+  // order_refund rows in applied/processing.
+  int64 refunds_pending = 16;
+  // project_report rows still pending.
+  int64 reports_pending = 17;
+  int64 goods_on_sale = 18;
+  // goods_order rows in paid/completed.
+  int64 goods_orders_paid = 19;
+  // Sum of price_coins over paid/completed goods orders.
+  int64 coins_spent = 20;
+  int64 feeds_total = 21;
+  // Feeds whose status is not 1 (hidden).
+  int64 feeds_hidden = 22;
+  repeated TrendSeries trends = 23;
+}
+
+// GetDashboardRequest is the request for GetDashboard.
+message GetDashboardRequest {}
+
+// AuditLog is one console write recorded in planstar_admin.admin_audit_log.
+message AuditLog {
+  int64 id = 1;
+  // Admin UUID; empty when the actor was not an authenticated admin.
+  string admin_id = 2;
+  string actor = 3;
+  string action = 4;
+  string target = 5;
+  // success / failure.
+  string result = 6;
+  string detail = 7;
+  string remote_addr = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+// AuditLogSet is a page of audit logs.
+message AuditLogSet {
+  repeated AuditLog logs = 1;
+  string next_page_token = 2;
+}
+
+// ListAuditLogsRequest is the request for ListAuditLogs.
+message ListAuditLogsRequest {
+  // Optional. Matches actor, action or target.
+  string keyword = 1;
+  // Optional. Exact action filter, e.g. project.review.
+  string action = 2;
+  // Optional. success / failure; empty lists every result.
+  string result = 3;
+  // Optional. Defaults to 20, capped at 200.
+  int32 page_size = 4;
+  // Optional. Token returned by the previous page.
+  string page_token = 5;
+}
+
+// Idea is a community idea (planstar_catalog.project_idea).
+message Idea {
+  // Business idea ID (project_idea.idea_id).
+  int64 id = 1;
+  int64 user_id = 2;
+  string title = 3;
+  string summary = 4;
+  string cover = 5;
+  int64 category_id = 6;
+  // Category name resolved from project_category.name.
+  string category_name = 7;
+  // Stage: 1 concept / 2 validated.
+  int32 stage = 8;
+  // Publish status: 0 draft, 1 published, 2 under review, 3 rejected.
+  int32 publish_status = 9;
+  // Visibility: 1 normal / 0 hidden.
+  int32 status = 10;
+  int32 support_count = 11;
+  int32 oppose_count = 12;
+  // Sum of pledged coin intent.
+  int64 coin_intent_sum = 13;
+  google.protobuf.Timestamp created_at = 14;
+}
+
+// IdeaSet is a page of ideas.
+message IdeaSet {
+  repeated Idea ideas = 1;
+  string next_page_token = 2;
+}
+
+// IdeaVote is one vote on an idea (planstar_catalog.project_idea_vote).
+message IdeaVote {
+  int64 id = 1;
+  int64 idea_id = 2;
+  int64 user_id = 3;
+  // 1 support / 2 oppose.
+  int32 vote_type = 4;
+  // Coin tier: 0/5/10/20.
+  int32 coin_tier = 5;
+  string reason_code = 6;
+  string reason_text = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+// IdeaDetail is an idea plus its vote aggregation and recent votes.
+message IdeaDetail {
+  Idea idea = 1;
+  string description = 2;
+  int64 votes_total = 3;
+  int64 votes_support = 4;
+  int64 votes_oppose = 5;
+  repeated IdeaVote recent_votes = 6;
+}
+
+// Goods is a shop item (planstar_shop.goods).
+message Goods {
+  // Business goods ID (goods.goods_id).
+  int64 id = 1;
+  string goods_sn = 2;
+  string name = 3;
+  string brief = 4;
+  string cover = 5;
+  string category = 6;
+  // 1 on sale / 0 off sale.
+  int32 status = 7;
+  int32 sort = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+// GoodsSet is a page of goods.
+message GoodsSet {
+  repeated Goods goods = 1;
+  string next_page_token = 2;
+}
+
+// GoodsSku is one sellable unit (planstar_shop.goods_sku).
+message GoodsSku {
+  // Business SKU ID (goods_sku.sku_id).
+  int64 id = 1;
+  int64 goods_id = 2;
+  string sku_name = 3;
+  int32 price_coins = 4;
+  int32 stock = 5;
+  int32 sold = 6;
+  // 1 on sale / 0 off sale.
+  int32 status = 7;
+}
+
+// GoodsDetail is a goods item plus its SKUs.
+message GoodsDetail {
+  Goods goods = 1;
+  string description = 2;
+  repeated GoodsSku skus = 3;
+}
+
+// GoodsOrder is a coin purchase (planstar_shop.goods_order).
+message GoodsOrder {
+  int64 id = 1;
+  string order_no = 2;
+  int64 user_id = 3;
+  int64 goods_id = 4;
+  int64 sku_id = 5;
+  string sku_name = 6;
+  int32 price_coins = 7;
+  // paid / completed / cancelled.
+  string status = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+// GoodsOrderSet is a page of goods orders.
+message GoodsOrderSet {
+  repeated GoodsOrder orders = 1;
+  string next_page_token = 2;
+}
+
+// PayOrder is a payment attempt (planstar_payment.pay_order).
+message PayOrder {
+  int64 id = 1;
+  string pay_no = 2;
+  string order_no = 3;
+  int64 order_id = 4;
+  int64 user_id = 5;
+  // wechat / alipay / unionpay / balance.
+  string channel = 6;
+  // Amount in cents.
+  int64 amount = 7;
+  // pending / success / failed / expired.
+  string status = 8;
+  string third_trade_no = 9;
+  google.protobuf.Timestamp paid_at = 10;
+  google.protobuf.Timestamp expire_at = 11;
+  google.protobuf.Timestamp created_at = 12;
+}
+
+// PayOrderSet is a page of payment attempts.
+message PayOrderSet {
+  repeated PayOrder pay_orders = 1;
+  string next_page_token = 2;
+}
+
+// Refund is a refund request (planstar_payment.order_refund).
+message Refund {
+  int64 id = 1;
+  string refund_no = 2;
+  int64 order_id = 3;
+  string order_no = 4;
+  int64 user_id = 5;
+  string reason_code = 6;
+  string reason_text = 7;
+  // Refundable amount in cents.
+  int64 refundable_amount = 8;
+  // applied / processing / success / rejected.
+  string status = 9;
+  int32 expected_arrival_days = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+// RefundSet is a page of refunds.
+message RefundSet {
+  repeated Refund refunds = 1;
+  string next_page_token = 2;
+}
+
+// OrderDetail is a unified order plus its payment attempts and refunds.
+message OrderDetail {
+  Order order = 1;
+  string title = 2;
+  // Order total in cents.
+  int64 total_amount = 3;
+  // Already-refunded amount in cents.
+  int64 refund_amount = 4;
+  google.protobuf.Timestamp pay_time = 5;
+  repeated PayOrder pay_orders = 6;
+  repeated Refund refunds = 7;
+}
+
+// Feed is a community post (planstar_community.feed).
+message Feed {
+  // Business feed ID (feed.feed_id).
+  int64 id = 1;
+  // Feed type (see dict_enum.FeedType).
+  int32 type = 2;
+  int64 user_id = 3;
+  string title = 4;
+  string content = 5;
+  int32 likes = 6;
+  int32 reply_count = 7;
+  int32 views = 8;
+  // 1 normal; anything else is hidden.
+  int32 status = 9;
+  int32 is_quality = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+// FeedSet is a page of feeds.
+message FeedSet {
+  repeated Feed feeds = 1;
+  string next_page_token = 2;
+}
+
+// FeedDetail is a feed plus its media and author snapshot.
+message FeedDetail {
+  Feed feed = 1;
+  repeated string images = 2;
+  repeated string videos = 3;
+  repeated string tags = 4;
+  // Author display name from the feed.user snapshot.
+  string author_name = 5;
+}
+
+// ListIdeasRequest is the request for ListIdeas.
+message ListIdeasRequest {
+  // Optional. Matches idea title, summary or idea ID.
+  string keyword = 1;
+  // Optional. Publish status (0/1/2/3); omit to list every status.
+  optional int32 publish_status = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+// GetIdeaRequest is the request for GetIdea.
+message GetIdeaRequest {
+  // Required. Business idea ID.
+  int64 id = 1;
+}
+
+// ListGoodsRequest is the request for ListGoods.
+message ListGoodsRequest {
+  // Optional. Matches goods name, SN or goods ID.
+  string keyword = 1;
+  // Optional. 1 on sale / 0 off sale; omit to list every status.
+  optional int32 status = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+// GetGoodsRequest is the request for GetGoods.
+message GetGoodsRequest {
+  // Required. Business goods ID.
+  int64 id = 1;
+}
+
+// ListGoodsOrdersRequest is the request for ListGoodsOrders.
+message ListGoodsOrdersRequest {
+  // Optional. Matches order number or user ID.
+  string keyword = 1;
+  // Optional. paid / completed / cancelled; empty lists every status.
+  string status = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+// GetOrderRequest is the request for GetOrder.
+message GetOrderRequest {
+  // Required. Business order ID.
+  int64 id = 1;
+}
+
+// ListPayOrdersRequest is the request for ListPayOrders.
+message ListPayOrdersRequest {
+  // Optional. Matches pay number, order number or user ID.
+  string keyword = 1;
+  // Optional. pending / success / failed / expired; empty lists every status.
+  string status = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+// ListRefundsRequest is the request for ListRefunds.
+message ListRefundsRequest {
+  // Optional. Matches refund number, order number or user ID.
+  string keyword = 1;
+  // Optional. applied / processing / success / rejected; empty lists every status.
+  string status = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+// ListFeedsRequest is the request for ListFeeds.
+message ListFeedsRequest {
+  // Optional. Matches feed title, content or feed ID.
+  string keyword = 1;
+  // Optional. 1 normal / 0 hidden; omit to list every status.
+  optional int32 status = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+// GetFeedRequest is the request for GetFeed.
+message GetFeedRequest {
+  // Required. Business feed ID.
+  int64 id = 1;
+}
+
 // ConsoleService exposes read-mostly business management APIs for the console.
 service ConsoleService {
   // ListUsers lists business users.
@@ -242,6 +683,106 @@ service ConsoleService {
   rpc HandleReport (HandleReportRequest) returns (Report) {
     option (google.api.http) = {
       post: "/v1/planstar/reports/{id}/handle"
+      body: "*"
+    };
+  }
+  // GetDashboard aggregates read-only business metrics for the overview page.
+  rpc GetDashboard (GetDashboardRequest) returns (Dashboard) {
+    option (google.api.http) = {
+      get: "/v1/planstar/dashboard"
+    };
+  }
+  // ListAuditLogs pages the console write audit trail (admin role only).
+  rpc ListAuditLogs (ListAuditLogsRequest) returns (AuditLogSet) {
+    option (google.api.http) = {
+      get: "/v1/planstar/audit-logs"
+    };
+  }
+  // ListIdeas lists community ideas.
+  rpc ListIdeas (ListIdeasRequest) returns (IdeaSet) {
+    option (google.api.http) = {
+      get: "/v1/planstar/ideas"
+    };
+  }
+  // GetIdea returns one idea with its vote aggregation and recent votes.
+  rpc GetIdea (GetIdeaRequest) returns (IdeaDetail) {
+    option (google.api.http) = {
+      get: "/v1/planstar/ideas/{id}"
+    };
+  }
+  // ListGoods lists shop goods.
+  rpc ListGoods (ListGoodsRequest) returns (GoodsSet) {
+    option (google.api.http) = {
+      get: "/v1/planstar/goods"
+    };
+  }
+  // GetGoods returns one goods item with its SKUs.
+  rpc GetGoods (GetGoodsRequest) returns (GoodsDetail) {
+    option (google.api.http) = {
+      get: "/v1/planstar/goods/{id}"
+    };
+  }
+  // ListGoodsOrders lists coin purchases.
+  rpc ListGoodsOrders (ListGoodsOrdersRequest) returns (GoodsOrderSet) {
+    option (google.api.http) = {
+      get: "/v1/planstar/goods-orders"
+    };
+  }
+  // GetOrder returns one unified order with its payments and refunds.
+  rpc GetOrder (GetOrderRequest) returns (OrderDetail) {
+    option (google.api.http) = {
+      get: "/v1/planstar/orders/{id}"
+    };
+  }
+  // ListPayOrders lists payment attempts.
+  rpc ListPayOrders (ListPayOrdersRequest) returns (PayOrderSet) {
+    option (google.api.http) = {
+      get: "/v1/planstar/pay-orders"
+    };
+  }
+  // ListRefunds lists refund requests.
+  rpc ListRefunds (ListRefundsRequest) returns (RefundSet) {
+    option (google.api.http) = {
+      get: "/v1/planstar/refunds"
+    };
+  }
+  // ListFeeds lists community feeds.
+  rpc ListFeeds (ListFeedsRequest) returns (FeedSet) {
+    option (google.api.http) = {
+      get: "/v1/planstar/feeds"
+    };
+  }
+  // GetFeed returns one feed with its media and author snapshot.
+  rpc GetFeed (GetFeedRequest) returns (FeedDetail) {
+    option (google.api.http) = {
+      get: "/v1/planstar/feeds/{id}"
+    };
+  }
+  // SetFeedStatus hides or shows a community feed through the ops service.
+  rpc SetFeedStatus (SetFeedStatusRequest) returns (StatusReply) {
+    option (google.api.http) = {
+      post: "/v1/planstar/feeds/{id}/status"
+      body: "*"
+    };
+  }
+  // SetGoodsStatus puts a shop goods on or off shelf through the ops service.
+  rpc SetGoodsStatus (SetGoodsStatusRequest) returns (StatusReply) {
+    option (google.api.http) = {
+      post: "/v1/planstar/goods/{id}/status"
+      body: "*"
+    };
+  }
+  // SetGoodsSkuStatus puts a goods SKU on or off shelf through the ops service.
+  rpc SetGoodsSkuStatus (SetGoodsSkuStatusRequest) returns (StatusReply) {
+    option (google.api.http) = {
+      post: "/v1/planstar/goods-skus/{id}/status"
+      body: "*"
+    };
+  }
+  // ReviewRefund approves or rejects a refund through the ops service.
+  rpc ReviewRefund (ReviewRefundRequest) returns (RefundReview) {
+    option (google.api.http) = {
+      post: "/v1/planstar/refunds/{id}/review"
       body: "*"
     };
   }
