@@ -26,9 +26,8 @@ export default [
     path: "/overview",
     name: "overview",
     icon: "dashboard",
-    // 概览页读的是 ListAdmins，服务端同样要求管理员权限，这里必须一致，
-    // 否则非管理员登录后会落在一个只显示 0 和权限错误的页面上。
-    access: "canAdmin",
+    // GetDashboard 是只读聚合，服务端只要求 viewer，三个角色都能进。
+    access: "canView",
     component: "./Overview",
   },
   {
@@ -37,6 +36,13 @@ export default [
     path: "/admins",
     access: "canAdmin",
     component: "./admins",
+  },
+  {
+    name: "auditLogs",
+    icon: "audit",
+    path: "/audit-logs",
+    access: "canAdmin",
+    component: "./audit-logs",
   },
   {
     name: "planstar",
@@ -54,22 +60,51 @@ export default [
         component: "./planstar/projects",
       },
       {
+        name: "planstarIdeas",
+        path: "/planstar/ideas",
+        component: "./planstar/ideas",
+      },
+      {
+        name: "planstarGoods",
+        path: "/planstar/goods",
+        component: "./planstar/goods",
+      },
+      {
+        name: "planstarGoodsOrders",
+        path: "/planstar/goods-orders",
+        component: "./planstar/goods-orders",
+      },
+      {
         name: "planstarOrders",
         path: "/planstar/orders",
         component: "./planstar/orders",
+      },
+      {
+        name: "planstarPayOrders",
+        path: "/planstar/pay-orders",
+        component: "./planstar/pay-orders",
+      },
+      {
+        name: "planstarRefunds",
+        path: "/planstar/refunds",
+        component: "./planstar/refunds",
       },
       {
         name: "planstarReports",
         path: "/planstar/reports",
         component: "./planstar/reports",
       },
+      {
+        name: "planstarFeeds",
+        path: "/planstar/feeds",
+        component: "./planstar/feeds",
+      },
     ],
   },
   {
-    // 概览页只对 admin 开放；登录后的默认落点必须所有角色都能进入，
-    // 否则 operator/viewer 会被直接丢到 403。
+    // 概览页对所有角色开放（GetDashboard 只要求 viewer），作为统一落点。
     path: "/",
-    redirect: "/planstar/users",
+    redirect: "/overview",
   },
   {
     component: "404",

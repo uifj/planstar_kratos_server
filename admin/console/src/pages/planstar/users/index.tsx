@@ -87,15 +87,13 @@ const UserTable: React.FC = () => {
       width: 110,
       valueEnum: {
         1: {
-          text: (
-            <FormattedMessage id="pages.planstar.users.status.normal" />
-          ),
+          text: intl.formatMessage({ id: 'pages.planstar.users.status.normal' }),
           status: 'Success',
         },
         0: {
-          text: (
-            <FormattedMessage id="pages.planstar.users.status.disabled" />
-          ),
+          text: intl.formatMessage({
+            id: 'pages.planstar.users.status.disabled',
+          }),
           status: 'Default',
         },
       },

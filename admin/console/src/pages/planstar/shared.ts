@@ -41,9 +41,12 @@ export function useCursorPager(pageSize = PAGE_SIZE) {
 export const optionalIntFilter = (value?: number) =>
   value === 0 ? ('0' as unknown as number) : value;
 
-/** 金额字段（分）转成人民币文案。 */
-export const formatCents = (cents?: number) =>
-  typeof cents === 'number' ? `¥${(cents / 100).toFixed(2)}` : '-';
+/** 金额字段（分）转成人民币文案。protojson 把 int64 序列化成字符串，两种都收。 */
+export const formatCents = (cents?: number | string) => {
+  if (cents === undefined || cents === null || cents === '') return '-';
+  const value = Number(cents);
+  return Number.isFinite(value) ? `¥${(value / 100).toFixed(2)}` : '-';
+};
 
 /** 达成率以千分数返回，1000 表示 100%。 */
 export const formatPermille = (permille?: number) =>
@@ -55,3 +58,77 @@ export const maskMobile = (mobile?: string) => {
   if (mobile.length < 7) return mobile;
   return `${mobile.slice(0, 3)}****${mobile.slice(-4)}`;
 };
+
+/** useIntl() 的最小结构类型，避免直接依赖 react-intl 的类型导出。 */
+type StatusIntl = { formatMessage: (descriptor: { id: string }) => string };
+
+/** 状态枚举的单一事实源：文案 id + ProTable 徽章色。列表与详情抽屉共用。 */
+export type StatusMeta = {
+  id: string;
+  status: 'Default' | 'Success' | 'Processing' | 'Error' | 'Warning';
+};
+
+export const IDEA_PUBLISH_STATUS: Record<number, StatusMeta> = {
+  0: { id: 'pages.planstar.projects.publish.draft', status: 'Default' },
+  1: { id: 'pages.planstar.projects.publish.published', status: 'Success' },
+  2: { id: 'pages.planstar.projects.publish.reviewing', status: 'Processing' },
+  3: { id: 'pages.planstar.projects.publish.rejected', status: 'Error' },
+};
+
+export const GOODS_STATUS: Record<number, StatusMeta> = {
+  1: { id: 'pages.planstar.goods.status.on', status: 'Success' },
+  0: { id: 'pages.planstar.goods.status.off', status: 'Default' },
+};
+
+export const FEED_STATUS: Record<number, StatusMeta> = {
+  1: { id: 'pages.planstar.feeds.status.normal', status: 'Success' },
+  0: { id: 'pages.planstar.feeds.status.hidden', status: 'Default' },
+};
+
+export const ORDER_STATUS: Record<number, StatusMeta> = {
+  1: { id: 'pages.planstar.orders.status.init', status: 'Default' },
+  2: { id: 'pages.planstar.orders.status.paying', status: 'Processing' },
+  3: { id: 'pages.planstar.orders.status.waitingForTickets', status: 'Processing' },
+  4: { id: 'pages.planstar.orders.status.gettingTickets', status: 'Processing' },
+  5: { id: 'pages.planstar.orders.status.finished', status: 'Success' },
+  6: { id: 'pages.planstar.orders.status.canceled', status: 'Error' },
+  7: { id: 'pages.planstar.orders.status.refunded', status: 'Default' },
+};
+
+export const PAY_ORDER_STATUS: Record<string, StatusMeta> = {
+  pending: { id: 'pages.planstar.payOrders.status.pending', status: 'Default' },
+  success: { id: 'pages.planstar.payOrders.status.success', status: 'Success' },
+  failed: { id: 'pages.planstar.payOrders.status.failed', status: 'Error' },
+  expired: { id: 'pages.planstar.payOrders.status.expired', status: 'Warning' },
+};
+
+export const REFUND_STATUS: Record<string, StatusMeta> = {
+  applied: { id: 'pages.planstar.refunds.status.applied', status: 'Warning' },
+  processing: { id: 'pages.planstar.refunds.status.processing', status: 'Processing' },
+  success: { id: 'pages.planstar.refunds.status.success', status: 'Success' },
+  rejected: { id: 'pages.planstar.refunds.status.rejected', status: 'Default' },
+};
+
+/** 把状态映射转成 ProTable valueEnum（保留徽章色）。 */
+export function statusValueEnum(
+  intl: StatusIntl,
+  map: Record<number | string, StatusMeta>,
+) {
+  return Object.fromEntries(
+    Object.entries(map).map(([key, meta]) => [
+      key,
+      { text: intl.formatMessage({ id: meta.id }), status: meta.status },
+    ]),
+  );
+}
+
+/** 详情抽屉里把状态值转成本地化文案；缺省回退 '-'，未知值原样显示。 */
+export function statusText(
+  intl: StatusIntl,
+  map: Record<number | string, StatusMeta>,
+  value?: number | string,
+) {
+  if (value === undefined || value === null || value === '') return '-';
+  const meta = map[value];
+  return meta ? intl.formatMessage({ id: meta.id }) : String(value);
+}

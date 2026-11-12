@@ -67,6 +67,7 @@ const ReportTable: React.FC = () => {
       title: <FormattedMessage id="pages.planstar.reports.reportDescription" />,
       dataIndex: 'description',
       search: false,
+      width: 260,
       ellipsis: true,
       render: (_, record) => record.description || '-',
     },
@@ -76,15 +77,21 @@ const ReportTable: React.FC = () => {
       width: 110,
       valueEnum: {
         pending: {
-          text: <FormattedMessage id="pages.planstar.reports.status.pending" />,
+          text: intl.formatMessage({
+            id: 'pages.planstar.reports.status.pending',
+          }),
           status: 'Processing',
         },
         accepted: {
-          text: <FormattedMessage id="pages.planstar.reports.status.accepted" />,
+          text: intl.formatMessage({
+            id: 'pages.planstar.reports.status.accepted',
+          }),
           status: 'Success',
         },
         rejected: {
-          text: <FormattedMessage id="pages.planstar.reports.status.rejected" />,
+          text: intl.formatMessage({
+            id: 'pages.planstar.reports.status.rejected',
+          }),
           status: 'Default',
         },
       },

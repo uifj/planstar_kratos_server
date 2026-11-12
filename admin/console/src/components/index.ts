@@ -7,6 +7,16 @@ import Footer from './Footer';
 import Logo from './Logo';
 import { SelectLang } from './RightContent';
 import { AvatarDropdown, AvatarName } from './RightContent/AvatarDropdown';
+import TrendChart from './TrendChart';
 
 export type { DataTableRef, DataTableResult } from './DataTable';
-export { AvatarDropdown, AvatarName, DataTable, Footer, Logo, SelectLang };
+export type { TrendPoint } from './TrendChart';
+export {
+  AvatarDropdown,
+  AvatarName,
+  DataTable,
+  Footer,
+  Logo,
+  SelectLang,
+  TrendChart,
+};

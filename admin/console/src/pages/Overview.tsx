@@ -1,161 +1,289 @@
-import { type Admin, type AdminSet, services } from '@/services';
-import { DataTable } from '@/components';
-import type { ProColumns } from '@ant-design/pro-components';
+import { TrendChart } from '@/components';
+import { type Dashboard, services } from '@/services';
 import { PageContainer } from '@ant-design/pro-components';
 import { FormattedMessage, Link, useRequest } from '@umijs/max';
-import { Card, Col, Row, Statistic, Typography, theme } from 'antd';
-import dayjs from 'dayjs';
+import {
+  Alert,
+  Card,
+  Col,
+  Progress,
+  Row,
+  Statistic,
+  Typography,
+  theme,
+} from 'antd';
 import React from 'react';
-import { adminStatusColumn } from './admins/columns';
+import { formatCents } from './planstar/shared';
 
-/**
- * ListAdmins 只返回一页数据加一个 nextPageToken，没有总数字段。所以这里拉一个
- * 足够大的窗口，所有统计都从这一批算出来，再用 nextPageToken 判断这批是否覆盖了
- * 全表：覆盖不到时数字渲染成 "N+"，页面不去暗示一个接口给不出的语义。
- */
-const STATS_WINDOW = 100;
+const PUBLISH_KEYS: Record<number, string> = {
+  0: 'pages.planstar.projects.publish.draft',
+  1: 'pages.planstar.projects.publish.published',
+  2: 'pages.planstar.projects.publish.reviewing',
+  3: 'pages.planstar.projects.publish.rejected',
+};
 
-const RECENT_DAYS = 7;
+const TREND_KEYS: Record<string, string> = {
+  orders: 'pages.overview.trend.orders',
+  pledges: 'pages.overview.trend.pledges',
+  votes: 'pages.overview.trend.votes',
+  new_users: 'pages.overview.trend.new_users',
+};
 
 const Overview: React.FC = () => {
   const { token } = theme.useToken();
 
-  // umi 的 useRequest 默认按 `{ data }` 形状解包响应，而 ListAdmins 直接返回
-  // AdminSet，所以用 formatResult 原样透传。
+  // GetDashboard 直接返回 Dashboard，用 formatResult 原样透传。
   const { data, loading, error } = useRequest(
-    () =>
-      services.admin.ListAdmins({
-        pageSize: STATS_WINDOW,
-        pageToken: undefined,
-        filter: undefined,
-        orderBy: 'created_at desc',
-      }),
-    { formatResult: (res: AdminSet) => res },
+    () => services.console.GetDashboard({}),
+    { formatResult: (res: Dashboard) => res },
   );
 
-  const admins = data?.admins ?? [];
-  // 非空说明窗口被填满且后面还有记录，这批只是最近的一部分。
-  const capped = Boolean(data?.nextPageToken);
+  // 请求失败时显示 "-" 而不是 0，避免把「加载失败」说成「一条都没有」。
+  const stat = (value?: number) => (error ? '-' : (value ?? 0));
+  const money = (cents?: number) => (error ? '-' : formatCents(cents));
 
-  const activeCount = admins.filter((a) => a.status === 'ACTIVE').length;
-  const inactiveCount = admins.filter((a) => a.status === 'INACTIVE').length;
-
-  const since = dayjs().subtract(RECENT_DAYS, 'day');
-  const recentCount = admins.filter(
-    (a) => a.createdAt && dayjs(a.createdAt).isAfter(since),
-  ).length;
-  // 窗口按 created_at desc 排序，所以只要窗口里最老的一条早于 7 天前，整个 7 天
-  // 区间就完整落在窗口内、计数精确；否则区间被窗口截断了。
-  const oldest = admins[admins.length - 1]?.createdAt;
-  const recentExact =
-    !capped || (oldest ? dayjs(oldest).isBefore(since) : true);
-
-  /**
-   * 打满窗口时数字只是下界，用 "+" 标出来。请求失败时显示 "-" —— 此时 admins 是
-   * 空数组，渲染成 0 会把「加载失败」说成「一条都没有」。
-   */
-  const approx = (value: number, exact = !capped) => {
-    if (error) return '-';
-    return exact ? `${value}` : `${value}+`;
-  };
-
-  const columns: ProColumns<Admin>[] = [
-    {
-      title: <FormattedMessage id="pages.searchTable.title.name" />,
-      dataIndex: 'name',
-    },
-    {
-      title: <FormattedMessage id="pages.searchTable.title.email" />,
-      dataIndex: 'email',
-    },
-    adminStatusColumn,
-    {
-      title: <FormattedMessage id="pages.searchTable.title.createdAt" />,
-      dataIndex: 'createdAt',
-      valueType: 'dateTime',
-    },
-  ];
-
-  const stats: {
-    key: string;
-    id: string;
-    value: string;
-    values?: Record<string, number>;
-    color?: string;
-  }[] = [
-    {
-      key: 'total',
-      id: 'pages.overview.stat.total',
-      value: approx(admins.length),
-    },
-    {
-      key: 'active',
-      id: 'pages.overview.stat.active',
-      value: approx(activeCount),
-      color: token.colorSuccess,
-    },
-    {
-      key: 'inactive',
-      id: 'pages.overview.stat.inactive',
-      value: approx(inactiveCount),
-    },
-    {
-      key: 'recent',
-      id: 'pages.overview.stat.recent',
-      value: approx(recentCount, recentExact),
-      values: { days: RECENT_DAYS },
-    },
-  ];
+  const votesTotal = data?.votesTotal ?? 0;
+  const supportPercent =
+    votesTotal > 0
+      ? Math.round(((data?.votesSupport ?? 0) / votesTotal) * 100)
+      : 0;
+  const projectsTotal = data?.projectsTotal ?? 0;
+  const buckets = data?.projectsByPublishStatus ?? [];
 
   return (
-    // 头部不重复当前用户的信息：side 布局把头像、用户名放在侧栏底部了。
-    <PageContainer title={<FormattedMessage id="pages.overview.title" />}>
+    <PageContainer
+      title={<FormattedMessage id="pages.overview.title" />}
+      content={
+        <Typography.Text type="secondary">
+          <FormattedMessage id="pages.overview.description" />
+        </Typography.Text>
+      }
+    >
+      {error && (
+        <Alert
+          type="error"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message={<FormattedMessage id="pages.overview.loadFailed" />}
+        />
+      )}
+
       <Row gutter={[16, 16]}>
-        {stats.map((stat) => (
-          <Col key={stat.key} xs={24} sm={12} xl={6}>
-            <Card loading={loading}>
-              <Statistic
-                title={<FormattedMessage id={stat.id} values={stat.values} />}
-                value={stat.value}
-                styles={
-                  stat.color ? { content: { color: stat.color } } : undefined
-                }
+        <Col xs={24} sm={12} xl={6}>
+          <Card loading={loading}>
+            <Statistic
+              title={<FormattedMessage id="pages.overview.users" />}
+              value={stat(data?.usersTotal)}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
+          <Card loading={loading}>
+            <Statistic
+              title={<FormattedMessage id="pages.overview.projects" />}
+              value={stat(data?.projectsTotal)}
+              suffix={
+                <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                  <FormattedMessage
+                    id="pages.overview.projectsOngoing"
+                    values={{ count: stat(data?.projectsOngoing) }}
+                  />
+                </Typography.Text>
+              }
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
+          <Card loading={loading}>
+            <Statistic
+              title={<FormattedMessage id="pages.overview.raised" />}
+              value={money(data?.raisedTotal)}
+              styles={{ content: { color: token.colorSuccess } }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
+          <Card loading={loading}>
+            <Statistic
+              title={<FormattedMessage id="pages.overview.gmv" />}
+              value={money(data?.gmv)}
+              suffix={
+                <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                  <FormattedMessage
+                    id="pages.overview.ordersPaid"
+                    values={{ count: stat(data?.ordersPaid) }}
+                  />
+                </Typography.Text>
+              }
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col xs={24} sm={12} xl={6}>
+          <Card loading={loading}>
+            <Statistic
+              title={<FormattedMessage id="pages.overview.ideas" />}
+              value={`${stat(data?.ideasPublished)} / ${stat(data?.ideasTotal)}`}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
+          <Card loading={loading}>
+            <Statistic
+              title={<FormattedMessage id="pages.overview.votes" />}
+              value={stat(data?.votesTotal)}
+            />
+            {/* 没有投票时不画比例条：整条 trail 会被误读成「全部反对」。 */}
+            {votesTotal > 0 && (
+              <Progress
+                percent={supportPercent}
+                strokeColor={token.colorSuccess}
+                trailColor={token.colorError}
+                showInfo={false}
+              />
+            )}
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              <FormattedMessage
+                id="pages.overview.votesSplit"
+                values={{
+                  support: stat(data?.votesSupport),
+                  oppose: stat(data?.votesOppose),
+                }}
+              />
+            </Typography.Text>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
+          <Card loading={loading}>
+            <Statistic
+              title={<FormattedMessage id="pages.overview.pledges" />}
+              value={stat(data?.pledgesPaid)}
+              suffix={
+                <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                  {money(data?.pledgedAmount)}
+                </Typography.Text>
+              }
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
+          <Card loading={loading}>
+            <Statistic
+              title={<FormattedMessage id="pages.overview.coins" />}
+              value={stat(data?.coinsSpent)}
+              suffix={
+                <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                  <FormattedMessage
+                    id="pages.overview.goodsOrders"
+                    values={{ count: stat(data?.goodsOrdersPaid) }}
+                  />
+                </Typography.Text>
+              }
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col xs={24} xl={12}>
+          <Card
+            loading={loading}
+            title={<FormattedMessage id="pages.overview.pending" />}
+          >
+            <Row gutter={[16, 16]}>
+              <Col span={8}>
+                <Statistic
+                  title={
+                    <FormattedMessage id="pages.overview.refundsPending" />
+                  }
+                  value={stat(data?.refundsPending)}
+                  styles={
+                    (data?.refundsPending ?? 0) > 0
+                      ? { content: { color: token.colorWarning } }
+                      : undefined
+                  }
+                />
+              </Col>
+              <Col span={8}>
+                <Statistic
+                  title={
+                    <FormattedMessage id="pages.overview.reportsPending" />
+                  }
+                  value={stat(data?.reportsPending)}
+                  styles={
+                    (data?.reportsPending ?? 0) > 0
+                      ? { content: { color: token.colorWarning } }
+                      : undefined
+                  }
+                />
+                <Link to="/planstar/reports">
+                  <FormattedMessage id="pages.overview.viewReports" />
+                </Link>
+              </Col>
+              <Col span={8}>
+                <Statistic
+                  title={<FormattedMessage id="pages.overview.feedsHidden" />}
+                  value={stat(data?.feedsHidden)}
+                />
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+        <Col xs={24} xl={12}>
+          <Card
+            loading={loading}
+            title={<FormattedMessage id="pages.overview.publishDist" />}
+          >
+            {buckets.length === 0 ? (
+              <Typography.Text type="secondary">-</Typography.Text>
+            ) : (
+              buckets.map((bucket) => {
+                const count = bucket.count ?? 0;
+                const percent =
+                  projectsTotal > 0
+                    ? Math.round((count / projectsTotal) * 100)
+                    : 0;
+                return (
+                  <div key={bucket.status} style={{ marginBottom: 8 }}>
+                    <Typography.Text style={{ fontSize: 13 }}>
+                      <FormattedMessage
+                        id={
+                          PUBLISH_KEYS[bucket.status ?? -1] ??
+                          'pages.overview.publishDist'
+                        }
+                      />
+                      {` · ${count}`}
+                    </Typography.Text>
+                    <Progress percent={percent} size="small" />
+                  </div>
+                );
+              })
+            )}
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        {(data?.trends ?? []).map((series) => (
+          <Col key={series.name} xs={24} sm={12} xl={6}>
+            <Card
+              loading={loading}
+              title={
+                <FormattedMessage
+                  id={TREND_KEYS[series.name ?? ''] ?? 'pages.overview.trends'}
+                />
+              }
+            >
+              <TrendChart
+                points={series.points ?? []}
+                color={token.colorPrimary}
               />
             </Card>
           </Col>
         ))}
       </Row>
-
-      <Typography.Paragraph
-        type="secondary"
-        style={{ marginTop: 12, marginBottom: 16, fontSize: 12 }}
-      >
-        {capped ? (
-          <FormattedMessage
-            id="pages.overview.scope.capped"
-            values={{ window: STATS_WINDOW }}
-          />
-        ) : (
-          <FormattedMessage
-            id="pages.overview.scope.exact"
-            values={{ total: admins.length }}
-          />
-        )}
-      </Typography.Paragraph>
-
-      <DataTable<Admin>
-        headerTitle={<FormattedMessage id="pages.overview.recent.title" />}
-        columns={columns}
-        dataSource={admins.slice(0, 5)}
-        loading={loading}
-        // 这里只是概览里的一小段摘要，连刷新按钮都不需要。
-        options={false}
-        toolBarRender={() => [
-          <Link key="all" to="/admins">
-            <FormattedMessage id="pages.overview.recent.viewAll" />
-          </Link>,
-        ]}
-      />
     </PageContainer>
   );
 };

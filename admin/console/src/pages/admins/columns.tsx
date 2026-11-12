@@ -3,7 +3,7 @@ import type { ProColumns } from "@ant-design/pro-components";
 import { FormattedMessage } from "@umijs/max";
 
 /**
- * 状态列。管理员列表和概览页的「最近创建」都用它，状态映射改动只需要动这一处。
+ * 状态列。search: false，valueEnum 只用于单元格渲染，不参与搜索下拉。
  *
  * 只映射 ACTIVE / INACTIVE：DELETED 不会出现在读接口的结果里，
  * STATUS_UNSPECIFIED 理论上也不该出现，未映射的值会原样渲染。

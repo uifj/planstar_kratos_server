@@ -50,6 +50,8 @@ const ProjectTable: React.FC = () => {
       title: <FormattedMessage id="pages.planstar.projects.titleColumn" />,
       dataIndex: 'title',
       search: false,
+      // 固定表格布局下不给宽度会被挤成 0 列，标题是主列必须显式占位。
+      width: 220,
       ellipsis: true,
       render: (_, record) => (
         <Typography.Text strong>{record.title || '-'}</Typography.Text>
@@ -68,25 +70,27 @@ const ProjectTable: React.FC = () => {
       width: 110,
       valueEnum: {
         0: {
-          text: <FormattedMessage id="pages.planstar.projects.publish.draft" />,
+          text: intl.formatMessage({
+            id: 'pages.planstar.projects.publish.draft',
+          }),
           status: 'Default',
         },
         1: {
-          text: (
-            <FormattedMessage id="pages.planstar.projects.publish.published" />
-          ),
+          text: intl.formatMessage({
+            id: 'pages.planstar.projects.publish.published',
+          }),
           status: 'Success',
         },
         2: {
-          text: (
-            <FormattedMessage id="pages.planstar.projects.publish.reviewing" />
-          ),
+          text: intl.formatMessage({
+            id: 'pages.planstar.projects.publish.reviewing',
+          }),
           status: 'Processing',
         },
         3: {
-          text: (
-            <FormattedMessage id="pages.planstar.projects.publish.rejected" />
-          ),
+          text: intl.formatMessage({
+            id: 'pages.planstar.projects.publish.rejected',
+          }),
           status: 'Error',
         },
       },
@@ -98,29 +102,33 @@ const ProjectTable: React.FC = () => {
       width: 110,
       valueEnum: {
         preheating: {
-          text: (
-            <FormattedMessage id="pages.planstar.projects.funding.preheating" />
-          ),
+          text: intl.formatMessage({
+            id: 'pages.planstar.projects.funding.preheating',
+          }),
           status: 'Default',
         },
         ongoing: {
-          text: <FormattedMessage id="pages.planstar.projects.funding.ongoing" />,
+          text: intl.formatMessage({
+            id: 'pages.planstar.projects.funding.ongoing',
+          }),
           status: 'Processing',
         },
         achieved: {
-          text: (
-            <FormattedMessage id="pages.planstar.projects.funding.achieved" />
-          ),
+          text: intl.formatMessage({
+            id: 'pages.planstar.projects.funding.achieved',
+          }),
           status: 'Success',
         },
         delivered: {
-          text: (
-            <FormattedMessage id="pages.planstar.projects.funding.delivered" />
-          ),
+          text: intl.formatMessage({
+            id: 'pages.planstar.projects.funding.delivered',
+          }),
           status: 'Success',
         },
         failed: {
-          text: <FormattedMessage id="pages.planstar.projects.funding.failed" />,
+          text: intl.formatMessage({
+            id: 'pages.planstar.projects.funding.failed',
+          }),
           status: 'Error',
         },
       },

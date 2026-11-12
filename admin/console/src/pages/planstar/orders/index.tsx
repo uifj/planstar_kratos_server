@@ -7,13 +7,16 @@ import {
 } from '@ant-design/pro-components';
 import { FormattedMessage, useIntl } from '@umijs/max';
 import { Typography } from 'antd';
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
+  ORDER_STATUS,
   PAGE_SIZE,
   formatCents,
   optionalIntFilter,
+  statusValueEnum,
   useCursorPager,
 } from '../shared';
+import OrderDrawer from './OrderDrawer';
 
 type OrderQuery = {
   keyword?: string;
@@ -24,6 +27,7 @@ const OrderTable: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
   const pager = useCursorPager();
   const intl = useIntl();
+  const [activeId, setActiveId] = useState<number>();
 
   const columns: ProColumns<Order>[] = [
     {
@@ -40,6 +44,7 @@ const OrderTable: React.FC = () => {
       title: <FormattedMessage id="pages.planstar.orders.orderNo" />,
       dataIndex: 'orderNo',
       copyable: true,
+      width: 220,
       ellipsis: true,
       search: false,
       render: (_, record) => record.orderNo || '-',
@@ -63,40 +68,7 @@ const OrderTable: React.FC = () => {
       title: <FormattedMessage id="pages.planstar.orders.status" />,
       dataIndex: 'status',
       width: 120,
-      valueEnum: {
-        1: {
-          text: <FormattedMessage id="pages.planstar.orders.status.init" />,
-          status: 'Default',
-        },
-        2: {
-          text: <FormattedMessage id="pages.planstar.orders.status.paying" />,
-          status: 'Processing',
-        },
-        3: {
-          text: (
-            <FormattedMessage id="pages.planstar.orders.status.waitingForTickets" />
-          ),
-          status: 'Processing',
-        },
-        4: {
-          text: (
-            <FormattedMessage id="pages.planstar.orders.status.gettingTickets" />
-          ),
-          status: 'Processing',
-        },
-        5: {
-          text: <FormattedMessage id="pages.planstar.orders.status.finished" />,
-          status: 'Success',
-        },
-        6: {
-          text: <FormattedMessage id="pages.planstar.orders.status.canceled" />,
-          status: 'Error',
-        },
-        7: {
-          text: <FormattedMessage id="pages.planstar.orders.status.refunded" />,
-          status: 'Default',
-        },
-      },
+      valueEnum: statusValueEnum(intl, ORDER_STATUS),
     },
     {
       title: <FormattedMessage id="pages.planstar.orders.createdAt" />,
@@ -104,6 +76,18 @@ const OrderTable: React.FC = () => {
       valueType: 'dateTime',
       width: 200,
       search: false,
+    },
+    {
+      title: <FormattedMessage id="pages.planstar.operation" />,
+      dataIndex: 'option',
+      valueType: 'option',
+      width: 80,
+      search: false,
+      render: (_, record) => [
+        <a key="detail" onClick={() => setActiveId(record.id)}>
+          <FormattedMessage id="pages.planstar.detail" />
+        </a>,
+      ],
     },
   ];
 
@@ -149,6 +133,7 @@ const OrderTable: React.FC = () => {
           };
         }}
       />
+      <OrderDrawer id={activeId} onClose={() => setActiveId(undefined)} />
     </PageContainer>
   );
 };

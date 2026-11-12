@@ -196,6 +196,448 @@ export type HandleReportRequest = {
   note: string | undefined;
 };
 
+// SetFeedStatusRequest is the request for SetFeedStatus.
+export type SetFeedStatusRequest = {
+  // Required. Community feed ID.
+  id: number | undefined;
+  // Required. 0 hidden, 1 normal.
+  status: number | undefined;
+};
+
+// SetGoodsStatusRequest is the request for SetGoodsStatus.
+export type SetGoodsStatusRequest = {
+  // Required. Shop goods ID.
+  id: number | undefined;
+  // Required. 0 off shelf, 1 on shelf.
+  status: number | undefined;
+};
+
+// SetGoodsSkuStatusRequest is the request for SetGoodsSkuStatus.
+export type SetGoodsSkuStatusRequest = {
+  // Required. Shop goods SKU ID.
+  id: number | undefined;
+  // Required. 0 off shelf, 1 on shelf.
+  status: number | undefined;
+};
+
+// StatusReply echoes the id and status after a status write.
+export type StatusReply = {
+  id: number | undefined;
+  status: number | undefined;
+};
+
+// ReviewRefundRequest is the request for ReviewRefund.
+export type ReviewRefundRequest = {
+  // Required. Payment refund ID.
+  id: number | undefined;
+  // Required. approve or reject.
+  decision: string | undefined;
+};
+
+// RefundReview is the result of reviewing a refund.
+export type RefundReview = {
+  refundId: number | undefined;
+  refundNo: string | undefined;
+  orderId: number | undefined;
+  // success or rejected.
+  status: string | undefined;
+  // Unified order status after the review.
+  orderStatus: number | undefined;
+  // Refunded amount in cents.
+  refundAmount: number | undefined;
+};
+
+// StatusCount is one bucket of a grouped count.
+export type StatusCount = {
+  status: number | undefined;
+  count: number | undefined;
+};
+
+// DailyCount is one day of a trend series (date formatted YYYY-MM-DD).
+export type DailyCount = {
+  date: string | undefined;
+  count: number | undefined;
+};
+
+// TrendSeries is a named daily series covering the last 14 days.
+export type TrendSeries = {
+  // Series key: orders / pledges / votes / new_users.
+  name: string | undefined;
+  points: DailyCount[] | undefined;
+};
+
+// Dashboard aggregates read-only business metrics across the Planstar databases.
+export type Dashboard = {
+  usersTotal: number | undefined;
+  projectsTotal: number | undefined;
+  // Buckets keyed by project.publish_status (0/1/2/3).
+  projectsByPublishStatus: StatusCount[] | undefined;
+  // Projects whose funding_status is ongoing.
+  projectsOngoing: number | undefined;
+  // Sum of raised_amount over published projects, in cents.
+  raisedTotal: number | undefined;
+  // Pledges in paid/confirmed/shipped/delivered.
+  pledgesPaid: number | undefined;
+  // Sum of support_amount over paid pledges, in cents.
+  pledgedAmount: number | undefined;
+  ideasTotal: number | undefined;
+  ideasPublished: number | undefined;
+  votesTotal: number | undefined;
+  votesSupport: number | undefined;
+  votesOppose: number | undefined;
+  ordersTotal: number | undefined;
+  // Orders with a non-null pay_time.
+  ordersPaid: number | undefined;
+  // Sum of pay_amount over paid orders, in cents.
+  gmv: number | undefined;
+  // order_refund rows in applied/processing.
+  refundsPending: number | undefined;
+  // project_report rows still pending.
+  reportsPending: number | undefined;
+  goodsOnSale: number | undefined;
+  // goods_order rows in paid/completed.
+  goodsOrdersPaid: number | undefined;
+  // Sum of price_coins over paid/completed goods orders.
+  coinsSpent: number | undefined;
+  feedsTotal: number | undefined;
+  // Feeds whose status is not 1 (hidden).
+  feedsHidden: number | undefined;
+  trends: TrendSeries[] | undefined;
+};
+
+// GetDashboardRequest is the request for GetDashboard.
+export type GetDashboardRequest = {
+};
+
+// AuditLog is one console write recorded in planstar_admin.admin_audit_log.
+export type AuditLog = {
+  id: number | undefined;
+  // Admin UUID; empty when the actor was not an authenticated admin.
+  adminId: string | undefined;
+  actor: string | undefined;
+  action: string | undefined;
+  target: string | undefined;
+  // success / failure.
+  result: string | undefined;
+  detail: string | undefined;
+  remoteAddr: string | undefined;
+  createdAt: wellKnownTimestamp | undefined;
+};
+
+// AuditLogSet is a page of audit logs.
+export type AuditLogSet = {
+  logs: AuditLog[] | undefined;
+  nextPageToken: string | undefined;
+};
+
+// ListAuditLogsRequest is the request for ListAuditLogs.
+export type ListAuditLogsRequest = {
+  // Optional. Matches actor, action or target.
+  keyword: string | undefined;
+  // Optional. Exact action filter, e.g. project.review.
+  action: string | undefined;
+  // Optional. success / failure; empty lists every result.
+  result: string | undefined;
+  // Optional. Defaults to 20, capped at 200.
+  pageSize: number | undefined;
+  // Optional. Token returned by the previous page.
+  pageToken: string | undefined;
+};
+
+// Idea is a community idea (planstar_catalog.project_idea).
+export type Idea = {
+  // Business idea ID (project_idea.idea_id).
+  id: number | undefined;
+  userId: number | undefined;
+  title: string | undefined;
+  summary: string | undefined;
+  cover: string | undefined;
+  categoryId: number | undefined;
+  // Category name resolved from project_category.name.
+  categoryName: string | undefined;
+  // Stage: 1 concept / 2 validated.
+  stage: number | undefined;
+  // Publish status: 0 draft, 1 published, 2 under review, 3 rejected.
+  publishStatus: number | undefined;
+  // Visibility: 1 normal / 0 hidden.
+  status: number | undefined;
+  supportCount: number | undefined;
+  opposeCount: number | undefined;
+  // Sum of pledged coin intent.
+  coinIntentSum: number | undefined;
+  createdAt: wellKnownTimestamp | undefined;
+};
+
+// IdeaSet is a page of ideas.
+export type IdeaSet = {
+  ideas: Idea[] | undefined;
+  nextPageToken: string | undefined;
+};
+
+// IdeaVote is one vote on an idea (planstar_catalog.project_idea_vote).
+export type IdeaVote = {
+  id: number | undefined;
+  ideaId: number | undefined;
+  userId: number | undefined;
+  // 1 support / 2 oppose.
+  voteType: number | undefined;
+  // Coin tier: 0/5/10/20.
+  coinTier: number | undefined;
+  reasonCode: string | undefined;
+  reasonText: string | undefined;
+  createdAt: wellKnownTimestamp | undefined;
+};
+
+// IdeaDetail is an idea plus its vote aggregation and recent votes.
+export type IdeaDetail = {
+  idea: Idea | undefined;
+  description: string | undefined;
+  votesTotal: number | undefined;
+  votesSupport: number | undefined;
+  votesOppose: number | undefined;
+  recentVotes: IdeaVote[] | undefined;
+};
+
+// Goods is a shop item (planstar_shop.goods).
+export type Goods = {
+  // Business goods ID (goods.goods_id).
+  id: number | undefined;
+  goodsSn: string | undefined;
+  name: string | undefined;
+  brief: string | undefined;
+  cover: string | undefined;
+  category: string | undefined;
+  // 1 on sale / 0 off sale.
+  status: number | undefined;
+  sort: number | undefined;
+  createdAt: wellKnownTimestamp | undefined;
+};
+
+// GoodsSet is a page of goods.
+export type GoodsSet = {
+  goods: Goods[] | undefined;
+  nextPageToken: string | undefined;
+};
+
+// GoodsSku is one sellable unit (planstar_shop.goods_sku).
+export type GoodsSku = {
+  // Business SKU ID (goods_sku.sku_id).
+  id: number | undefined;
+  goodsId: number | undefined;
+  skuName: string | undefined;
+  priceCoins: number | undefined;
+  stock: number | undefined;
+  sold: number | undefined;
+  // 1 on sale / 0 off sale.
+  status: number | undefined;
+};
+
+// GoodsDetail is a goods item plus its SKUs.
+export type GoodsDetail = {
+  goods: Goods | undefined;
+  description: string | undefined;
+  skus: GoodsSku[] | undefined;
+};
+
+// GoodsOrder is a coin purchase (planstar_shop.goods_order).
+export type GoodsOrder = {
+  id: number | undefined;
+  orderNo: string | undefined;
+  userId: number | undefined;
+  goodsId: number | undefined;
+  skuId: number | undefined;
+  skuName: string | undefined;
+  priceCoins: number | undefined;
+  // paid / completed / cancelled.
+  status: string | undefined;
+  createdAt: wellKnownTimestamp | undefined;
+};
+
+// GoodsOrderSet is a page of goods orders.
+export type GoodsOrderSet = {
+  orders: GoodsOrder[] | undefined;
+  nextPageToken: string | undefined;
+};
+
+// PayOrder is a payment attempt (planstar_payment.pay_order).
+export type PayOrder = {
+  id: number | undefined;
+  payNo: string | undefined;
+  orderNo: string | undefined;
+  orderId: number | undefined;
+  userId: number | undefined;
+  // wechat / alipay / unionpay / balance.
+  channel: string | undefined;
+  // Amount in cents.
+  amount: number | undefined;
+  // pending / success / failed / expired.
+  status: string | undefined;
+  thirdTradeNo: string | undefined;
+  paidAt: wellKnownTimestamp | undefined;
+  expireAt: wellKnownTimestamp | undefined;
+  createdAt: wellKnownTimestamp | undefined;
+};
+
+// PayOrderSet is a page of payment attempts.
+export type PayOrderSet = {
+  payOrders: PayOrder[] | undefined;
+  nextPageToken: string | undefined;
+};
+
+// Refund is a refund request (planstar_payment.order_refund).
+export type Refund = {
+  id: number | undefined;
+  refundNo: string | undefined;
+  orderId: number | undefined;
+  orderNo: string | undefined;
+  userId: number | undefined;
+  reasonCode: string | undefined;
+  reasonText: string | undefined;
+  // Refundable amount in cents.
+  refundableAmount: number | undefined;
+  // applied / processing / success / rejected.
+  status: string | undefined;
+  expectedArrivalDays: number | undefined;
+  createdAt: wellKnownTimestamp | undefined;
+};
+
+// RefundSet is a page of refunds.
+export type RefundSet = {
+  refunds: Refund[] | undefined;
+  nextPageToken: string | undefined;
+};
+
+// OrderDetail is a unified order plus its payment attempts and refunds.
+export type OrderDetail = {
+  order: Order | undefined;
+  title: string | undefined;
+  // Order total in cents.
+  totalAmount: number | undefined;
+  // Already-refunded amount in cents.
+  refundAmount: number | undefined;
+  payTime: wellKnownTimestamp | undefined;
+  payOrders: PayOrder[] | undefined;
+  refunds: Refund[] | undefined;
+};
+
+// Feed is a community post (planstar_community.feed).
+export type Feed = {
+  // Business feed ID (feed.feed_id).
+  id: number | undefined;
+  // Feed type (see dict_enum.FeedType).
+  type: number | undefined;
+  userId: number | undefined;
+  title: string | undefined;
+  content: string | undefined;
+  likes: number | undefined;
+  replyCount: number | undefined;
+  views: number | undefined;
+  // 1 normal; anything else is hidden.
+  status: number | undefined;
+  isQuality: number | undefined;
+  createdAt: wellKnownTimestamp | undefined;
+};
+
+// FeedSet is a page of feeds.
+export type FeedSet = {
+  feeds: Feed[] | undefined;
+  nextPageToken: string | undefined;
+};
+
+// FeedDetail is a feed plus its media and author snapshot.
+export type FeedDetail = {
+  feed: Feed | undefined;
+  images: string[] | undefined;
+  videos: string[] | undefined;
+  tags: string[] | undefined;
+  // Author display name from the feed.user snapshot.
+  authorName: string | undefined;
+};
+
+// ListIdeasRequest is the request for ListIdeas.
+export type ListIdeasRequest = {
+  // Optional. Matches idea title, summary or idea ID.
+  keyword: string | undefined;
+  // Optional. Publish status (0/1/2/3); omit to list every status.
+  publishStatus?: number;
+  pageSize: number | undefined;
+  pageToken: string | undefined;
+};
+
+// GetIdeaRequest is the request for GetIdea.
+export type GetIdeaRequest = {
+  // Required. Business idea ID.
+  id: number | undefined;
+};
+
+// ListGoodsRequest is the request for ListGoods.
+export type ListGoodsRequest = {
+  // Optional. Matches goods name, SN or goods ID.
+  keyword: string | undefined;
+  // Optional. 1 on sale / 0 off sale; omit to list every status.
+  status?: number;
+  pageSize: number | undefined;
+  pageToken: string | undefined;
+};
+
+// GetGoodsRequest is the request for GetGoods.
+export type GetGoodsRequest = {
+  // Required. Business goods ID.
+  id: number | undefined;
+};
+
+// ListGoodsOrdersRequest is the request for ListGoodsOrders.
+export type ListGoodsOrdersRequest = {
+  // Optional. Matches order number or user ID.
+  keyword: string | undefined;
+  // Optional. paid / completed / cancelled; empty lists every status.
+  status: string | undefined;
+  pageSize: number | undefined;
+  pageToken: string | undefined;
+};
+
+// GetOrderRequest is the request for GetOrder.
+export type GetOrderRequest = {
+  // Required. Business order ID.
+  id: number | undefined;
+};
+
+// ListPayOrdersRequest is the request for ListPayOrders.
+export type ListPayOrdersRequest = {
+  // Optional. Matches pay number, order number or user ID.
+  keyword: string | undefined;
+  // Optional. pending / success / failed / expired; empty lists every status.
+  status: string | undefined;
+  pageSize: number | undefined;
+  pageToken: string | undefined;
+};
+
+// ListRefundsRequest is the request for ListRefunds.
+export type ListRefundsRequest = {
+  // Optional. Matches refund number, order number or user ID.
+  keyword: string | undefined;
+  // Optional. applied / processing / success / rejected; empty lists every status.
+  status: string | undefined;
+  pageSize: number | undefined;
+  pageToken: string | undefined;
+};
+
+// ListFeedsRequest is the request for ListFeeds.
+export type ListFeedsRequest = {
+  // Optional. Matches feed title, content or feed ID.
+  keyword: string | undefined;
+  // Optional. 1 normal / 0 hidden; omit to list every status.
+  status?: number;
+  pageSize: number | undefined;
+  pageToken: string | undefined;
+};
+
+// GetFeedRequest is the request for GetFeed.
+export type GetFeedRequest = {
+  // Required. Business feed ID.
+  id: number | undefined;
+};
+
 // ConsoleService exposes read-mostly business management APIs for the console.
 export interface ConsoleService {
   // ListUsers lists business users.
@@ -212,6 +654,38 @@ export interface ConsoleService {
   ListReports(request: ListReportsRequest): Promise<ReportSet>;
   // HandleReport accepts or rejects a report through the ops service.
   HandleReport(request: HandleReportRequest): Promise<Report>;
+  // GetDashboard aggregates read-only business metrics for the overview page.
+  GetDashboard(request: GetDashboardRequest): Promise<Dashboard>;
+  // ListAuditLogs pages the console write audit trail (admin role only).
+  ListAuditLogs(request: ListAuditLogsRequest): Promise<AuditLogSet>;
+  // ListIdeas lists community ideas.
+  ListIdeas(request: ListIdeasRequest): Promise<IdeaSet>;
+  // GetIdea returns one idea with its vote aggregation and recent votes.
+  GetIdea(request: GetIdeaRequest): Promise<IdeaDetail>;
+  // ListGoods lists shop goods.
+  ListGoods(request: ListGoodsRequest): Promise<GoodsSet>;
+  // GetGoods returns one goods item with its SKUs.
+  GetGoods(request: GetGoodsRequest): Promise<GoodsDetail>;
+  // ListGoodsOrders lists coin purchases.
+  ListGoodsOrders(request: ListGoodsOrdersRequest): Promise<GoodsOrderSet>;
+  // GetOrder returns one unified order with its payments and refunds.
+  GetOrder(request: GetOrderRequest): Promise<OrderDetail>;
+  // ListPayOrders lists payment attempts.
+  ListPayOrders(request: ListPayOrdersRequest): Promise<PayOrderSet>;
+  // ListRefunds lists refund requests.
+  ListRefunds(request: ListRefundsRequest): Promise<RefundSet>;
+  // ListFeeds lists community feeds.
+  ListFeeds(request: ListFeedsRequest): Promise<FeedSet>;
+  // GetFeed returns one feed with its media and author snapshot.
+  GetFeed(request: GetFeedRequest): Promise<FeedDetail>;
+  // SetFeedStatus hides or shows a community feed through the ops service.
+  SetFeedStatus(request: SetFeedStatusRequest): Promise<StatusReply>;
+  // SetGoodsStatus puts a shop goods on or off shelf through the ops service.
+  SetGoodsStatus(request: SetGoodsStatusRequest): Promise<StatusReply>;
+  // SetGoodsSkuStatus puts a goods SKU on or off shelf through the ops service.
+  SetGoodsSkuStatus(request: SetGoodsSkuStatusRequest): Promise<StatusReply>;
+  // ReviewRefund approves or rejects a refund through the ops service.
+  ReviewRefund(request: ReviewRefundRequest): Promise<RefundReview>;
 }
 
 type RequestType = {
@@ -398,6 +872,389 @@ export function createConsoleServiceClient(
         service: "ConsoleService",
         method: "HandleReport",
       }) as Promise<Report>;
+    },
+    GetDashboard(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      const path = `v1/planstar/dashboard`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "GetDashboard",
+      }) as Promise<Dashboard>;
+    },
+    ListAuditLogs(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      const path = `v1/planstar/audit-logs`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.keyword) {
+        queryParams.push(`keyword=${encodeURIComponent(request.keyword.toString())}`)
+      }
+      if (request.action) {
+        queryParams.push(`action=${encodeURIComponent(request.action.toString())}`)
+      }
+      if (request.result) {
+        queryParams.push(`result=${encodeURIComponent(request.result.toString())}`)
+      }
+      if (request.pageSize) {
+        queryParams.push(`pageSize=${encodeURIComponent(request.pageSize.toString())}`)
+      }
+      if (request.pageToken) {
+        queryParams.push(`pageToken=${encodeURIComponent(request.pageToken.toString())}`)
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "ListAuditLogs",
+      }) as Promise<AuditLogSet>;
+    },
+    ListIdeas(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      const path = `v1/planstar/ideas`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.keyword) {
+        queryParams.push(`keyword=${encodeURIComponent(request.keyword.toString())}`)
+      }
+      if (request.publishStatus) {
+        queryParams.push(`publishStatus=${encodeURIComponent(request.publishStatus.toString())}`)
+      }
+      if (request.pageSize) {
+        queryParams.push(`pageSize=${encodeURIComponent(request.pageSize.toString())}`)
+      }
+      if (request.pageToken) {
+        queryParams.push(`pageToken=${encodeURIComponent(request.pageToken.toString())}`)
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "ListIdeas",
+      }) as Promise<IdeaSet>;
+    },
+    GetIdea(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      if (!request.id) {
+        throw new Error("missing required field request.id");
+      }
+      const path = `v1/planstar/ideas/${request.id}`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "GetIdea",
+      }) as Promise<IdeaDetail>;
+    },
+    ListGoods(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      const path = `v1/planstar/goods`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.keyword) {
+        queryParams.push(`keyword=${encodeURIComponent(request.keyword.toString())}`)
+      }
+      if (request.status) {
+        queryParams.push(`status=${encodeURIComponent(request.status.toString())}`)
+      }
+      if (request.pageSize) {
+        queryParams.push(`pageSize=${encodeURIComponent(request.pageSize.toString())}`)
+      }
+      if (request.pageToken) {
+        queryParams.push(`pageToken=${encodeURIComponent(request.pageToken.toString())}`)
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "ListGoods",
+      }) as Promise<GoodsSet>;
+    },
+    GetGoods(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      if (!request.id) {
+        throw new Error("missing required field request.id");
+      }
+      const path = `v1/planstar/goods/${request.id}`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "GetGoods",
+      }) as Promise<GoodsDetail>;
+    },
+    ListGoodsOrders(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      const path = `v1/planstar/goods-orders`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.keyword) {
+        queryParams.push(`keyword=${encodeURIComponent(request.keyword.toString())}`)
+      }
+      if (request.status) {
+        queryParams.push(`status=${encodeURIComponent(request.status.toString())}`)
+      }
+      if (request.pageSize) {
+        queryParams.push(`pageSize=${encodeURIComponent(request.pageSize.toString())}`)
+      }
+      if (request.pageToken) {
+        queryParams.push(`pageToken=${encodeURIComponent(request.pageToken.toString())}`)
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "ListGoodsOrders",
+      }) as Promise<GoodsOrderSet>;
+    },
+    GetOrder(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      if (!request.id) {
+        throw new Error("missing required field request.id");
+      }
+      const path = `v1/planstar/orders/${request.id}`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "GetOrder",
+      }) as Promise<OrderDetail>;
+    },
+    ListPayOrders(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      const path = `v1/planstar/pay-orders`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.keyword) {
+        queryParams.push(`keyword=${encodeURIComponent(request.keyword.toString())}`)
+      }
+      if (request.status) {
+        queryParams.push(`status=${encodeURIComponent(request.status.toString())}`)
+      }
+      if (request.pageSize) {
+        queryParams.push(`pageSize=${encodeURIComponent(request.pageSize.toString())}`)
+      }
+      if (request.pageToken) {
+        queryParams.push(`pageToken=${encodeURIComponent(request.pageToken.toString())}`)
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "ListPayOrders",
+      }) as Promise<PayOrderSet>;
+    },
+    ListRefunds(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      const path = `v1/planstar/refunds`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.keyword) {
+        queryParams.push(`keyword=${encodeURIComponent(request.keyword.toString())}`)
+      }
+      if (request.status) {
+        queryParams.push(`status=${encodeURIComponent(request.status.toString())}`)
+      }
+      if (request.pageSize) {
+        queryParams.push(`pageSize=${encodeURIComponent(request.pageSize.toString())}`)
+      }
+      if (request.pageToken) {
+        queryParams.push(`pageToken=${encodeURIComponent(request.pageToken.toString())}`)
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "ListRefunds",
+      }) as Promise<RefundSet>;
+    },
+    ListFeeds(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      const path = `v1/planstar/feeds`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.keyword) {
+        queryParams.push(`keyword=${encodeURIComponent(request.keyword.toString())}`)
+      }
+      if (request.status) {
+        queryParams.push(`status=${encodeURIComponent(request.status.toString())}`)
+      }
+      if (request.pageSize) {
+        queryParams.push(`pageSize=${encodeURIComponent(request.pageSize.toString())}`)
+      }
+      if (request.pageToken) {
+        queryParams.push(`pageToken=${encodeURIComponent(request.pageToken.toString())}`)
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "ListFeeds",
+      }) as Promise<FeedSet>;
+    },
+    GetFeed(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      if (!request.id) {
+        throw new Error("missing required field request.id");
+      }
+      const path = `v1/planstar/feeds/${request.id}`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "GetFeed",
+      }) as Promise<FeedDetail>;
+    },
+    SetFeedStatus(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      if (!request.id) {
+        throw new Error("missing required field request.id");
+      }
+      const path = `v1/planstar/feeds/${request.id}/status`; // eslint-disable-line quotes
+      const body = JSON.stringify(request);
+      const queryParams: string[] = [];
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "POST",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "SetFeedStatus",
+      }) as Promise<StatusReply>;
+    },
+    SetGoodsStatus(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      if (!request.id) {
+        throw new Error("missing required field request.id");
+      }
+      const path = `v1/planstar/goods/${request.id}/status`; // eslint-disable-line quotes
+      const body = JSON.stringify(request);
+      const queryParams: string[] = [];
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "POST",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "SetGoodsStatus",
+      }) as Promise<StatusReply>;
+    },
+    SetGoodsSkuStatus(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      if (!request.id) {
+        throw new Error("missing required field request.id");
+      }
+      const path = `v1/planstar/goods-skus/${request.id}/status`; // eslint-disable-line quotes
+      const body = JSON.stringify(request);
+      const queryParams: string[] = [];
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "POST",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "SetGoodsSkuStatus",
+      }) as Promise<StatusReply>;
+    },
+    ReviewRefund(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      if (!request.id) {
+        throw new Error("missing required field request.id");
+      }
+      const path = `v1/planstar/refunds/${request.id}/review`; // eslint-disable-line quotes
+      const body = JSON.stringify(request);
+      const queryParams: string[] = [];
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "POST",
+        body,
+      }, {
+        service: "ConsoleService",
+        method: "ReviewRefund",
+      }) as Promise<RefundReview>;
     },
   };
 }
