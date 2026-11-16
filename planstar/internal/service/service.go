@@ -122,6 +122,7 @@ func (s *Service) routes() []route {
 		{"POST /v1/shop/goods/{id}/skus/{skuId}/redeem", s.redeemGoods},
 
 		// 企划域（契约 7.7）。
+		{"GET /v1/categories", s.projectCategories},
 		{"GET /v1/projects/hot", s.hotProjects},
 		{"GET /v1/projects", s.projectList},
 		{"GET /v1/projects/{id}", s.projectDetail},

@@ -466,6 +466,16 @@ GET /v1/projects
 - 响应：`ProjectSummary[]`
 - 错误：`400 BAD_REQUEST`（枚举非法）、`500 INTERNAL`
 
+GET /v1/categories
+
+- 鉴权：否
+- 请求：无
+- 响应：`ProjectCategory[]`，仅返回 `status=1` 的品类，按 `sort`、`category_id` 升序：
+  - `id`、`name`、`enName`、`icon`、`sort`、`isSelect`、`status`
+  - `subCategoryTags[]`：`subCategoryId`、`categoryId`、`name`（仅 `status=1`，按 `sort`、`sub_tag_id` 升序）
+- 说明：分类目录是低频变更的枚举数据，客户端取一次缓存即可；不分页
+- 错误：`500 INTERNAL`
+
 GET /v1/projects/{id}
 
 - 鉴权：否

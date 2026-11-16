@@ -28,6 +28,16 @@ func (s *Service) hotProjects(w http.ResponseWriter, r *http.Request) {
 	httpx.JSON(w, http.StatusOK, items)
 }
 
+// projectCategories 返回启用的一级品类与二级标签。
+func (s *Service) projectCategories(w http.ResponseWriter, r *http.Request) {
+	items, err := s.project.Categories(r.Context())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	httpx.JSON(w, http.StatusOK, items)
+}
+
 func (s *Service) projectList(w http.ResponseWriter, r *http.Request) {
 	q := biz.ProjectQuery{
 		Page:          httpx.IntQuery(r, "page", 1),

@@ -72,6 +72,65 @@ func (r *ProjectRepo) List(ctx context.Context, q biz.ProjectQuery) ([]*biz.Proj
 	return items, rows.Err()
 }
 
+// Categories 返回启用的一级品类，并挂上各自的二级标签。
+//
+// 两张表都是几十行的枚举数据，两次全表扫描比分页/联表更简单；
+// 标签按 category_id 归组，未挂到任何启用分类下的标签直接丢弃。
+func (r *ProjectRepo) Categories(ctx context.Context) ([]*biz.ProjectCategory, error) {
+	db, err := r.d.DB("catalog")
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := db.QueryContext(ctx,
+		`SELECT category_id, name, COALESCE(en_name,''), COALESCE(icon,''), sort, is_select, status
+		   FROM planstar_catalog.project_category
+		  WHERE status = 1
+		  ORDER BY sort ASC, category_id ASC`)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]*biz.ProjectCategory, 0, 9)
+	index := make(map[int64]*biz.ProjectCategory, 9)
+	for rows.Next() {
+		c := &biz.ProjectCategory{SubTags: []*biz.ProjectSubCategory{}}
+		var isSelect int
+		if err := rows.Scan(&c.ID, &c.Name, &c.EnName, &c.Icon, &c.Sort, &isSelect, &c.Status); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		c.IsSelect = isSelect > 0
+		items = append(items, c)
+		index[c.ID] = c
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	tagRows, err := db.QueryContext(ctx,
+		`SELECT sub_tag_id, category_id, name
+		   FROM planstar_catalog.project_sub_tag
+		  WHERE status = 1
+		  ORDER BY sort ASC, sub_tag_id ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer tagRows.Close()
+	for tagRows.Next() {
+		tag := &biz.ProjectSubCategory{}
+		if err := tagRows.Scan(&tag.SubCategoryID, &tag.CategoryID, &tag.Name); err != nil {
+			return nil, err
+		}
+		if category, ok := index[tag.CategoryID]; ok {
+			category.SubTags = append(category.SubTags, tag)
+		}
+	}
+	return items, tagRows.Err()
+}
+
 func projectOrderBy(q biz.ProjectQuery) string {
 	switch {
 	case q.Hot:

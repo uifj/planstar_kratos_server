@@ -79,6 +79,25 @@ type ProjectSummary struct {
 	TagIDs []int64 `json:"-"`
 }
 
+// ProjectCategory 是一级品类（契约 8.10 ProjectCategory，`/v1/categories`）。
+type ProjectCategory struct {
+	ID       int64                 `json:"id"`
+	Name     string                `json:"name"`
+	EnName   string                `json:"enName"`
+	Icon     string                `json:"icon,omitempty"`
+	Sort     int                   `json:"sort"`
+	IsSelect bool                  `json:"isSelect"`
+	Status   int                   `json:"status"`
+	SubTags  []*ProjectSubCategory `json:"subCategoryTags"`
+}
+
+// ProjectSubCategory 是二级标签（契约 8.10 SubCategoryTag）。
+type ProjectSubCategory struct {
+	SubCategoryID int64  `json:"subCategoryId"`
+	CategoryID    int64  `json:"categoryId"`
+	Name          string `json:"name"`
+}
+
 // CreatorProfile 是创作者主页与信用（契约 8.10 CreatorProfile）。
 type CreatorProfile struct {
 	CreatorID       int64  `json:"creatorId"`
@@ -263,6 +282,7 @@ type ReportInput struct {
 // ProjectRepo 是企划域仓储端口。
 type ProjectRepo interface {
 	List(ctx context.Context, q ProjectQuery) ([]*ProjectSummary, error)
+	Categories(ctx context.Context) ([]*ProjectCategory, error)
 	Detail(ctx context.Context, projectID int64) (*ProjectDetail, error)
 	RewardTiers(ctx context.Context, projectID int64) ([]*RewardTier, error)
 	Updates(ctx context.Context, projectID int64, includeSupporterOnly bool, page, pageSize int) ([]*ProjectUpdate, error)
@@ -312,6 +332,20 @@ func (uc *ProjectUsecase) List(ctx context.Context, q ProjectQuery) ([]*ProjectS
 	}
 	if items == nil {
 		items = []*ProjectSummary{}
+	}
+	return items, nil
+}
+
+// Categories 返回启用的一级品类及其二级标签（/v1/categories）。
+//
+// 分类目录是低频变更的枚举数据，客户端启动后取一次即可；这里不做分页。
+func (uc *ProjectUsecase) Categories(ctx context.Context) ([]*ProjectCategory, error) {
+	items, err := uc.repo.Categories(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if items == nil {
+		items = []*ProjectCategory{}
 	}
 	return items, nil
 }
