@@ -5,7 +5,7 @@
 - **优先级**: P1
 - **影响维度**: 认知障碍 / 上下文膨胀 / 生产功能
 - **日期**: 2026-11-19
-- **来源**: `ADR-0001` 决策 D2/D3/D6 的落地细化；全仓审计 `PLANSTAR_DEEP_STUDY.md`；`.archive/go-wind/` 目录实践核对
+- **来源**: `ADR-0001` 决策 D2/D3/D6 的落地细化；全仓审计 `docs/notes/PLANSTAR_DEEP_STUDY.md`；`.archive/go-wind/` 目录实践核对
 - **修复 commit**: `e514842`（P2 首批：`service/events` 子包与 `data/project.go` 拆分，2026-11-19）
 
 ---
@@ -25,15 +25,15 @@
 ```
 planstar_kratos_server/                          # 仓库根（非 Go module，仅容纳多子项目）
 ├── AGENTS.md / agents.md / CLAUDE.md / README.md
-├── MIDDLEWARE.md / CODEGEN_VERIFICATION.md
-├── KRATOS_STUDY_NOTES.md / KRATOS_SHOP_STUDY_NOTES.md   # 归档模板研究，非本服务
-├── PLANSTAR_DEEP_STUDY.md                     # 全仓学习报告（本次新增，根目录）
+├── docs/notes/MIDDLEWARE.md / docs/notes/CODEGEN_VERIFICATION.md
+├── docs/notes/KRATOS_STUDY_NOTES.md / docs/notes/KRATOS_SHOP_STUDY_NOTES.md   # 归档模板研究，非本服务
+├── docs/notes/PLANSTAR_DEEP_STUDY.md                     # 全仓学习报告（本次新增，根目录）
 ├── LICENSE                                    # PolyForm Noncommercial 1.0.0
 ├── .archive/go-wind/{go-wind-admin,go-wind-cms}/        # 只读参考快照
 ├── .github/workflows/{ci,release,pages}.yml + dependabot.yml
 ├── backend/                                   # ← 0 文件
 ├── docs/
-│   ├── ADR/                                   # ADR-NNNN.md + planstar_arch_optimize.md（非 ADR）
+│   ├── ADR/                                   # ADR-NNNN.md + docs/research/go-wind-cms-split-proposal.md（非 ADR）
 │   ├── api/{API_CONTRACT,ADMIN_CONTRACT}.md
 │   ├── sql/  (21 .sql + history/ + optional/)
 │   ├── product/POSITIONING.md
@@ -60,7 +60,7 @@ planstar_kratos_server/                          # 仓库根（非 Go module，�
 └── site/index.html  (+ assets/ 与 openapi/ 均 0 文件)
 ```
 
-> **⚠ 上树是「意图布局」，不是当前 git 状态。** `git --no-pager status --short`（2026-11-19 实测）显示大量 `D admin/...`（含 `cmd/server/wire.go`、`wire_gen.go`、`internal/data/ent/...`、`console/`）与未跟踪的 `?? planstar_frontend/`，说明 `admin/` 正被迁往 `planstar_frontend/admin/` 但**尚未提交**；`.archive/`、`.agents/`、`PLANSTAR_DEEP_STUDY.md`、`docs/ADR/planstar_arch_optimize.md` 亦为未跟踪。
+> **⚠ 上树是「意图布局」，不是当前 git 状态。** `git --no-pager status --short`（2026-11-19 实测）显示大量 `D admin/...`（含 `cmd/server/wire.go`、`wire_gen.go`、`internal/data/ent/...`、`console/`）与未跟踪的 `?? planstar_frontend/`，说明 `admin/` 正被迁往 `planstar_frontend/admin/` 但**尚未提交**；`.archive/`、`.agents/`、`docs/notes/PLANSTAR_DEEP_STUDY.md`、`docs/research/go-wind-cms-split-proposal.md` 亦为未跟踪。
 > 因此本 ADR 的目录方案**以重排完成后的布局为准**，实施前置条件是先提交该重排（见 `ADR-0001` Q11 / D7 / P0）。任何 `ci.yml` paths、部署脚本与文档链接的修正必须与重排同批完成，否则 `admin-go` / `admin-console` 两个 job 会失去触发源。
 > 附带事实：迁出的 `planstar_frontend/admin/` 是**使用 Wire + Ent + proto 的另一个独立 Go module**（存在 `cmd/server/wire.go` 与 `wire_gen.go`），而 `planstar_backend/` 是手写装配、无 Wire/proto 的单体 —— 两个 module 的架构差异是硬边界，本 ADR 的目录方案**只作用于 `planstar_backend/`**。
 
@@ -89,8 +89,8 @@ planstar_kratos_server/
 │   │   ├── ADR-NNNN.md               # 模板
 │   │   ├── ADR-0001-...md            # 架构治理总纲
 │   │   └── ADR-0002-...md            # 本 ADR
-│   ├── research/                      # ★ 研究/推演材料区（planstar_arch_optimize.md 建议迁入并标注）
-│   ├── notes/                         # ★ 归档学习笔记（根目录 4 份 *NOTES.md + PLANSTAR_DEEP_STUDY.md）
+│   ├── research/                      # ★ 研究/推演材料区（docs/research/go-wind-cms-split-proposal.md 建议迁入并标注）
+│   ├── notes/                         # ★ 归档学习笔记（根目录 4 份 *NOTES.md + docs/notes/PLANSTAR_DEEP_STUDY.md）
 │   ├── api/{API_CONTRACT.md, ADMIN_CONTRACT.md, openapi.yaml(可选只读)}
 │   ├── sql/  product/  architecture.md  deployment.md  operations.md ...
 │   └── legacy/                        # 要么填充真实废弃文档，要么删除并清理死链
@@ -101,7 +101,7 @@ planstar_kratos_server/
 ```
 
 **根层决策**：
-- **根目录不再是「kratos-layout 模板残骸 + 多子项目 + 学习笔记」的混合物**：4 份上游 `*NOTES.md`、`CODEGEN_VERIFICATION.md`、`MIDDLEWARE.md` 与本次 `PLANSTAR_DEEP_STUDY.md` 统一归 `docs/notes/`（或 `.archive/`），并在 `docs/README.md` 显式标注「归档研究，不得作为实现/排障依据」。
+- **根目录不再是「kratos-layout 模板残骸 + 多子项目 + 学习笔记」的混合物**：4 份上游 `*NOTES.md`、`docs/notes/CODEGEN_VERIFICATION.md`、`docs/notes/MIDDLEWARE.md` 与本次 `docs/notes/PLANSTAR_DEEP_STUDY.md` 统一归 `docs/notes/`（或 `.archive/`），并在 `docs/README.md` 显式标注「归档研究，不得作为实现/排障依据」。
 - `backend/`（0 文件）、`docs/legacy/`（0 文件）、`site/assets/`、`site/openapi/`、`planstar_backend/deploy/{loki,promtail,otel}/`（0 文件）按 `ADR-0001` D7 处置。
 - `.archive/go-wind/` 明确为**只读参考**：用于 ADR 引用证据，不参与任何构建、CI、部署与依赖解析。
 - **先完成 `admin/` → `planstar_frontend/admin/` 重排提交**（见 §1 的 git 中间态告警），并把 CI paths、部署脚本、`docs/README.md` 索引中的旧 `admin/...` 引用同批修正。两个 Go module 的边界必须保持：`planstar_frontend/admin/` 用 Wire + Ent + proto，`planstar_backend/` 手写装配无生成链；本 ADR 的域分包方案**不作用于 `planstar_frontend/admin/`**，避免把两种装配范式混在同一套目录约定里。
@@ -271,7 +271,7 @@ wiring.go
 
 | 阶段 | 动作 | 守卫（不满足即停） |
 |---|---|---|
-| **P0 基线**（不改 Go 包路径） | **先收尾 `admin/` → `planstar_frontend/admin/` 重排提交**；修 `AGENTS.md` 5 条契约口径；ADR 台账与索引；`planstar_arch_optimize.md` 标注/迁 `docs/research/`；根 `docs/notes/` 归位；8 个空目录处置；11 库口径统一；`ci.yml` paths 修 `planstar_frontend/admin/**` + 必过 Go 门禁；`routes_test.go` 增条数断言；错误码表单源化；`Makefile` 补 `check`/`lint` 并修 `go vet ./...` | `go build/vet/test -race` 全绿；CI 全 job 通过；契约集合与 P0 前快照逐字一致；`git status` 无 `D admin/...` 与 `?? planstar_frontend/` 并存 |
+| **P0 基线**（不改 Go 包路径） | **先收尾 `admin/` → `planstar_frontend/admin/` 重排提交**；修 `AGENTS.md` 5 条契约口径；ADR 台账与索引；`docs/research/go-wind-cms-split-proposal.md` 标注/迁 `docs/research/`；根 `docs/notes/` 归位；8 个空目录处置；11 库口径统一；`ci.yml` paths 修 `planstar_frontend/admin/**` + 必过 Go 门禁；`routes_test.go` 增条数断言；错误码表单源化；`Makefile` 补 `check`/`lint` 并修 `go vet ./...` | `go build/vet/test -race` 全绿；CI 全 job 通过；契约集合与 P0 前快照逐字一致；`git status` 无 `D admin/...` 与 `?? planstar_frontend/` 并存 |
 | **P1 共享内核 + 装配** | 建 `biz/shared`（money/time/errors/event/paging/do）；`data/shared`（`*Data`/`mapDriverError`/`rowQuerier`/事务 helper）；`platform/` 归位；`pkg/session` 拆 `token`/`cookie`；`notify.SMSSender` 端口移到 `biz/identity`；`QuoteTTLFromEnv` 改为 conf 注入；`main.go` 瘦身 + `wiring.go` 分层小节 + 显式生命周期钩子 | `go list -deps` 三条断言全绿且 `biz` 不再传递命中 `net/http`；`/healthz`、`/readyz`、三 server 行为不变；`main.go ≤ 80 行` |
 | **P2 层内按域分包** | 按 §3 映射表逐域迁移（建议顺序：`identity → catalog → community → wallet → trade → project → ops`，先简单后跨域）；每域一次提交；`service/{api,admin,events}` 拆分；`server/admin*.go` 的运营 handler 迁入 `service/admin/` | 每域提交后 `go build ./... && go test -race ./...`；无循环依赖；30 个单测 + `test-integration` 全绿；路由集合 == P0 快照；阈值断言全绿 |
 | **P3 接缝固化** | 域间禁止 import 对方 `data`；跨域一律「消费方定义端口 + wiring 注入适配器」；按域 CI 路径 / 指标 label / 文档归属；产出「若需拆服务」的候选域清单 | 每域可独立 `go test ./internal/{biz,data}/<domain>/...`；端口清单与 18 个 repo 端口对账完整 |
@@ -330,6 +330,6 @@ scripts/smoke-local.sh
 ## 9. 关联（Links）
 
 - 代码: `planstar_backend/internal/{biz,data,service}/`、`planstar_backend/cmd/planstar_backend/main.go#L45-L301`、`planstar_backend/internal/biz/models.go`、`planstar_backend/internal/pkg/session/session.go`、`planstar_backend/internal/data/data.go#L45-L49`
-- 文档: `docs/ADR/ADR-0001-modular-monolith-governance.md`（上位决策）、`docs/ADR/ADR-NNNN.md`（模板）、`docs/ADR/planstar_arch_optimize.md`（参考材料，经 ADR-0001 §1.1 复核）、`docs/api/API_CONTRACT.md`、`docs/architecture.md#§10`、`agents.md`、`PLANSTAR_DEEP_STUDY.md`
+- 文档: `docs/ADR/ADR-0001-modular-monolith-governance.md`（上位决策）、`docs/ADR/ADR-NNNN.md`（模板）、`docs/research/go-wind-cms-split-proposal.md`（参考材料，经 ADR-0001 §1.1 复核）、`docs/api/API_CONTRACT.md`、`docs/architecture.md#§10`、`agents.md`、`docs/notes/PLANSTAR_DEEP_STUDY.md`
 - 参考快照: `.archive/go-wind/go-wind-cms/backend/{AGENTS.md,app/core/service/cmd/server/wiring.go,tools/register/main.go}`、`.archive/go-wind/go-wind-admin/{CONTRIBUTING.md,backend/{AGENTS.md,Makefile,app.mk,.golangci.yml,tools/register/main.go}}`
 - 关联 ADR: `ADR-0001`（D2/D3/D6 的上位决策）；`ADR-0003` 起为独立功能性 ADR（见 ADR-0001 §8）

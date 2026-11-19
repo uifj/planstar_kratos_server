@@ -5,7 +5,7 @@
 - **优先级**: P1
 - **影响维度**: 认知障碍 / 上下文膨胀 / 幻觉源 / 生产功能
 - **日期**: 2026-11-19
-- **来源**: 全仓代码审计（见根目录 `PLANSTAR_DEEP_STUDY.md`）+ `.archive/go-wind/{go-wind-cms,go-wind-admin}` 代码实践核对 + `docs/ADR/planstar_arch_optimize.md` 适用性复核
+- **来源**: 全仓代码审计（见根目录 `docs/notes/PLANSTAR_DEEP_STUDY.md`）+ `.archive/go-wind/{go-wind-cms,go-wind-admin}` 代码实践核对 + `docs/research/go-wind-cms-split-proposal.md` 适用性复核
 - **修复 commit**: `e514842`（P0/P1/P3、目录改名、装配拆分与本地 Docker 验证，2026-11-19；P2 剩余域分包待后续批次）
 
 ---
@@ -25,7 +25,7 @@
 
 ### 1.1 参考基线的适用性必须先纠偏
 
-`docs/ADR/planstar_arch_optimize.md`（43.4 KB，日期 2026-06-18，带博客式 frontmatter）自称「基于 go-wind-cms 的官网+商城双业务渐进拆分**实战复盘**」。对 `.archive/go-wind/` 真实代码逐条核对后：
+`docs/research/go-wind-cms-split-proposal.md`（43.4 KB，日期 2026-06-18，带博客式 frontmatter）自称「基于 go-wind-cms 的官网+商城双业务渐进拆分**实战复盘**」。对 `.archive/go-wind/` 真实代码逐条核对后：
 
 | 文章主张 | 仓库事实 | 判定 |
 |---|---|---|
@@ -69,12 +69,12 @@
 | **Q3 共享内核缺位** | `biz/models.go` 导出 `Fen/FmtDT/FmtDTp/BirthTs` **给 data 层使用**，`biz/auth.go` 定义全局错误，`biz/event.go` 定义事件；DO/错误/事件/单位换算混在领域层根包。一旦按域拆包，这些会立刻产生循环依赖 | `biz/models.go`、`biz/auth.go:21-27`、`biz/event.go`；`biz/quote.go:58 QuoteTTLFromEnv` 还在领域层直接 `os.Getenv` |
 | **Q4 契约与规范漂移** | `agents.md` 的 5 条「必须保留的契约怪癖」中，「登录失败 5xx+text/plain」已被代码否定（`service/auth.go:132-137` 是 400/401 JSON，`httpx.Plain` 全仓零调用）；「发码恒 200」漏了 429；「枚举取自 dict_enum」与硬编码白名单不符。路由代码 57 条/56 唯一端点，`API_CONTRACT.md:9` 写 56/55，而 `routes_test.go` 只比集合不比条数，测试照样通过 | 源码复核 + `go test ./...` 实测 |
 | **Q5 契约无机器校验** | 事实源是 Markdown 文档 + `service.go` 路由表，二者靠人工同步；错误码是 `service.go:181-223` 的 18 个字符串字面量；`ADMIN_CONTRACT.md` 缺 4 条运营写路由，且称「本地令牌为空鉴权关闭」与 `OpsAuth` fail-closed 冲突 | `docs/api/{API_CONTRACT,ADMIN_CONTRACT}.md`、`server/ops_auth.go:80-91` |
-| **Q6 ADR 台账失效** | 治理前 `docs/ADR/` 只有 `ADR-NNNN.md` 模板 + 43 KB 的非 ADR 复盘文章，**没有任何已记录的架构决策**；`git status --short` 显示 `planstar_arch_optimize.md` 为未跟踪（`??`）材料，即它并非仓库既有决策记录；`docs/legacy/` 0 文件却有多条文档链接指向它 | 目录列举 + `git status --short` + 前次审计 |
-| **Q7 空目录与死链** | 实测 0 文件的目录：`backend/`、`docs/legacy/`、`site/assets/`、`site/openapi/`、`planstar_backend/deploy/{loki,promtail,otel}/`；但 Grafana 数据源、Prometheus 的 otel-collector job、`config.prod.yaml:61-65` 的 `trace.endpoint=otel-collector:4317` 都在引用未编排的容器 | 目录统计；`PLANSTAR_DEEP_STUDY.md` §9.2 |
+| **Q6 ADR 台账失效** | 治理前 `docs/ADR/` 只有 `ADR-NNNN.md` 模板 + 43 KB 的非 ADR 复盘文章，**没有任何已记录的架构决策**；`git status --short` 显示 `docs/research/go-wind-cms-split-proposal.md` 为未跟踪（`??`）材料，即它并非仓库既有决策记录；`docs/legacy/` 0 文件却有多条文档链接指向它 | 目录列举 + `git status --short` + 前次审计 |
+| **Q7 空目录与死链** | 实测 0 文件的目录：`backend/`、`docs/legacy/`、`site/assets/`、`site/openapi/`、`planstar_backend/deploy/{loki,promtail,otel}/`；但 Grafana 数据源、Prometheus 的 otel-collector job、`config.prod.yaml:61-65` 的 `trace.endpoint=otel-collector:4317` 都在引用未编排的容器 | 目录统计；`docs/notes/PLANSTAR_DEEP_STUDY.md` §9.2 |
 | **Q8 CI 门禁缺口** | `.github/workflows/ci.yml` 的 paths 含 `admin/**`；CI 不跑 `make ops-check` / `test-integration`，无文档一致性校验。**关于 `admin/**` 的准确判定见 Q11**：它不是「从未存在的写错路径」，而是目录重排后未同步的残留 | `ci.yml` 路径输出实测 + `git status --short` |
-| **Q9 多口径与配置矛盾** | 库数量三套口径（文档 9 / `data.go:46-49` 连接池 10 / 运行时 11）；`config.lite.yaml` 以 `env:prod` 启动必被 `conf.Validate()` 拒绝（`cookie_secure:false` 无 env 可覆盖），但 `release.yml` 的 deploy job 硬编码该档位 | `PLANSTAR_DEEP_STUDY.md` §12 |
+| **Q9 多口径与配置矛盾** | 库数量三套口径（文档 9 / `data.go:46-49` 连接池 10 / 运行时 11）；`config.lite.yaml` 以 `env:prod` 启动必被 `conf.Validate()` 拒绝（`cookie_secure:false` 无 env 可覆盖），但 `release.yml` 的 deploy job 硬编码该档位 | `docs/notes/PLANSTAR_DEEP_STUDY.md` §12 |
 | **Q10 装配与边界未沉淀为可执行规则** | `AGENTS.md` 写「service 不 import data、biz 纯 Go」，但没有 lint / CI 断言；`data` 层驱动错误映射散落手写，无统一 adapter（`data/order.go:401 isDuplicateKey` 是唯一公共 helper） | `data/` 全包扫描 |
-| **Q11 仓库处于目录重排中间态** | `git status --short` 显示大量 `D admin/...`（含 `cmd/server/wire.go`、`wire_gen.go`、`internal/data/ent/...`、`console/`）与 `?? planstar_frontend/`（未跟踪），即 `admin/` 正被迁往 `planstar_frontend/admin/` 但尚未提交；同时 `?? .archive/`、`.agents/`、`PLANSTAR_DEEP_STUDY.md`、`docs/ADR/planstar_arch_optimize.md` 均为未跟踪。**CI paths、文档链接、部署脚本与 ADR 引用必须以「重排完成后」的布局为准，不能按当前工作区瞬时状态定结论** | `git --no-pager status --short`（2026-11-19 实测） |
+| **Q11 仓库处于目录重排中间态** | `git status --short` 显示大量 `D admin/...`（含 `cmd/server/wire.go`、`wire_gen.go`、`internal/data/ent/...`、`console/`）与 `?? planstar_frontend/`（未跟踪），即 `admin/` 正被迁往 `planstar_frontend/admin/` 但尚未提交；同时 `?? .archive/`、`.agents/`、`docs/notes/PLANSTAR_DEEP_STUDY.md`、`docs/research/go-wind-cms-split-proposal.md` 均为未跟踪。**CI paths、文档链接、部署脚本与 ADR 引用必须以「重排完成后」的布局为准，不能按当前工作区瞬时状态定结论** | `git --no-pager status --short`（2026-11-19 实测） |
 
 **问题定性**：planstar 的**分层与依赖倒置是健康的**（`biz` 无 `net/http`/`database/sql`/redis/amqp/elastic 引用，18 个端口全部由 `data`/`mq` 实现），问题集中在「**单体内缺少领域边界的物理表达**」「**装配与契约没有工程化治理**」「**文档与代码没有机器一致性**」「**目录重排未完成导致的多套路径口径**」。这是**结构债与治理债**，不是架构选型错误。
 
@@ -108,7 +108,7 @@
 - `planstar_backend/cmd/planstar_backend/` 装配结构、`planstar_backend/Makefile` 与门禁目标。
 - `docs/ADR/`、`docs/api/`、`docs/README.md`、根 `agents.md` / `README.md` / `CLAUDE.md` 的口径与台账。
 - `.github/workflows/ci.yml` 的 paths 与 job 组合。
-- 仓库根目录结构：`.archive/`、`planstar_frontend/`、`site/`、`scripts/`、`backend/`、根目录 4 份归档 `*NOTES.md` 与 `PLANSTAR_DEEP_STUDY.md` 的定位。
+- 仓库根目录结构：`.archive/`、`planstar_frontend/`、`site/`、`scripts/`、`backend/`、根目录 4 份归档 `*NOTES.md` 与 `docs/notes/PLANSTAR_DEEP_STUDY.md` 的定位。
 
 ### 3.2 范围外（Out of Scope）
 
@@ -235,8 +235,8 @@ cmd/planstar_backend/{main.go, wiring.go}          # 装配拆分
 ### D4 ADR 台账与参考材料治理
 
 - `docs/ADR/` 从此**只放 ADR 格式文档**，新增 `README.md` 索引（编号 / 标题 / 状态 / 日期 / 分类 / 关联）。
-- `docs/ADR/planstar_arch_optimize.md` **重定位为研究材料**（建议 `docs/research/go-wind-cms-split-proposal.md`），并在文首标注「**设计推演，非实战复盘；技术栈与 `.archive` 快照有出入；收益数字未经测量**」；在索引中列为「参考材料·不作为决策依据」。本阶段仅提出建议，不移动文件（C9）。
-- 根目录 4 份 `*NOTES.md` 与 `PLANSTAR_DEEP_STUDY.md` 归入「归档/研究」类，在 `docs/README.md` 的有效文档索引中显式标注**不得作为实现或排障依据**（对齐 `docs/README.md` 已有约定）。
+- `docs/research/go-wind-cms-split-proposal.md` **重定位为研究材料**（建议 `docs/research/go-wind-cms-split-proposal.md`），并在文首标注「**设计推演，非实战复盘；技术栈与 `.archive` 快照有出入；收益数字未经测量**」；在索引中列为「参考材料·不作为决策依据」。本阶段仅提出建议，不移动文件（C9）。
+- 根目录 4 份 `*NOTES.md` 与 `docs/notes/PLANSTAR_DEEP_STUDY.md` 归入「归档/研究」类，在 `docs/README.md` 的有效文档索引中显式标注**不得作为实现或排障依据**（对齐 `docs/README.md` 已有约定）。
 - 后续所有架构决策必须落 ADR 编号文件，`docs/README.md` 的「失真文档先 Deprecated 再迁 legacy」流程保持不变。
 
 ### D5 契约与规范治理：轻量、机器可校验，不引入生成链
@@ -350,12 +350,12 @@ grep -n 'admin/\*\*' .github/workflows/ci.yml            # 期望为 planstar_fr
 ## 8. 关联（Links）
 
 - 代码: `planstar_backend/cmd/planstar_backend/main.go#L45-L301`、`planstar_backend/internal/service/service.go#L71-L224`、`planstar_backend/internal/data/data.go#L45-L49`、`planstar_backend/internal/biz/models.go`、`planstar_backend/internal/server/routes_test.go`
-- 文档: `docs/ADR/ADR-NNNN.md`（模板）、`docs/ADR/planstar_arch_optimize.md`（参考材料，本 ADR §1.1 已复核）、`docs/api/API_CONTRACT.md#L5-L11`、`docs/api/ADMIN_CONTRACT.md`、`docs/architecture.md#§10`、`docs/README.md`、`agents.md`、`PLANSTAR_DEEP_STUDY.md`（现状审计基线）
+- 文档: `docs/ADR/ADR-NNNN.md`（模板）、`docs/research/go-wind-cms-split-proposal.md`（参考材料，本 ADR §1.1 已复核）、`docs/api/API_CONTRACT.md#L5-L11`、`docs/api/ADMIN_CONTRACT.md`、`docs/architecture.md#§10`、`docs/README.md`、`agents.md`、`docs/notes/PLANSTAR_DEEP_STUDY.md`（现状审计基线）
 - 参考快照: `.archive/go-wind/go-wind-cms/backend/{AGENTS.md,app/core/service/cmd/server/wiring.go,api/protos/}`、`.archive/go-wind/go-wind-admin/{CONTRIBUTING.md,backend/{AGENTS.md,Makefile,app.mk,.golangci.yml}}`（**只读参考，不参与构建**）
 - 关联 ADR: `ADR-0002`（目录结构优化与分阶段迁移方案，本决策的落地细化）
 - 建议另行立项的独立 ADR（不在本 ADR 范围）：
   - `ADR-0003` 生产配置不变量与 `config.lite.yaml` 可启动性修复（Q9 / C6）
-  - `ADR-0004` MQ 消费幂等、DLQ 治理与事务性 Outbox（功能性缺口，见 `PLANSTAR_DEEP_STUDY.md` §13）
+  - `ADR-0004` MQ 消费幂等、DLQ 治理与事务性 Outbox（功能性缺口，见 `docs/notes/PLANSTAR_DEEP_STUDY.md` §13）
   - `ADR-0005` 错误映射集中化与 `dict_enum` 运行时化/废弃决策（Q10 / Q9）
 
 ---
@@ -368,7 +368,7 @@ grep -n 'admin/\*\*' .github/workflows/ci.yml            # 期望为 planstar_fr
 
 | 决策项 | 落地内容 |
 |---|---|
-| D4 | 新增 `docs/ADR/README.md` 台账索引；`planstar_arch_optimize.md` 文首加「设计推演、非实战复盘」性质标注；归档笔记定位写入索引 |
+| D4 | 新增 `docs/ADR/README.md` 台账索引；`docs/research/go-wind-cms-split-proposal.md` 文首加「设计推演、非实战复盘」性质标注；归档笔记定位写入索引 |
 | D5 | `agents.md` 的 5 条契约怪癖按代码修正（登录失败 401 JSON、发码 429 例外、枚举为硬编码白名单、只写 HttpOnly Cookie、版本号禁止统一）；`API_CONTRACT.md` 条数 57/56、附录 56、登录端点清单、`psSession` 响应头；`ADMIN_CONTRACT.md` fail-closed 修正 + 补齐 4 条运营写路由与审计 action |
 | D5 | 新增 `internal/pkg/errcode` 单一错误码表（21 个码）；`service`/`server`/`observability`/`httpx` 全部改为引用常量；`API_CONTRACT.md` 补 `SERVICE_UNAVAILABLE` |
 | D5 | `routes_test.go` 新增 `TestRouteInventory`（57 条 / 56 唯一端点 / 恰好 1 条尾斜杠别名）与 `TestContractDeclaresSameInventory` |

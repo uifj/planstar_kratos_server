@@ -89,3 +89,35 @@ docker compose --env-file .env.local -f docker-compose.local.yml up -d --no-buil
   `docker compose --env-file .env.local -f docker-compose.local.yml down -v` 后再 `up -d --no-build`。
 - 因 Docker Hub 不可达，后续 CI 的镜像构建仍走 GitHub Actions runner；本地复现请使用本文的「内置 builder + `--no-build`」两段式命令。
 - 停止本地栈：`docker compose --env-file .env.local -f docker-compose.local.yml down`。
+
+---
+
+## 7. 治理批次复测（2026-11-19，PASS）
+
+在 `ADR-0003/0004/0005/0006` 实施、`internal/platform/` 归位、SMTP/OSS 接线、
+MQ 幂等与指标、错误映射层、测试补齐之后，重新构建镜像并复测 local deploy：
+
+```
+cd planstar_backend
+docker build --pull=false --build-arg VERSION=governance -t planstar-api:local .
+docker compose --env-file .env.local -f docker-compose.local.yml up -d --no-build
+```
+
+| 检查 | 结果 |
+|---|---|
+| 镜像构建 | `BUILD=0`（内置 builder，基础镜像命中本地缓存） |
+| 容器 | mysql / redis / planstar-api 均 Up (healthy) |
+| `GET /healthz` | `200 {"status":"ok","version":"governance"}` |
+| `GET /readyz` | `200 ready=true`，mysql/redis ok，elasticsearch/rabbitmq/consul skipped |
+| `GET /v1/categories` | `200`，3116 字节 |
+| `GET /v1/activities?pageIndex=1&pageSize=1` | `200`，JSON 可解析 |
+| `GET /v1/projects/hot` | `200`，8401 字节 |
+| `POST /v3/user/sendLoginCode` | `200`（烟雾脚本中亦为 200，非 5xx） |
+| `scripts/smoke-local.ps1` | `4/6 通过、2 项跳过`，退出码 0 |
+
+静态门禁（同批次）：`gofmt` 0、`go build ./...` 0、`go vet ./...` 0、
+`go test ./... -count=1` 0 失败、`go test -tags integration ./...` 0 失败（DSN 缺失自动 skip）、
+`golangci-lint run ./...` `0 issues.`、`promtool check rules` 20 rules SUCCESS、
+四份 compose `config -q` 通过、CI YAML 8 个 job 解析正常。
+
+> 本治理批次的文档与代码改动**尚未提交**；如需入库请按 Conventional Commits 单独提交。

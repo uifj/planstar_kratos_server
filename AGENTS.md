@@ -94,8 +94,11 @@ proto/Wire in `planstar_backend/`; `ADR-0002` defines the target directory layou
 - Thresholds: one package ≤ 40 `.go` files and ≤ 1 domain; one file ≤ 30 KB or
   ≤ 800 lines; `main.go` ≤ 80 lines; one wiring function ≤ 30 arguments.
 - `make check` is the local gate; CI additionally runs `internal/governance`
-  tests for dependency direction, route inventory, error-code table and ADR index
-  (set `PLANSTAR_GOVERNANCE_STRICT=1` to turn size warnings into failures).
+  tests for dependency direction, route inventory, error-code table and ADR index.
+  Layout thresholds are strict by default (`PLANSTAR_GOVERNANCE_STRICT=0` only
+  downgrades to report mode during P2 file moves).
+- All known open work is tracked in `docs/OPEN_ITEMS.md`. Check it before starting
+  architecture work, and update it (plus `docs/ADR/README.md`) when an item closes.
 
 ## Build & test
 

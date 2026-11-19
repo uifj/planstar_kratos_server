@@ -10,7 +10,7 @@
 把原 13 个编号文件按阿里规约整体重写，整理成一份**顺序正确、可一次性执行**的建库脚本，
 并在真实 MySQL 8.4.10 上跑通。
 
-- `00_all.sql` —— **一键完整安装**（9 库 / 97 张业务表 + 3 张证据表 / 0 物理外键 / 索引全部内联）
+- `00_all.sql` —— **一键完整安装**（9 个基线库 / 0 物理外键 / 索引全部内联；表数以 `verify.sql` 实跑输出为准，不在本文档写死）
 - `01..13_*.sql` —— 分文件副本，便于逐段 `SOURCE` 或复用
 - `90_teardown.sql` —— 逆序删库（**破坏性**，执行前确认无业务数据）
 - `15_project_domain.sql` —— 企划域增量 DDL（企划、回报档位、进度更新、支持记录等 11 张表），
@@ -48,8 +48,8 @@
 | 唯一索引 | 业务唯一键补齐 UNIQUE（`user_info.mobile_no`、`order_info.order_number`、`gift_card.serial_number` 等），且唯一键列全部 `NOT NULL` |
 | 禁止外键与级联 | 原 61 条外键（含 24 条跨库）全部移除，见 `12_constraints.sql` 的替代约定 |
 | 禁止冗余索引 | 原 8 个条件索引取消，改为内联；去除 5 组前缀冗余，单表二级索引 ≤ 5 |
-| 字段必须注释 | 1,760 列 **0 缺注释**（保留原 DTO 字段映射，便于追溯） |
-| 字符集 | 9 库、100 表全部 `utf8mb4 / utf8mb4_unicode_ci`；97 张业务表均 `ROW_FORMAT=DYNAMIC`（3 张证据表未显式指定，沿用默认） |
+| 字段必须注释 | 基线列 **0 缺注释**（保留原 DTO 字段映射）；列数随增量脚本增长，历史快照数字见 `history/`，不作验收依据 |
+| 字符集 | 9 个基线库全部 `utf8mb4 / utf8mb4_unicode_ci`；业务表均 `ROW_FORMAT=DYNAMIC`（3 张 `_rev_*` 证据表未显式指定，沿用默认） |
 | 禁用存储过程 | 无存储过程、无触发器、无视图 |
 
 > `dict_enum.code` 是唯一的 signed `INT`：种子含 `-1` 的枚举（`DeliverType.UNKOWN`、
@@ -59,7 +59,7 @@
 
 ```
 01_init_databases.sql   ->  CREATE DATABASE x 9
-02..09_<域>.sql         ->  USE <库> + CREATE TABLE（86 张业务表）
+02..09_<域>.sql         ->  USE <库> + CREATE TABLE（基线业务表，验收期望 86，见 verify.sql）
 10_dict_enums.sql       ->  dict_enum + 143 条字典种子
 11_rev_evidence.sql     ->  3 张证据表 + 2,363 行证据
 12_constraints.sql      ->  no-op（0 外键，仅应用层一致性说明）
@@ -69,6 +69,18 @@
 ```
 
 `00_all.sql` 已按此顺序拼接；各分文件自带 `USE`。
+### 两套执行入口的口径（2026-11-19，OPEN_ITEMS E4）
+
+- **分文件 SOURCE 顺序**：即上表 `01..13 → 15_project_domain.sql → 14_mock_seed.sql`，
+  `15_project_domain.sql` 是企划域增量 DDL，必须在演示种子之前执行（种子引用企划表）。
+- **compose / docker-entrypoint-initdb.d 顺序**：按挂载文件的**名字典序**执行，实际链路为
+  `00_all.sql`（已合并 01..13 与企划域 DDL）→ `14_mock_seed.sql`（生产由 `14_noop.sql` 同名覆盖）
+  → `planstar_backend/sql/15_auth_support.sql` → `16_...` → `20_project_idea.sql`。
+  因此 compose **不会**也不应再挂载 `docs/sql/15_project_domain.sql`，否则会重复建表。
+- 两者不冲突：分文件顺序用于人工逐段 `SOURCE`，compose 顺序用于容器初始化。
+- `verify.sql` 的 86/89 是**基线验收口径**；企划域、`shop`、`admin`、创意等增量库由
+  `planstar_backend/sql/15..20_*.sql` 追加，全库总表数随迁移链增长，不应写死在文档中。
+  历史快照里的 97/100/106/1,760 等数字属于不同阶段产物，仅保留在 `history/` 作对照。
 
 ## 本机实跑方式
 

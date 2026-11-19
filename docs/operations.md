@@ -1,3 +1,10 @@
+> **当前部署能力边界（2026-11-19，OPEN_ITEMS C10 决策）**：本仓库当前**未编排**
+> `loki` / `promtail` / `otel-collector` 服务，因此不具备远端链路追踪与日志聚合能力。
+> `config.prod.yaml` 的 `trace.endpoint` 已置空，Prometheus 的 collector job 与 Grafana
+> Loki 数据源已移除；日志请用 `docker compose logs --tail=200 planstar-api` 查看。
+> 下文涉及 Loki / OTel / Jaeger 的排障与巡检条目描述的是**未来启用后的目标态**，
+> 未编排时应跳过；启用步骤见 `planstar_backend/deploy/{loki,promtail,otel}/README.md`。
+> 日志中的 `trace_id` / `span_id` 仍可用于单机日志关联。
 > 适用版本：planstar 单体 · 最后核对：2026-11-07 · 维护：后端组
 
 # 运维手册（planstar 单体）
@@ -331,7 +338,7 @@ planstar-api --OTLP/gRPC--> otel-collector:4317 --batch--> jaeger:4317
 
 | 配置键 | 生产值 | 说明 |
 | --- | --- | --- |
-| `trace.endpoint` | `otel-collector:4317` | 支持 `host:port` 或带 scheme 的 URL；留空则 tracing 降级为 no-op |
+| `trace.endpoint` | 空（当前未编排 collector） | 支持 `host:port` 或带 scheme 的 URL；留空则 tracing 降级为 no-op |
 | `trace.insecure` | `true` | 明文 gRPC，适用内网 collector；未配置默认 `true` |
 | `trace.env` | `prod` | 写入资源属性 `deployment.environment` |
 | `trace.sample_ratio` | `0.1` | 父级采样 + TraceIDRatio，生产 10% |
@@ -586,7 +593,7 @@ Loki 查询：
 - [ ] `curl -fsS 127.0.0.1:9108/healthz` 返回 `status=ok`；`/readyz` 返回 200 且
       `checks[]` 无 `fail`（或仅 optional 项 `degraded`）。
 - [ ] `/metrics` 带 Bearer 可抓取，`planstar_build_info` 的 `version` 与发布记录一致。
-- [ ] Prometheus Targets：`planstar-api`、`mysql`、`redis`、`consul`、`otel-collector` 全部 UP。
+- [ ] Prometheus Targets：`planstar-api`、`mysql`、`redis`、`consul` 全部 UP（`otel-collector` 未编排，跳过）。
 - [ ] `planstar_ops_auth_failed_total` 无持续增长；`deploy/prometheus/ops_token` 与
       `.env` 中 `PLANSTAR_OPS_TOKEN` 一致，权限 `0600`。
 - [ ] 5xx 比例、P95 延迟、429 数量、在途请求、`planstar_db_wait_count_total` 在基线内。
@@ -594,7 +601,7 @@ Loki 查询：
 - [ ] Redis 内存、evicted_keys、AOF 磁盘；无持续拒绝连接。
 - [ ] RabbitMQ 队列深度、消费者数、DLQ 是否为空。
 - [ ] Elasticsearch 集群 health、JVM 堆、磁盘水位；`planstar-activities` 文档数与上架活动数接近。
-- [ ] Jaeger 能查到 `planstar.api` 新 trace；`otel-collector` 无持续导出错误。
+- [ ] （可选，未编排时跳过）Jaeger 能查到 `planstar.api` 新 trace。
 - [ ] Alertmanager（`9093`）无静默过期；SMTP 配置变更后 `amtool check-config` 通过。
 - [ ] 最近一次 MySQL 备份成功，抽查可恢复；备份文件保留周期符合要求。
 - [ ] Traefik 证书有效期、80/443 转发、Grafana/Loki 面板可访问。

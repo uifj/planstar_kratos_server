@@ -22,7 +22,7 @@
 **最容易误判的三件事**（下文逐条给证据）：
 
 1. 仓库根的 `README.md` / `agents.md` 描述的"9 个库、登录失败 5xx+text/plain、发码恒 200"是**旧口径**，与当前代码不符。
-2. `MIDDLEWARE.md`、`CODEGEN_VERIFICATION.md`、`KRATOS_STUDY_NOTES.md`、`KRATOS_SHOP_STUDY_NOTES.md` 写的是**上游 kratos-layout 模板和 kratos-shop 微服务**，不是本服务；`CLAUDE.md` 只是内容为 `AGENTS.md` 的链接桩。
+2. `docs/notes/MIDDLEWARE.md`、`docs/notes/CODEGEN_VERIFICATION.md`、`docs/notes/KRATOS_STUDY_NOTES.md`、`docs/notes/KRATOS_SHOP_STUDY_NOTES.md` 写的是**上游 kratos-layout 模板和 kratos-shop 微服务**，不是本服务；`CLAUDE.md` 只是内容为 `AGENTS.md` 的链接桩。
 3. `AGENTS.md` 说 `cmd` 是唯一装配点、无 Wire —— 这对 `planstar_backend/` 成立，但 `planstar_frontend/admin/` 是**使用 Wire 的**另一个服务，不可混为一谈。
 
 许可证是 **PolyForm Noncommercial 1.0.0**：允许一切非商业用途，禁止商业使用，分发须保留 `Required Notice: Copyright (C) 2026 uifj`，违规有 32 天补救期。这是理解整个项目性质的前提。
@@ -427,7 +427,7 @@ pnpm 9.15.9 + Turborepo 2 + TS 5 strict monorepo；`apps/web` 是 Next.js 15.5.4
 
 `Makefile`：`build`（`-X main.Version`）、`run`、`tidy`、`fmt`（仅 `gofmt -l` 检查）、`test`（`go test -race ./...`）、`vet`、`check: fmt vet test`、`ops-check`（探针单测 + 可选 promtool/amtool/compose）、`docker`、`sql-apply`、`test-integration`（`go test -tags integration ./...`，DSN 未设自动 skip）、`cover`。
 
-**实测**：`go build ./...` 退出 0；`go test ./...` 15 个包全 `ok`。本机 Go 1.27.3 与 `go.mod` 的 1.26.0 / 镜像的 `golang:1.26.5` 存在版本漂移 —— `CODEGEN_VERIFICATION.md` 记录过 Go 1.27.3 与 1.25.7 错配导致 `http2.TrailerPrefix`、Ent 生成器崩溃等问题，锁工具链是待办。
+**实测**：`go build ./...` 退出 0；`go test ./...` 15 个包全 `ok`。本机 Go 1.27.3 与 `go.mod` 的 1.26.0 / 镜像的 `golang:1.26.5` 存在版本漂移 —— `docs/notes/CODEGEN_VERIFICATION.md` 记录过 Go 1.27.3 与 1.25.7 错配导致 `http2.TrailerPrefix`、Ent 生成器崩溃等问题，锁工具链是待办。
 
 **领域层测试缺口**：19 个实现文件只有 10 个有测试，`AuthUsecase`（登录/验证码/限流/时序防护）、`OrderUsecase.MakeOrder`、`CatalogUsecase`、`FeedUsecase`、`MessageUsecase`、`UserUsecase` 6 个用例完全无 biz 单测。data 层除 ops 外，auth/order/payment/wallet/project 的 SQL **都没有集成测试**。
 
@@ -451,7 +451,7 @@ pnpm 9.15.9 + Turborepo 2 + TS 5 strict monorepo；`apps/web` 是 Next.js 15.5.4
 6. **`API_CONTRACT.md` 说登录下发响应头 `psSession`**，代码只写 HttpOnly Cookie（明确禁止 JS 可读头）。
 7. **`config.lite.yaml` 不可启动**（见 9.1）；`release.yml` 头部注释说 `PLANSTAR_LITE=1` 可选，但 deploy job 硬编码 `config.lite.yaml`。
 8. **`docs/legacy/` 是空目录、ADR 只有模板、`site/assets`/`openapi` 空、`backend/` 空** —— 但 `docs/README.md` 与 `architecture.md` 里有多条指向 legacy 文件的死链；`docs/ADR/` 里**没有任何已记录的架构决策**。
-9. **CI paths 指向不存在的 `admin/`**；`CODEGEN_VERIFICATION.md` / `KRATOS_STUDY_NOTES.md` 批评的 `.github/workflows/go.yml` 和 `go-version: ^1.20` 也不存在（实际只有 `ci.yml`，Go 1.26）。
+9. **CI paths 指向不存在的 `admin/`**；`docs/notes/CODEGEN_VERIFICATION.md` / `docs/notes/KRATOS_STUDY_NOTES.md` 批评的 `.github/workflows/go.yml` 和 `go-version: ^1.20` 也不存在（实际只有 `ci.yml`，Go 1.26）。
 10. **可观测栈容器未编排**（loki/promtail/otel-collector 目录空），但多处配置引用。
 11. **短信/OSS 状态互相矛盾**：`aliyun-sms-oss.md` 说默认关闭 Noop；`PRODUCTION_DELIVERY.md` 说生产强制 Dypnsapi、对象存储实际是火山 TOS/S3 故 overlay 关闭且 OSS 变量仍需非空占位。`docs/sql/README.md` 要求 `15_project_domain.sql` 在 `14_mock_seed.sql` 之前，但 compose 按字典序执行（14 在 15 前）。
 12. **`docs/sql/README.md` 自身数字打架**："重构后规模" 97 表/1760 列/271 索引 vs "实跑结果" 86 表/89 全表/1590 列 vs `history/VALIDATION.md` 89 表/1444 列/61 外键。
@@ -462,7 +462,7 @@ pnpm 9.15.9 + Turborepo 2 + TS 5 strict monorepo；`apps/web` 是 Next.js 15.5.4
 
 **P0（会致线上事故或改错契约）**：同步 `agents.md` / 根 `README.md` 的 5 条契约怪癖与代码；修 `config.lite.yaml` 使其能通过 `Validate`（或让 prod overlay 显式覆盖 `cookie_secure`）；确认 `PLANSTAR_QUOTE_TTL_SECONDS` / `PLANSTAR_ES_SYNC_INTERVAL_SECONDS` 的读取实现与 `conf.go` 的覆盖清单是否一致；修 CI 的 `admin/**` 路径。
 
-**P1（数据/消息可靠性）**：给 MQ 消费加基于 `ev.ID` 的去重表，给 DLQ 加告警与重放工具，发布改事务性 Outbox（这正是 `KRATOS_SHOP_STUDY_NOTES.md` §12 建议"搬回的三件事"之一）；补 `catalog.activity.changed/deleted` 发布点或删掉空链路；把重试从消费者内阻塞改成延迟队列/TTL 队列。
+**P1（数据/消息可靠性）**：给 MQ 消费加基于 `ev.ID` 的去重表，给 DLQ 加告警与重放工具，发布改事务性 Outbox（这正是 `docs/notes/KRATOS_SHOP_STUDY_NOTES.md` §12 建议"搬回的三件事"之一）；补 `catalog.activity.changed/deleted` 发布点或删掉空链路；把重试从消费者内阻塞改成延迟队列/TTL 队列。
 
 **P2（工程质量）**：补 `AuthUsecase` / `OrderUsecase.MakeOrder` 与主要 repo 的测试；把 `QuoteTTLFromEnv` 从 biz 移到 conf 注入；统一 `sql.ErrNoRows`/驱动错误映射 helper；消除 `Shop.Goods` / `Project.Detail` 的 N+1；统一分页阈值（现在通用 20/100、创意 10/20、聊天 20/100、举报 50/200）；锁 Go 工具链版本；补齐 loki/promtail/otel-collector 编排或删掉引用。
 

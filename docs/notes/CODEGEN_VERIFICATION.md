@@ -13,8 +13,8 @@
 
 ```
 ?? .workbuddy-ai/
-?? KRATOS_STUDY_NOTES.md
-?? CODEGEN_VERIFICATION.md
+?? docs/notes/KRATOS_STUDY_NOTES.md
+?? docs/notes/CODEGEN_VERIFICATION.md
 ```
 
 即所有已检入的生成产物（protobuf / gRPC / HTTP / OpenAPI / Wire injector / Ent 代码）

@@ -339,7 +339,7 @@ POST /v1/unifiedPay/pay
   | `orderNumber` | string | 是 | 订单号（兼容 `order_number`） |
   | `channel` | string | 是 | `wechat` / `alipay` / `unionpay` / `balance`（兼容 `payChannel` / `pay_channel`） |
 - 响应：`PaymentOrder`，字段见第 8.12 节；金额单位为**分**，`expireAt` 为毫秒时间戳
-- 说明：按 `(order_number, channel)` 唯一幂等，同一订单同一渠道重复调用返回同一 `payNo`；已过期（`pending` 或读取时已落为 `expired`）的支付单再次调用会重置为 `pending` 并续期 30 分钟。`payParams` 当前为占位对象 `{}`，字段留给后续支付 SDK
+- 说明：按 `(order_number, channel)` 唯一幂等，同一订单同一渠道重复调用返回同一 `payNo`；已过期（`pending` 或读取时已落为 `expired`）的支付单再次调用会重置为 `pending` 并续期 30 分钟。`payParams` 当前为占位对象 `{}`（**预留、未实现**：本阶段不接第三方支付 SDK，客户端不得依赖其字段内容；见 `docs/OPEN_ITEMS.md` C6）
 - 错误：`401 UNAUTHORIZED`、`400 BAD_REQUEST`（缺订单号/渠道非法）、`404 NOT_FOUND`（订单不存在或不属于当前用户）、`409 CONFLICT`（订单已关闭/已退款）、`500 INTERNAL`
 
 GET /v1/unifiedPay/payDetail
@@ -805,7 +805,7 @@ POST /v1/projectIdeas/{ideaId}/vote
 | 榜单 | `planstar_catalog.project`（`funding_status` + `rank_weight` 索引） |
 | 企划创意 / 表态 | `planstar_catalog.project_idea`、`project_idea_vote` |
 | 支持记录 / 支持下单 | `planstar_order.pledge` |
-| 组队支持 | `planstar_catalog.support_team`、`support_team_member` |
+| 组队支持 | `planstar_catalog.support_team`、`support_team_member`（表已建，**当前无对应端点**，属预留能力；见 `docs/OPEN_ITEMS.md` C6） |
 | 企划列表 / 热门 / 详情（legacy activity 表） | `planstar_catalog`（activity、activity_event、activity_category、city、venue、activity_lineup、activity_detail）+ `planstar_ticket`（ticket_category、ticket_group） |
 | 动态 / 评论 | `planstar_community.feed`、`feed_media`、`review` |
 | 消息 | `planstar_user.user_message` |

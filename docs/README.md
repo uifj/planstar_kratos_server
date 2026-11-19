@@ -34,17 +34,21 @@
 | [sql/README.md](sql/README.md) | 9 个基线 `planstar_*` 库建库脚本与演示数据说明（另有 `shop`/`admin` 增量脚本，运行时共 11 库） | 有效（数据基线） |
 | [ADR/README.md](ADR/README.md) | 架构决策台账索引（ADR-0001 模块化单体 / ADR-0002 目录结构） | 有效（决策台账） |
 | [local-deploy-verification.md](local-deploy-verification.md) | 目录改名后的 Docker 配置调整与本地 local deploy 验证记录（2026-11-19，PASS） | 有效 |
+| [OPEN_ITEMS.md](OPEN_ITEMS.md) | **治理台账**：A 架构阶段 / B 功能 ADR / C 功能缺口 / D 测试工程 / E 文档归档共 33 项，逐项附证据与验收方式；**2026-11-19 已全部闭环**（顶部为闭环状态，后文保留原始盘点证据） | 有效（治理台账） |
 
-## legacy 目录用途
+## 归档与研究材料（**不得作为实现或排障依据**）
 
-[legacy/](legacy/README.md) 存放与当前代码不符的历史资料，仅作对照，**不得作为实现或排障依据**。
+| 目录 | 内容 |
+|---|---|
+| [`ADR/`](ADR/README.md) | 正式架构决策台账 |
+| [`research/`](research/go-wind-cms-split-proposal.md) | go-wind-cms 拆分设计推演（非实战复盘，收益数字未经测量；见 `ADR-0001` §1.1） |
+| [`notes/`](notes/PLANSTAR_DEEP_STUDY.md) | 全仓学习报告与上游 kratos-layout / kratos-shop 模板研究笔记 |
 
-> **2026-11-19 治理核查**：该目录当前只有 `README.md`。旧索引列出的
-> `architecture-microservices.md`、`configuration.md`、`database.md`、
-> `development.md`、`evolution-plan.md`、`feasibility-p1.md` **均未随本仓库检出**，
-> 原链接为死链，已移除。历史微服务方案（gRPC / Consul / `shop_*` / PostgreSQL）
-> 已被 `architecture.md` 与 [ADR-0001](ADR/ADR-0001-modular-monolith-governance.md) 否决；
-> 如需对照上游模板，请查 `.archive/` 只读快照。
+> **2026-11-19 治理核查**：`docs/legacy/` 原为空目录，旧索引列出的
+> `architecture-microservices.md` 等 6 个文件均未随本仓库检出；死链已清理，
+> 空目录已删除。历史微服务方案（gRPC / Consul / `shop_*` / PostgreSQL）已被
+> `architecture.md` 与 [ADR-0001](ADR/ADR-0001-modular-monolith-governance.md) 否决；
+> 上游模板对照请查 `.archive/` 只读快照（已被 `.gitignore` 排除）。
 
 ## 文档维护约定
 

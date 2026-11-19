@@ -182,4 +182,4 @@ go.opentelemetry.io/otel v1.43.0   # 由 indirect 转为直接依赖
 ```
 
 > 工具链提示：本机默认 Go 1.27.3 与 `go.mod` 的 `go 1.25.7` 不一致，会让 Ent 生成器失败。
-> 请使用 Go 1.25.7（或 `GOTOOLCHAIN` 配合正确的 GOROOT），详见 `CODEGEN_VERIFICATION.md`。
+> 请使用 Go 1.25.7（或 `GOTOOLCHAIN` 配合正确的 GOROOT），详见 `docs/notes/CODEGEN_VERIFICATION.md`。
