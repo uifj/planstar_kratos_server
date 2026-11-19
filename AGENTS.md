@@ -50,6 +50,8 @@ client -> DTO -> service -> DO -> biz -> DO -> data -> PO -> storage
   separate admin module). Maps driver errors to `biz` errors.
 - `cmd` is the only assembly point. There is no Wire generation in `planstar_backend/`.
   `planstar_frontend/admin/` is a **different** Go module and does use Wire/Ent/proto.
+- New read/write business domains follow the checklist in `docs/CRUD_MODULE_GUIDE.md`
+  (ADR-0010 P2⑦); data-layer transactions go through `data/shared.WithTx`.
 
 ## Contract quirks (must preserve)
 
@@ -104,6 +106,12 @@ proto/Wire in `planstar_backend/`; `ADR-0002` defines the target directory layou
   still needs action is in `docs/FOLLOWUP_WORK.md` (TODO / DEBT / VERIFY / ENV / TRIGGER).
   Check both before starting architecture work, and update them (plus
   `docs/ADR/README.md`) when an item closes.
+- `docs/research/archive-reference-integration.md` (registered as **ADR-0010**) is
+  the phased reference-integration plan distilled from `.archive/go-wind` and
+  `.archive/zenith-admin`. Execute its P0→P2 items in order; close each in
+  `docs/FOLLOWUP_WORK.md`, and record a new ADR if a change touches the client contract.
+  Excluded (never adopt): Ent ORM, proto/Wire codegen, Kratos v2 multi-service split,
+  Node/Hono/Drizzle code, Semi Design, zenith `pageOffset` pagination semantics.
 
 ## Build & test
 

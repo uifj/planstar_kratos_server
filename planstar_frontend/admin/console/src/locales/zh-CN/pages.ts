@@ -350,4 +350,7 @@ export default {
   'pages.passwordChange.required': '请先修改初始密码后再继续操作',
 
   'pages.error.permissionDenied': '没有权限执行此操作',
+  'pages.error.renderFailed.title': '页面渲染出错',
+  'pages.error.renderFailed.subTitle': '页面加载或渲染时发生异常，请重新加载。',
+  'pages.error.reload': '重新加载',
 };

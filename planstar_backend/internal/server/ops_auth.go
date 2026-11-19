@@ -168,6 +168,10 @@ func (a *OpsAuth) Wrap(endpoint string, next http.Handler) http.Handler {
 				})
 				return
 			}
+			// ADR-0010 P0①：鉴权通过同样产出审计记录，与拒绝侧对称（补 PolicyEvaluationLog 闭环）。
+			a.logger.InfoContext(r.Context(), "rbac allowed", "audit", true,
+				"subject", identity.Subject, "obj", r.URL.Path, "act", r.Method,
+				"break_glass", identity.ViaBreakGlass)
 		}
 
 		r = r.WithContext(authn.WithIdentity(r.Context(), identity))

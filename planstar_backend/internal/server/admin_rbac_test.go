@@ -113,6 +113,26 @@ func TestAdminRBACLoginAndAuthorize(t *testing.T) {
 	}
 }
 
+func TestAdminRBACDecisionAudit(t *testing.T) {
+	f := newAuthFixture(t)
+	access, _ := f.login(t)
+
+	// 允许的访问：auditor 读举报列表应产出 rbac allowed 审计记录。
+	if rec := f.request(t, http.MethodGet, "/admin/reports", access, ""); rec.Code != http.StatusOK {
+		t.Fatalf("auditor 读举报列表 = %d, want 200", rec.Code)
+	}
+	if !bytes.Contains(f.buf.Bytes(), []byte("rbac allowed")) {
+		t.Error("鉴权通过未产出 rbac allowed 审计记录")
+	}
+	// 拒绝的访问：auditor 读 RBAC 策略应产出 rbac denied 审计记录。
+	if rec := f.request(t, http.MethodGet, "/admin/rbac/policies", access, ""); rec.Code != http.StatusForbidden {
+		t.Fatalf("auditor 读策略 = %d, want 403", rec.Code)
+	}
+	if !bytes.Contains(f.buf.Bytes(), []byte("rbac denied")) {
+		t.Error("鉴权拒绝未产出 rbac denied 审计记录")
+	}
+}
+
 func TestAdminRBACRejectsInvalidCredentials(t *testing.T) {
 	f := newAuthFixture(t)
 	rec := f.request(t, http.MethodPost, "/admin/auth/login", "", `{"username":"alice","password":"wrong"}`)

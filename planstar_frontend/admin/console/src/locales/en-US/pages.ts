@@ -370,4 +370,8 @@ export default {
 
   'pages.error.permissionDenied':
     'You do not have permission to perform this action',
+  'pages.error.renderFailed.title': 'Failed to render this page',
+  'pages.error.renderFailed.subTitle':
+    'Something went wrong while rendering the page. Please reload.',
+  'pages.error.reload': 'Reload',
 };

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"planstar/internal/biz"
+	"planstar/internal/data/shared"
 )
 
 // UserRepo 实现 biz.UserRepo，落 planstar_user。
@@ -195,21 +196,15 @@ func (r *UserRepo) SetDefaultAddress(ctx context.Context, userID int64, addressI
 	if err != nil {
 		return err
 	}
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
+	return shared.WithTx(ctx, db, func(tx *sql.Tx) error {
+		if _, err := tx.ExecContext(ctx, `UPDATE user_address SET is_default = 0 WHERE user_id = ?`, userID); err != nil {
+			return err
+		}
+		_, err := tx.ExecContext(ctx,
+			`UPDATE user_address SET is_default = 1, gmt_modified = NOW()
+			  WHERE user_id = ? AND address_id = ? AND status = 1`, userID, addressID)
 		return err
-	}
-	defer func() { _ = tx.Rollback() }()
-
-	if _, err := tx.ExecContext(ctx, `UPDATE user_address SET is_default = 0 WHERE user_id = ?`, userID); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx,
-		`UPDATE user_address SET is_default = 1, gmt_modified = NOW()
-		  WHERE user_id = ? AND address_id = ? AND status = 1`, userID, addressID); err != nil {
-		return err
-	}
-	return tx.Commit()
+	})
 }
 
 // splitRegion 把「省 市 区」拆成三段；空格分隔，多于三段时并入 district。

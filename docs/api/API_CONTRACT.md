@@ -817,3 +817,13 @@ POST /v1/projectIdeas/{ideaId}/vote
 | 订单 | `planstar_order.order_info` |
 | 用户资料 | `planstar_user.user_info`、`user_statistic` |
 | 地址 | `planstar_user.user_address` |
+
+## 10. 文件下载约定（前瞻，ADR-0010 P1④）
+
+当前 C 端无文件下载端点；本节约定未来新增「下载 / 导出」（如运营后台导出举报、订单、支付单为 CSV/Excel，或客户端下载附件）时的统一口径，避免前后端各自发明：
+
+- **成功**：`200`，直接返回文件字节流，`Content-Type` 按真实类型（如 `text/csv`、`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`），并写 `Content-Disposition: attachment; filename*=UTF-8''<urlencoded 文件名>`（中文文件名必须用 `filename*` 而非裸 `filename`，避免乱码）。
+- **失败（未开始流式输出前）**：与普通端点一致，返回统一 JSON 错误体 `{code,message,traceId}`（见第 2 节）；一旦开始输出字节流便不再改写响应，避免损坏文件。
+- **鉴权**：与所在端口一致——C 端走 `Cookie: psSession`；9108 运维端走 Bearer JWT（ADR-0007）。匿名可下载的内容不得泄漏他人数据。
+- **分页/大文件**：导出类接口不套用第 4 节的 JSON 分页，改为「请求带筛选条件 → 返回完整文件」或「服务端生成临时文件 + `GET` 拉取」；流式生成时优先 `io.Copy`，避免一次性载入内存。
+- **Flutter 协同点**：客户端下载需自行解析 `Content-Disposition` 的 `filename*` 取真实文件名，并处理「失败时返回 JSON 而非二进制」——先按 `Content-Type` 判断，`application/json` 则按第 2 节错误体解析。

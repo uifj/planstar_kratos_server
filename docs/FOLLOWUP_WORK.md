@@ -33,6 +33,9 @@
 | **F10** | `TODO` | **6 个 usecase 单测只覆盖边界** | 新增 `biz/usecase_smoke_test.go` 用 stub 覆盖空参数、分页归一、超限量等**校验前置路径**，未覆盖登录全链路、报价权威计算、下单幂等、消息通知等核心算法 | 按 `ADR-0002` 域分包时，每域补 2~3 个表驱动核心流程用例 | `go test ./internal/biz -cover` 明显提升且核心分支有断言 |
 | **F11** | `TODO` | **`/v1/upload` 端点与 OSS 消费者** | `internal/service/*.go` 中 `/v1/upload` 命中 **0**；`cmd/planstar/wiring.go` 已构造 `NewObjectStorage` 并注入 `Service.objects`，但该字段当前无调用方；`server/http.go` 的 upload 常量与放宽分支已在治理批次删除 | OSS 目前是「已接线但未使用」。要么实现端点（需同步契约条数 57→58 与客户端），要么在契约里明确标注「对象存储为预留能力」 | 二选一并同步 `API_CONTRACT.md` §1 条数与路由清单断言 |
 | **F12** | `TODO` | **`payParams` / 组队支持端点** | `docs/api/API_CONTRACT.md` 已标注 `payParams` 为占位 `{}`、`support_team` / `support_team_member` 表无对应端点（治理批次只做了标注） | 接支付 SDK / 组队业务时补实现；否则保留「预留、未实现」标注 | 契约标注与代码一致；新增端点时走路由清单断言 |
+| **F27** | `TRIGGER` | **DataScope 接线到可归属资源（ADR-0010 P0② 机制已落地）** | `biz/shared/datascope.go`（`ScopeSelf`/`ScopeAll` + `CanAccess`）与 `data/shared/datascope.go`（`ScopedWhere`）已落地并有单测；但 9108 现有端点（举报/企划/订单）均无「操作者归属」列，故尚未接线到具体查询 | 触发条件：运营后台出现带 `owner`/`assignee` 的资源（如审核任务单）。届时在 data 层用 `ScopedWhere` 拼 `WHERE owner=?`，单资源访问用 `CanAccess` 做 IDOR 校验（越权 → 403/404） | 不同 scope 查询结果正确；越权访问返回 403/404 |
+| **F28** | `TODO` | **剩余 11 处 `BeginTx` 迁移到 `shared.WithTx`（ADR-0010 P2⑧）** | `data/shared/tx.go` 已提供 `WithTx`；`data/user.go SetDefaultAddress` 已迁移示范；`grep -c '\.BeginTx(ctx, nil)' internal/data/*.go` 仍有 **11** 处（wallet 2、payment 2、user/shop/ops/project_write/project_idea/order/chat 各 1，不含 `tx.go` 自身） | 同 F3 口径：按 repo 逐个迁移到 `WithTx`，语义不变（失败回滚/成功提交）；迁移后 `grep -c` 单调下降 | 迁移后全量 `go test ./...` 通过，集成测试覆盖事务路径 |
+| **F29** | `TRIGGER` | **JWT access+refresh 客户端「刷新单飞」（ADR-0010 P0③ 已做跳转单飞）** | `console/src/requestErrorConfig.ts` 已加 401 跳转单飞守卫；但控制台走 cookie `psAdminToken` 会话、无 refresh 流，故「刷新单飞」不适用 | 触发条件：控制台或新客户端接入 9108 的 JWT access+refresh（ADR-0007）。届时把「单飞」模式套到 refresh 调用上（并发 401 只发一次 refresh，其余请求挂起重放） | 401 时仅一次 refresh 请求，其余并发请求复用同一新令牌 |
 
 ---
 
@@ -80,6 +83,15 @@
 - `ADR-0003` 生产配置可启动性、`ADR-0004` MQ 单实例幂等 + 指标 + 告警 + 重放工具、`ADR-0005` 错误映射内核 + dict_enum 决策、`ADR-0006` P2 收敛决策。
 - 本地 Docker local deploy 两次 PASS（初始验证 + 治理批次复测）。
 - 空目录清理、参考材料归档 `docs/research/`、研究笔记归档 `docs/notes/`。
+- **ADR-0010 归档参考集成方案 P0→P2 落地（本批次）**：
+  - P0① 鉴权决策审计：`server/ops_auth.go` 在 Casbin 通过时补 `rbac allowed` 审计记录，与 `rbac denied` 对称；新增 `TestAdminRBACDecisionAudit`。
+  - P0② 数据权限：`biz/shared/datascope.go`（enum + `CanAccess` IDOR 判定）+ `data/shared/datascope.go`（`ScopedWhere` 查询条件生成器）+ 单测；接线见 F27。
+  - P0③ 前端请求封装：`console` 本已具备 cookie 注入 + 统一错误处理；补 401 跳转**单飞**守卫（`requestErrorConfig.ts`）；refresh 单飞见 F29。
+  - P1④ 契约补强：`API_CONTRACT.md` 新增 §10 文件下载约定（含 Flutter 协同点）；响应/分页本已覆盖。
+  - P1⑤⑥ 已具备：`DataTable` 列表页抽象、生成式契约客户端 + `useRequest`/`useCursorPager`，无需新增样板。
+  - P2⑦ CRUD 约定：新增 `docs/CRUD_MODULE_GUIDE.md`（去 proto/Wire/Ent 的 11 步清单）。
+  - P2⑧ 事务统一：`data/shared/tx.go` 提供 `WithTx` + `user.go SetDefaultAddress` 迁移示范；剩余 11 处见 F28。
+  - P2⑨ 前端容错：新增 `console/src/components/PageErrorBoundary`（页面错误边界 + chunk 失败自动刷新），接入 `app.tsx` 布局。
 - **明确否决、不再列入待办**：物理拆服务/双 BFF/gRPC 微服务化、全量 proto/buf 生成链、按域做一级目录（`ADR-0001`）、事务性 Outbox（F15 除外需重新评审的场景）。
 
 ---

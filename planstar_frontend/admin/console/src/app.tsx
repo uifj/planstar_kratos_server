@@ -6,6 +6,9 @@ import {
   SelectLang,
 } from "@/components";
 import PasswordChangeGate from "@/components/PasswordChangeGate";
+import PageErrorBoundary, {
+  installChunkErrorRecovery,
+} from "@/components/PageErrorBoundary";
 import { type Admin, services } from "@/services";
 import type { Settings as LayoutSettings } from "@ant-design/pro-components";
 import { SettingDrawer } from "@ant-design/pro-components";
@@ -24,6 +27,9 @@ import { errorConfig } from "./requestErrorConfig";
 
 const isDevOrTest = process.env.NODE_ENV === "development" || process.env.CI;
 const loginPath = "/user/login";
+
+// chunk 加载失败兜底：发布后旧 chunk 失效时自动刷新一次，避免整站卡在「加载中」。
+installChunkErrorRecovery();
 
 /**
  * ProLayout 会为 realDark 注入暗色算法，但 config.ts 中固定的亮色 token 优先级更高，
@@ -118,7 +124,7 @@ export const layout: RunTimeLayoutConfig = ({
       <>
         <ThemeSync primary={themeColor} mode={colorMode} />
         <PasswordChangeGate />
-        {children}
+        <PageErrorBoundary>{children}</PageErrorBoundary>
         {isDevOrTest && (
           <SettingDrawer
             disableUrlParams

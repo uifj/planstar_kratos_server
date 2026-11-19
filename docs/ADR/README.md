@@ -16,6 +16,7 @@
 | [ADR-0007](./ADR-0007-jwt-casbin-rbac.md) | 运营域 JWT 鉴权与 Casbin RBAC | ACCEPTED | SEC | P1 | 2026-11-19 | C 端 `psSession` 契约不动；9108 在 OpsAuth 之后接入 JWT + 仓内可审计 Casbin 模型，共享运维令牌映射为显式 superadmin 策略 |
 | [ADR-0008](./ADR-0008-audit-debt-deferral.md) | 生产审计剩余问题的技术债登记与暂缓决策 | ACCEPTED | DEBT | P0/P1 | 2026-11-19 | 登记 G0/G1 修复后剩余的 8 项阻断与 26 项风险；用户决策「先落 ADR、暂不处理」，每项给触发条件；上线闸门 G2–G5 仍有效 |
 | [ADR-0009](./ADR-0009-local-seed-gaps.md) | 本地演示数据缺口登记（订单 / 退款 / 商城） | ACCEPTED | DEBT | P2 | 2026-11-19 | 登记 `order_info`、`order_refund` 为空与唯一商品下架导致本地只能覆盖 4xx；明确补齐种子时必须满足的金额/状态/幂等不变量 |
+| [ADR-0010](./ADR-0010-archive-reference-integration.md) | 归档项目参考集成方案立项与分期执行 | ACCEPTED | ARC | P0/P1/P2 | 2026-11-19 | 采纳 `docs/research/archive-reference-integration.md` 筛选的可复用项（鉴权审计、数据权限、前端请求封装等），排除 Ent/proto/Wire/Semi 等冲突项，按 P0→P2 分期落地 |
 
 **状态说明**：模板默认 `PROPOSED`；本台账中 `ACCEPTED` 表示**设计决策已选定**。ADR-0001/0002 的实施按 P0–P3 分批推进，进度见下表。
 
