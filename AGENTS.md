@@ -97,8 +97,10 @@ proto/Wire in `planstar_backend/`; `ADR-0002` defines the target directory layou
   tests for dependency direction, route inventory, error-code table and ADR index.
   Layout thresholds are strict by default (`PLANSTAR_GOVERNANCE_STRICT=0` only
   downgrades to report mode during P2 file moves).
-- All known open work is tracked in `docs/OPEN_ITEMS.md`. Check it before starting
-  architecture work, and update it (plus `docs/ADR/README.md`) when an item closes.
+- `docs/OPEN_ITEMS.md` is the closed governance ledger (33 items); the work that
+  still needs action is in `docs/FOLLOWUP_WORK.md` (TODO / DEBT / VERIFY / ENV / TRIGGER).
+  Check both before starting architecture work, and update them (plus
+  `docs/ADR/README.md`) when an item closes.
 
 ## Build & test
 

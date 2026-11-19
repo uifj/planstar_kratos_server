@@ -35,6 +35,7 @@
 | [ADR/README.md](ADR/README.md) | 架构决策台账索引（ADR-0001 模块化单体 / ADR-0002 目录结构） | 有效（决策台账） |
 | [local-deploy-verification.md](local-deploy-verification.md) | 目录改名后的 Docker 配置调整与本地 local deploy 验证记录（2026-11-19，PASS） | 有效 |
 | [OPEN_ITEMS.md](OPEN_ITEMS.md) | **治理台账**：A 架构阶段 / B 功能 ADR / C 功能缺口 / D 测试工程 / E 文档归档共 33 项，逐项附证据与验收方式；**2026-11-19 已全部闭环**（顶部为闭环状态，后文保留原始盘点证据） | 有效（治理台账） |
+| [FOLLOWUP_WORK.md](FOLLOWUP_WORK.md) | **后续工作台账**：从「闭环」中拆出的 26 项仍需代码/配置/验证动作的内容（TODO / DEBT / VERIFY / ENV / TRIGGER），含触发条件、证据与验收方式 | 有效（待办台账） |
 
 ## 归档与研究材料（**不得作为实现或排障依据**）
 

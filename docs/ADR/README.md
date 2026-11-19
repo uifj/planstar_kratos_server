@@ -35,9 +35,12 @@
 
 **P2 收敛说明（ADR-0006）**：`biz` / `data` / `service` 三个单包共 100+ 文件共享大量包内私有符号（`s.fail`、`s.requireUser`、`r.d`、`fen()`、各 DO 等）。一次性拆成 7 个域包会使这些引用跨包失效，必须逐域抽取端口、下沉 DO、重写 import 并分批跑全量测试；把它塞进一次变更会让「目录改名 + 部署验证 + 提交」失去可回滚的稳定点。已完成的 `service/events` 与 `data/project.go` 拆分验证了迁移路径可行，2026-11-19 治理批次已完成 `internal/platform/` 归位与严格门禁，并由 `ADR-0006` 决策阶段性停止 7 域拆包；重新拆包的触发条件（单包 > 60 文件 / 多团队并行 / 拆多进程）见该 ADR。
 
-**门禁状态**：`gofmt -l .` 空、`go build ./...` 0（两个 Go module）、`go vet ./...` 0、`go test ./... -count=1` 全绿、四份 compose `config -q` 通过、CI YAML 解析出 7 个 job、本地 Docker local deploy PASS。`go test -race` 本机因缺 `gcc` 无法执行，由 CI ubuntu runner 覆盖；`golangci-lint` 仍为报告式，待补 `.golangci.yml` 后转必过。
+**门禁状态**（2026-11-19 治理批次后）：`gofmt -l .` 空、`go build ./...` 0（两个 Go module）、`go vet ./...` 0、`go test ./... -count=1` 与 `-tags integration`（无 DSN 自动 skip）全绿、`golangci-lint run ./...` `0 issues.`、四份 compose `config -q` 通过、`promtool check rules` 20 rules SUCCESS、CI YAML 解析出 8 个 job、本地 Docker local deploy 两次 PASS。`go test -race` 本机因缺 `gcc`/CGO 无法执行，由 CI ubuntu runner 覆盖；目录/文件阈值门禁默认严格阻断。
 
-> **未完成项完整台账**：见 [docs/OPEN_ITEMS.md](../OPEN_ITEMS.md)。涵盖 P2 剩余 6 域与 `platform/` 归位、待立项的 ADR-0003（生产配置可启动性，P0）/ 0004（MQ 可靠性）/ 0005（错误映射与 `dict_enum`）、功能未接线项、测试覆盖与文档口径漂移。立项后请按 `ADR-NNNN.md` 模板生成编号文件并回写本台账。
+> **台账分两份**：[`docs/OPEN_ITEMS.md`](../OPEN_ITEMS.md) 是 33 项**已闭环**治理记录（闭环含实施、决策关闭、环境限制与预留扩展点）；
+> [`docs/FOLLOWUP_WORK.md`](../FOLLOWUP_WORK.md) 是其中**仍需后续动作**的 26 项（TODO / DEBT / VERIFY / ENV / TRIGGER），
+> 含 7 域拆包触发条件、ICP 备案期 Cookie 豁免、MQ 多实例去重、真实环境验证缺口等。
+> ADR-0003/0004/0005/0006 已在本台账登记，不再是「待立项」。
 
 ## 模板
 
