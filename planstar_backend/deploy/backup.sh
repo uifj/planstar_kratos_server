@@ -6,9 +6,10 @@
 #   ./backup.sh pre-deploy   # 发布前快照
 set -euo pipefail
 
-COMPOSE_DIR="${COMPOSE_DIR:-/opt/planstar_backend/planstar}"
+# 目录改名后 compose 位于 ${APP_DIR}/planstar_backend（PRODUCTION_AUDIT O3）。
+COMPOSE_DIR="${COMPOSE_DIR:-${APP_DIR:-/opt/planstar}/planstar_backend}"
 BACKUP_ROOT="${BACKUP_DIR:-/opt/planstar_backend/backups}"
-ENV_FILE="${ENV_FILE:-.env}"
+ENV_FILE="${ENV_FILE:-.env.prod}"
 LABEL="${1:-daily}"
 STAMP="$(date +%F-%H%M)"
 DIR="${BACKUP_ROOT}/${LABEL}/${STAMP}"

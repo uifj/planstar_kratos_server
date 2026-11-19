@@ -27,6 +27,8 @@ func prodConfig() *Config {
 	c.Notify.SMS.AccessSecret = "sk"
 	c.Notify.SMS.SignName = "sign"
 	c.Notify.SMS.TemplateCode = "SMS_001"
+	// ADR-0007：运营域 JWT 密钥在生产必须由 env 注入且足够强。
+	c.Security.JWT.Secret = "a-strong-production-jwt-signing-secret-2026"
 	return c
 }
 
@@ -92,6 +94,7 @@ func TestLiteConfigStartsWithProductionEnv(t *testing.T) {
 		"PLANSTAR_NOTIFY_SMS_SIGN_NAME":     "sign",
 		"PLANSTAR_NOTIFY_SMS_TEMPLATE_CODE": "SMS_001",
 		"PLANSTAR_MYSQL_USER":               "planstar_app",
+		"PLANSTAR_SECURITY_JWT_SECRET":      "a-strong-production-jwt-signing-secret-2026",
 	} {
 		t.Setenv(k, v)
 	}
@@ -103,11 +106,11 @@ func TestLiteConfigStartsWithProductionEnv(t *testing.T) {
 	if c.Server.Env != EnvProd {
 		t.Fatalf("env = %q, want prod", c.Server.Env)
 	}
-	if c.Auth.CookieSecureEnabled() {
-		t.Fatal("备案期档位应保持 cookie_secure=false")
+	if !c.Auth.CookieSecureEnabled() {
+		t.Fatal("生产档位必须启用 Secure Cookie（PRODUCTION_AUDIT S4）")
 	}
-	if !c.Auth.AllowInsecureCookie {
-		t.Fatal("备案期档位必须显式开启 allow_insecure_cookie")
+	if c.Auth.AllowInsecureCookie {
+		t.Fatal("生产档位不得开启明文 Cookie 豁免")
 	}
 }
 
@@ -128,6 +131,14 @@ func TestProductionInvariantsRejectUnsafeConfig(t *testing.T) {
 		{"短信 provider 非 aliyun", func(c *Config) { c.Notify.SMS.Provider = "noop" }, "provider"},
 		{"短信密钥缺失", func(c *Config) { c.Notify.SMS.AccessSecret = "" }, "access_secret"},
 		{"OSS 启用但配置不全", func(c *Config) { c.Storage.OSS.Enabled = true }, "storage.oss.provider"},
+		{"JWT 密钥缺失", func(c *Config) { c.Security.JWT.Secret = "" }, "security.jwt.secret"},
+		{"JWT 密钥过短", func(c *Config) { c.Security.JWT.Secret = "short" }, "security.jwt.secret"},
+		{"JWT 密钥为占位值", func(c *Config) { c.Security.JWT.Secret = "development-only-signing-key-1234567890" }, "占位值"},
+		{"JWT access TTL 过长", func(c *Config) { c.Security.JWT.AccessTTLSeconds = 99999 }, "access_ttl_seconds"},
+		{"JWT refresh TTL 不合法", func(c *Config) { c.Security.JWT.RefreshTTLSeconds = 1 }, "refresh_ttl_seconds"},
+		{"运营账号缺 hash", func(c *Config) {
+			c.Security.Users = []UserEntry{{Username: "alice", Roles: []string{"auditor"}}}
+		}, "security.users"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

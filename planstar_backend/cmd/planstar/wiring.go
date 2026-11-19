@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -19,6 +21,8 @@ import (
 
 	"planstar/internal/biz"
 	"planstar/internal/data"
+	"planstar/internal/platform/authn"
+	"planstar/internal/platform/authz"
 	"planstar/internal/platform/conf"
 	"planstar/internal/platform/mq"
 	"planstar/internal/platform/observability"
@@ -120,6 +124,61 @@ func run() error {
 	if err != nil {
 		logger.Error("init object storage failed", "err", err)
 		return err
+	}
+
+	// 运营域 JWT + Casbin RBAC（ADR-0007）。C 端 psSession 链完全不受影响；
+	// 9108 的 OpsAuth 仍在最外层，个人账号 JWT 与共享运维令牌共用 Bearer 头。
+	jwtSecret := []byte(c.Security.JWT.Secret)
+	if len(jwtSecret) < 32 {
+		if conf.IsProductionLikeEnv(c.Server.Env) {
+			return fmt.Errorf("生产环境必须通过 PLANSTAR_SECURITY_JWT_SECRET 注入至少 32 字节密钥")
+		}
+		jwtSecret = make([]byte, 32)
+		if _, err := rand.Read(jwtSecret); err != nil {
+			return fmt.Errorf("生成临时 JWT 密钥失败: %w", err)
+		}
+		logger.Warn("本地环境未配置 PLANSTAR_SECURITY_JWT_SECRET，已生成进程内临时密钥（重启后令牌失效）")
+	}
+	jwtCfg := authn.DefaultSettings(jwtSecret)
+	jwtCfg.Issuer = c.Security.JWT.Issuer
+	jwtCfg.Audience = c.Security.JWT.Audience
+	jwtCfg.AccessTTL = time.Duration(c.Security.JWT.AccessTTLSeconds) * time.Second
+	jwtCfg.RefreshTTL = time.Duration(c.Security.JWT.RefreshTTLSeconds) * time.Second
+	jwtCfg.Leeway = time.Duration(c.Security.JWT.LeewaySeconds) * time.Second
+
+	// 撤销表与策略增量优先落 Redis（多实例共享），未配置 Redis 时降级为进程内存储。
+	var revocation authn.Revocation = authn.NewMemoryRevocation()
+	var policyStore authz.PolicyStore = authz.NewMemoryPolicyStore()
+	if d.HasRedis() {
+		revocation = authn.NewRedisRevocation(d.Redis())
+		policyStore = authz.NewRedisPolicyStore(d.Redis())
+		logger.Info("JWT revocation and RBAC policies persisted in Redis")
+	}
+	issuer, err := authn.NewIssuer(jwtCfg, revocation)
+	if err != nil {
+		logger.Error("init jwt issuer failed", "err", err)
+		return err
+	}
+	userCfgs := make([]authn.User, 0, len(c.Security.Users))
+	for _, u := range c.Security.Users {
+		userCfgs = append(userCfgs, authn.User{
+			Username: u.Username, PasswordHash: u.PasswordHash, UID: u.UID, Roles: u.Roles,
+		})
+	}
+	users, err := authn.NewStaticUserStore(userCfgs)
+	if err != nil {
+		logger.Error("init admin user directory failed", "err", err)
+		return err
+	}
+	enforcer, err := authz.New(policyStore)
+	if err != nil {
+		logger.Error("init casbin enforcer failed", "err", err)
+		return err
+	}
+	adminAuth := server.NewAdminAuthAPI(issuer, users, enforcer, opsAuth, logger)
+	opsAuth.ConfigureAuthn(issuer, enforcer)
+	if len(userCfgs) == 0 {
+		logger.Warn("未配置运营账号（PLANSTAR_SECURITY_USERS_JSON），JWT 登录不可用，9108 仅共享运维令牌可访问")
 	}
 
 	// 按环境装配认证仓储：仅本地版本允许测试口令；
@@ -228,7 +287,7 @@ func run() error {
 	})
 
 	hs := server.NewHTTPServer(c.Server, mux, metrics, logger)
-	adminSrv := server.NewAdminServer(c.Server, metrics, readiness, Version, opsAuth, biz.NewReportUsecase(data.NewReportRepo(d)), projectUC, biz.NewOpsUsecase(data.NewOpsRepo(d)), logger)
+	adminSrv := server.NewAdminServer(c.Server, metrics, readiness, Version, opsAuth, biz.NewReportUsecase(data.NewReportRepo(d)), projectUC, biz.NewOpsUsecase(data.NewOpsRepo(d)), logger, adminAuth)
 
 	// 异步事件消费者：随 kratos.App 一起启停。
 	eventHandler := events.NewEventHandler(messageUC, catalogRepo, logger)

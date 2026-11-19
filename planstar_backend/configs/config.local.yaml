@@ -106,3 +106,21 @@ storage:
     access_secret: ""
     cdn_host: ""
     presign_ttl_seconds: 900
+
+# 运营域 JWT + Casbin RBAC（ADR-0007）。
+# 本地演示账号口令为 planstar-local-dev（bcrypt hash，明文不入库）；
+# 生产密钥与账号一律由 PLANSTAR_SECURITY_JWT_SECRET / PLANSTAR_SECURITY_USERS_JSON 注入。
+security:
+  jwt:
+    secret: ""
+    issuer: planstar.admin
+    audience: planstar.ops
+    access_ttl_seconds: 900
+    refresh_ttl_seconds: 604800
+    leeway_seconds: 30
+  users:
+    - username: devadmin
+      password_hash: "$2a$10$R679XWGAf8uqLjV7BxmQget/BtKsQxLUqSS3KkJxdoAsYWgCYgwYq"
+      uid: "dev-1"
+      roles:
+        - operator

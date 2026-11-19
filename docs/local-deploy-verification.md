@@ -121,3 +121,26 @@ docker compose --env-file .env.local -f docker-compose.local.yml up -d --no-buil
 四份 compose `config -q` 通过、CI YAML 8 个 job 解析正常。
 
 > 本治理批次的文档与代码改动**尚未提交**；如需入库请按 Conventional Commits 单独提交。
+---
+
+## 8. JWT + Casbin RBAC 复测（2026-11-19，PASS）
+
+镜像以 `--build-arg VERSION=jwt-rbac` 重建；`docker-compose.local.yml` 的
+`PLANSTAR_OPS_TOKEN` 改为 `${PLANSTAR_OPS_TOKEN:-}`（默认仍为空，不影响既有联调），
+复测时注入 `local-ops-token-for-rbac-test` 以验证 break-glass 链路。
+
+| 检查 | 结果 |
+|---|---|
+| 镜像构建 | `BUILD=0`，容器内 Go 依赖从 `goproxy.cn` 下载成功 |
+| `/healthz` | `200 {"version":"jwt-rbac","status":"ok"}` |
+| `POST /admin/auth/login`（devadmin / 本地演示口令） | `200`，返回 access + refresh JWT |
+| `GET /admin/rbac/me`（Bearer access JWT） | `200`，`{subject:"devadmin",roles:["operator"],breakGlass:false}` |
+| `GET /admin/rbac/policies`（operator JWT） | `403`（默认拒绝 + 最小权限） |
+| `GET /admin/rbac/policies`（共享运维令牌） | `200`，映射为策略中的 `superadmin`，非代码绕过 |
+| `GET /admin/rbac/me`（无令牌） | `401` |
+| `scripts/smoke-local.ps1` | `4/6 通过、2 项跳过`，退出码 0（C 端契约零回归） |
+
+**结论**：运营域 JWT 认证与 Casbin RBAC 在真实容器中通过；401/403 分离、
+break-glass 可审计、C 端 `psSession` 与 57 条路由完全不受影响。
+生产部署仍需通过 `PLANSTAR_SECURITY_JWT_SECRET` 与 `PLANSTAR_SECURITY_USERS_JSON`
+注入密钥和账号（见 `ADR-0007` 与 `docs/api/ADMIN_CONTRACT.md` §0.4）。

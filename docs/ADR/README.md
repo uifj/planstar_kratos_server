@@ -13,6 +13,7 @@
 | [ADR-0004](./ADR-0004-mq-reliability.md) | MQ 消费幂等、DLQ 治理与 Outbox 取舍 | ACCEPTED | ARC | P1 | 2026-11-19 | 事件 ID TTL 去重 + 死信告警/重放工具；明确不引入事务性 Outbox |
 | [ADR-0005](./ADR-0005-error-mapping-and-dict-enum.md) | 错误映射集中化与 `dict_enum` 运行时化决策 | ACCEPTED | DEF | P2 | 2026-11-19 | 新增 `data/shared` 错误映射层；字典表保留为数据基线，运行时用硬编码白名单 |
 | [ADR-0006](./ADR-0006-p2-domain-packaging-review.md) | P2 域物理分包方案的再评估与收敛决策 | ACCEPTED | ARC | P1 | 2026-11-19 | 修订 `ADR-0002` P2：阶段性停止 7 域拆包，改用共享内核 + `platform/` 归位 + 命名分组 + 严格治理断言；列出重新拆包的触发条件 |
+| [ADR-0007](./ADR-0007-jwt-casbin-rbac.md) | 运营域 JWT 鉴权与 Casbin RBAC | ACCEPTED | SEC | P1 | 2026-11-19 | C 端 `psSession` 契约不动；9108 在 OpsAuth 之后接入 JWT + 仓内可审计 Casbin 模型，共享运维令牌映射为显式 superadmin 策略 |
 
 **状态说明**：模板默认 `PROPOSED`；本台账中 `ACCEPTED` 表示**设计决策已选定**。ADR-0001/0002 的实施按 P0–P3 分批推进，进度见下表。
 

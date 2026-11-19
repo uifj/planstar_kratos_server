@@ -66,7 +66,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ./planstar
+          context: ./planstar_backend
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -85,8 +85,9 @@ jobs:
     name: Deploy release to server
     needs: release
     runs-on: ubuntu-latest
-    # 部署前置条件只看仓库变量（secrets 不可用于 job 级 if 表达式）
-    if: ${{ vars.SERVER_HOST != '' }}
+    # 不再用 job 级 if 判断部署目标：secrets 不能用于 job 级 if，若只配了
+    # secrets.SERVER_HOST 而未配 vars.SERVER_HOST，deploy 会被静默跳过且 workflow 仍为绿。
+    # 现在 job 总是执行，并由下方「Assert deploy target configured」显式失败（PRODUCTION_AUDIT O4）。
     env:
       # 生产部署固定使用 4C8G 低配档位 + docker-compose.prod.yml
       PLANSTAR_CONFIG_FILE: config.lite.yaml
@@ -99,6 +100,19 @@ jobs:
       name: production
       url: http://${{ vars.SERVER_HOST || 'localhost' }}:8098
     steps:
+      # 显式校验部署目标：配置缺失时让 workflow 变红，而不是静默跳过（PRODUCTION_AUDIT O4）。
+      - name: Assert deploy target configured
+        shell: bash
+        env:
+          SECRET_HOST: ${{ secrets.SERVER_HOST }}
+          VAR_HOST: ${{ vars.SERVER_HOST }}
+        run: |
+          if [ -z "$SECRET_HOST" ] && [ -z "$VAR_HOST" ]; then
+            echo "::error::部署目标未配置：请设置 secrets.SERVER_HOST 或 vars.SERVER_HOST"
+            exit 1
+          fi
+          echo "deploy target: ${SECRET_HOST:-$VAR_HOST}"
+
       # 【安全整改】workflow_dispatch 的 tag 是自由文本，禁止直接把
       # ${{ ... }} 表达式插入远程 shell（可构造 `v1"; <命令>; #` 造成 RCE）。
       # 先在 runner 侧用白名单正则校验，再经 envs 以环境变量传给远端。
@@ -145,7 +159,7 @@ jobs:
 
             # 生产档位：4C8G/2M 单机，config.lite.yaml + prod overlay + .env.prod
             export PLANSTAR_CONFIG_FILE=config.lite.yaml
-            export COMPOSE_DIR="${DEPLOY_APP_DIR}/planstar"
+            export COMPOSE_DIR="${DEPLOY_APP_DIR}/planstar_backend"
             export ENV_FILE=.env.prod
 
             # Prometheus 抓取 9108/metrics 需要 Bearer 令牌，从服务器本地 .env.prod 落盘

@@ -70,7 +70,7 @@ printf '%s' "${PLANSTAR_OPS_TOKEN}" | ssh -p "${SERVER_PORT}" "${SERVER_USER}@${
 
 echo "==> 远程 preflight + 生产档位上线"
 ssh -p "${SERVER_PORT}" "${SERVER_USER}@${SERVER_HOST}" "cd ${APP_DIR} && \
-  export ENV_FILE=.env.prod COMPOSE_DIR=${APP_DIR}/planstar PLANSTAR_CONFIG_FILE=config.lite.yaml && \
+  export ENV_FILE=.env.prod COMPOSE_DIR=${APP_DIR}/planstar_backend PLANSTAR_CONFIG_FILE=config.lite.yaml && \
   ./planstar_backend/deploy/preflight.sh && \
   docker compose ${COMPOSE_ENV} ${COMPOSE_FILES} pull planstar-api admin admin-web && \
   docker compose ${COMPOSE_ENV} ${COMPOSE_FILES} up -d --remove-orphans && \

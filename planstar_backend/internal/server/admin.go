@@ -51,13 +51,19 @@ func writeProbeJSON(w http.ResponseWriter, status int, v any) {
 
 // NewAdminServer 提供运维端点：/metrics、/healthz、/readyz，以及运营后台的举报审核与企划审核端点。
 // 与业务端口分离，避免指标与审核能力暴露在公网 API 上。
-func NewAdminServer(c conf.Server, metrics *observability.Metrics, ready *ops.Readiness, version string, auth *OpsAuth, reports *biz.ReportUsecase, projects *biz.ProjectUsecase, opsUC *biz.OpsUsecase, logger *slog.Logger) *khttp.Server {
+func NewAdminServer(c conf.Server, metrics *observability.Metrics, ready *ops.Readiness, version string, auth *OpsAuth, reports *biz.ReportUsecase, projects *biz.ProjectUsecase, opsUC *biz.OpsUsecase, logger *slog.Logger, authAPI *AdminAuthAPI) *khttp.Server {
 	mux := http.NewServeMux()
 	// /metrics 与运营后台需要 Bearer 凭据；探针保持匿名，供容器编排健康检查使用。
 	mux.Handle("/metrics", auth.Wrap("metrics", metrics.Handler()))
 	live, readyz := NewProbeHandlers(ready, version, metrics)
 	mux.Handle("/healthz", live)
 	mux.Handle("/readyz", readyz)
+
+	// ADR-0007：运营域 JWT 登录/刷新与 RBAC 策略管理端点。
+	// 这些端点只在 9108，不改变 8098 的 57 条路由清单。
+	if authAPI != nil {
+		authAPI.Register(mux)
+	}
 
 	// 运营后台单页：举报处理台 + 企划审核。
 	mux.Handle("GET /admin/console", auth.Wrap("admin", http.HandlerFunc(adminConsole)))

@@ -24,6 +24,7 @@ services:
       PLANSTAR_STORAGE_OSS_REGION: ""
       PLANSTAR_STORAGE_OSS_BUCKET: ""
       PLANSTAR_STORAGE_OSS_CDN_HOST: ""
-    # 【临时】公网 IP 直连业务端口（备案完成走域名 HTTPS 后删除）
+    # 生产业务端口只发布到回环，HTTPS 由 Traefik 终止后转发（PRODUCTION_AUDIT S4）。
+    # 禁止 8098 公网明文直连：那会绕过 TLS，并以明文传输 30 天有效的 psSession Cookie。
     ports:
-      - "8098:8098"
+      - "127.0.0.1:8098:8098"

@@ -8,16 +8,14 @@ the repository root is a legacy kratos-layout template kept for reference and is
 ## Project structure
 
 ```text
-planstar_backend/cmd/planstar_backend/            entrypoint + manual dependency assembly (no Wire)
-planstar_backend/internal/conf/           config structs + env overrides (PLANSTAR_*)
-planstar_backend/internal/biz/            usecases, DO, repo ports, domain events (+ biz/shared kernel, ADR-0001 P1)
-planstar_backend/internal/data/           repo impls (MySQL database/sql, Redis, Elasticsearch)
-planstar_backend/internal/service/        HTTP handlers (DTO <-> DO) + route registry (source of truth)
-planstar_backend/internal/server/         business HTTP server + admin server (/metrics /healthz /readyz)
-planstar_backend/internal/mq/             RabbitMQ publisher / consumer (DLX, trace propagation)
-planstar_backend/internal/observability/  Prometheus metrics + OTLP tracing + trace logging
-planstar_backend/internal/ops/            readiness engine; internal/testutil/ integration harness
-planstar_backend/internal/pkg/            captcha / secret / session / httpx / notify / storage / errcode
+planstar_backend/cmd/planstar/            main.go (thin) + wiring.go + probes.go (no Wire)
+planstar_backend/internal/platform/       conf / mq / observability / ops / pkg / authn / authz
+planstar_backend/internal/biz/            usecases, DO, repo ports (+ biz/shared)
+planstar_backend/internal/data/           repos (+ data/shared driver error mapping)
+planstar_backend/internal/service/        HTTP handlers + route registry (+ service/events)
+planstar_backend/internal/server/         business HTTP + admin server (JWT + Casbin)
+planstar_backend/internal/governance/     CI-gated architecture assertions
+planstar_backend/internal/testutil/       opt-in integration harness
 planstar_backend/configs/                 config.yaml / config.local.yaml / config.lite.yaml / config.prod.yaml
 planstar_backend/deploy/                  Prometheus / Alertmanager / Traefik / Grafana (+ loki/promtail/otel placeholders)
 planstar_backend/docker-compose*.yml      base / local / prod / server overlay (4 files)
@@ -97,6 +95,11 @@ proto/Wire in `planstar_backend/`; `ADR-0002` defines the target directory layou
   tests for dependency direction, route inventory, error-code table and ADR index.
   Layout thresholds are strict by default (`PLANSTAR_GOVERNANCE_STRICT=0` only
   downgrades to report mode during P2 file moves).
+- 9108 ops domain uses JWT (jwt/v5 HS256) + Casbin RBAC (ADR-0007) in
+  internal/platform/{authn,authz}. The C-side psSession contract is unchanged.
+  The shared ops token is an explicit `superadmin` policy, not a code bypass:
+  deny-by-default, 401 vs 403, fail-closed. Secrets only via
+  PLANSTAR_SECURITY_JWT_SECRET / PLANSTAR_SECURITY_USERS_JSON.
 - `docs/OPEN_ITEMS.md` is the closed governance ledger (33 items); the work that
   still needs action is in `docs/FOLLOWUP_WORK.md` (TODO / DEBT / VERIFY / ENV / TRIGGER).
   Check both before starting architecture work, and update them (plus

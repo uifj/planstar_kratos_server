@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/url"
@@ -22,6 +23,7 @@ type Config struct {
 	Ops      Ops      `yaml:"ops"`
 	Notify   Notify   `yaml:"notify"`
 	Storage  Storage  `yaml:"storage"`
+	Security Security `yaml:"security"`
 }
 
 // Notify 是短信与邮件通知配置；默认关闭，真实服务商客户端按 provider 接入。
@@ -141,6 +143,31 @@ type Auth struct {
 	// 且必须由配置或 PLANSTAR_AUTH_ALLOW_INSECURE_COOKIE 显式开启，不能靠缺省值绕过。
 	// ADR-0003：备案完成切换域名 HTTPS 后，应把 cookie_secure 改回 true 并删除此开关。
 	AllowInsecureCookie bool `yaml:"allow_insecure_cookie"`
+}
+
+// Security 是运营域 JWT + RBAC 的运行时配置（ADR-0007）。
+// C 端 psSession Cookie 契约完全不受本段影响。
+type Security struct {
+	JWT   JWTConfig   `yaml:"jwt"`
+	Users []UserEntry `yaml:"users"`
+}
+
+// JWTConfig 的 Secret 只从 PLANSTAR_SECURITY_JWT_SECRET 注入，禁止写入任何 yaml。
+type JWTConfig struct {
+	Secret            string `yaml:"secret"`
+	Issuer            string `yaml:"issuer"`
+	Audience          string `yaml:"audience"`
+	AccessTTLSeconds  int    `yaml:"access_ttl_seconds"`
+	RefreshTTLSeconds int    `yaml:"refresh_ttl_seconds"`
+	LeewaySeconds     int    `yaml:"leeway_seconds"`
+}
+
+// UserEntry 的 PasswordHash 必须是 bcrypt hash；运行时由 authn.NewStaticUserStore 复核。
+type UserEntry struct {
+	Username     string   `yaml:"username"`
+	PasswordHash string   `yaml:"password_hash"`
+	UID          string   `yaml:"uid"`
+	Roles        []string `yaml:"roles"`
 }
 
 // CodeHMACKeyValue 返回验证码摘要密钥，未配置时回退到运维令牌（生产必填）。
@@ -311,6 +338,29 @@ func Load(path string) (*Config, error) {
 	}
 	override(&c.Auth.TestCredentialPassword, "PLANSTAR_AUTH_TEST_CREDENTIAL_PASSWORD")
 	override(&c.Auth.CodeHMACKey, "PLANSTAR_AUTH_CODE_HMAC_KEY")
+	// 运营域 JWT（ADR-0007）：密钥与账号目录只从 env 注入，绝不写入 yaml。
+	override(&c.Security.JWT.Secret, "PLANSTAR_SECURITY_JWT_SECRET")
+	override(&c.Security.JWT.Issuer, "PLANSTAR_SECURITY_JWT_ISSUER")
+	override(&c.Security.JWT.Audience, "PLANSTAR_SECURITY_JWT_AUDIENCE")
+	for _, kv := range []struct {
+		env string
+		dst *int
+	}{
+		{"PLANSTAR_SECURITY_JWT_ACCESS_TTL_SECONDS", &c.Security.JWT.AccessTTLSeconds},
+		{"PLANSTAR_SECURITY_JWT_REFRESH_TTL_SECONDS", &c.Security.JWT.RefreshTTLSeconds},
+		{"PLANSTAR_SECURITY_JWT_LEEWAY_SECONDS", &c.Security.JWT.LeewaySeconds},
+	} {
+		if err := overrideInt(kv.dst, kv.env); err != nil {
+			return nil, err
+		}
+	}
+	if v := os.Getenv("PLANSTAR_SECURITY_USERS_JSON"); v != "" {
+		var users []UserEntry
+		if err := json.Unmarshal([]byte(v), &users); err != nil {
+			return nil, fmt.Errorf("PLANSTAR_SECURITY_USERS_JSON 不是合法 JSON: %w", err)
+		}
+		c.Security.Users = users
+	}
 	// 通知与对象存储默认关闭，密钥仅通过环境变量注入。
 	if err := overrideBool(&c.Notify.SMS.Enabled, "PLANSTAR_NOTIFY_SMS_ENABLED"); err != nil {
 		return nil, err
@@ -474,6 +524,35 @@ func (c *Config) validateProductionInvariants() error {
 			}
 		}
 	}
+	// ADR-0007：运营域 JWT 的 fail-fast 断言。密钥弱、TTL 失控或账号目录缺字段
+	// 都在启动阶段拒绝，绝不退化成 go-wind-admin 的 authz.type=noop 全放行。
+	secret := strings.TrimSpace(c.Security.JWT.Secret)
+	if len(secret) < 32 {
+		return fail("security.jwt.secret 至少 32 字节（PLANSTAR_SECURITY_JWT_SECRET）")
+	}
+	lower := strings.ToLower(secret)
+	for _, bad := range []string{"dev", "changeme", "example", "test-only", "placeholder"} {
+		if strings.Contains(lower, bad) {
+			return fail("security.jwt.secret 疑似占位值 %q，禁止用于生产", bad)
+		}
+	}
+	if strings.TrimSpace(c.Security.JWT.Issuer) == "" || strings.TrimSpace(c.Security.JWT.Audience) == "" {
+		return fail("security.jwt.issuer/audience 不能为空")
+	}
+	if c.Security.JWT.AccessTTLSeconds < 60 || c.Security.JWT.AccessTTLSeconds > 3600 {
+		return fail("security.jwt.access_ttl_seconds 必须在 60~3600")
+	}
+	if c.Security.JWT.RefreshTTLSeconds <= c.Security.JWT.AccessTTLSeconds || c.Security.JWT.RefreshTTLSeconds > 30*24*3600 {
+		return fail("security.jwt.refresh_ttl_seconds 必须大于 access 且不超过 30 天")
+	}
+	if c.Security.JWT.LeewaySeconds < 0 || c.Security.JWT.LeewaySeconds > 60 {
+		return fail("security.jwt.leeway_seconds 必须在 0~60")
+	}
+	for i, u := range c.Security.Users {
+		if strings.TrimSpace(u.Username) == "" || strings.TrimSpace(u.PasswordHash) == "" || len(u.Roles) == 0 {
+			return fail("security.users[%d] 缺少 username/password_hash/roles", i)
+		}
+	}
 	return nil
 }
 
@@ -585,6 +664,22 @@ func applyDefaults(c *Config) {
 	}
 	if c.Server.Admin.Addr == "" {
 		c.Server.Admin.Addr = "0.0.0.0:9108"
+	}
+	// ADR-0007：JWT 默认值。RBAC 模型与基线策略内置在 authz 包，无配置项可关闭（默认拒绝）。
+	if c.Security.JWT.Issuer == "" {
+		c.Security.JWT.Issuer = "planstar.admin"
+	}
+	if c.Security.JWT.Audience == "" {
+		c.Security.JWT.Audience = "planstar.ops"
+	}
+	if c.Security.JWT.AccessTTLSeconds <= 0 {
+		c.Security.JWT.AccessTTLSeconds = 900
+	}
+	if c.Security.JWT.RefreshTTLSeconds <= 0 {
+		c.Security.JWT.RefreshTTLSeconds = 7 * 24 * 3600
+	}
+	if c.Security.JWT.LeewaySeconds <= 0 {
+		c.Security.JWT.LeewaySeconds = 30
 	}
 	if c.Registry.Consul.Scheme == "" {
 		c.Registry.Consul.Scheme = "http"

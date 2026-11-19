@@ -74,6 +74,35 @@ curl -fsS -H "Authorization: Bearer $PLANSTAR_OPS_TOKEN" \
   `service.fail()` 对同一错误返回 409，两套映射刻意不同）、`NOT_FOUND` → 404、其余 → 500 `INTERNAL`。
 - 同值设置不算 not-found：`data/ops.go` 先 `SELECT 1` 判存在，不依赖 `RowsAffected`。
 
+### 0.4 运营域 JWT 登录与 RBAC 管理（ADR-0007）
+
+9108 现在同时接受两类 Bearer 凭据：**认证在前、Casbin RBAC 授权在后**，默认拒绝。
+
+| 凭据 | 说明 |
+|---|---|
+| `PLANSTAR_OPS_TOKEN` | 共享运维令牌 → 映射为策略中显式声明的 `superadmin` 角色（break-glass，审计 `actor=token:<hash>`）；不是代码里的绕过分支，策略可审计、可撤销 |
+| 个人账号 access JWT | HS256、`typ=access`、15 分钟；由 `/admin/auth/login` 签发，角色来自账号目录；权限由 Casbin 即时判定，令牌内**不**携带权限快照 |
+
+- 未授权 `401 UNAUTHORIZED`；越权 `403 FORBIDDEN`；判定出错一律拒绝（fail-closed）。
+- 刷新令牌 `typ=refresh` 只用于 `/admin/auth/refresh`，轮换后旧 jti 立即撤销。
+- 撤销表与策略增量优先存 Redis（`planstar:authn:revoked:*`、`planstar:authz:policies`）；无 Redis 时降级为进程内存储（重启失效）。
+- 生产必须注入 `PLANSTAR_SECURITY_JWT_SECRET`（≥32 字节且非占位值）；账号目录由 `PLANSTAR_SECURITY_USERS_JSON`（JSON 数组：`username/password_hash/uid/roles`）注入。密钥弱、TTL 非法、账号缺字段均在启动阶段拒绝，绝不退化成 `authz=noop` 全放行。
+- 本地/开发档内置演示账号 `devadmin`（角色 `operator`），口令见 `planstar_backend/configs/config.local.yaml` 注释（仅 bcrypt hash 入库）。
+
+| 方法 | 路径 | 鉴权 | 用途 |
+|---|---|---|---|
+| `POST` | `/admin/auth/login` | 免 Bearer（CIDR + 失败限流 5 次/分钟） | `{username,password}` → access/refresh JWT |
+| `POST` | `/admin/auth/refresh` | 免 Bearer（refresh JWT 在 body） | 轮换 access + refresh |
+| `POST` | `/admin/auth/logout` | Bearer | 撤销当前 access jti，可带 `refreshToken` 一并撤销 |
+| `GET` | `/admin/rbac/me` | Bearer | 当前 subject/roles/过期时间/是否 break-glass |
+| `GET` | `/admin/rbac/policies` | Bearer + `rbac_admin`/superadmin | 策略与 g 分组快照 |
+| `POST` | `/admin/rbac/policies` | 同上 | 新增策略 `{sub,obj,act}`；内置基线不可覆盖 |
+| `DELETE` | `/admin/rbac/policies` | 同上 | 删除运行时策略；内置基线不可删 |
+| `GET` | `/admin/rbac/roles` | 同上 | 内置角色与账号目录摘要 |
+| `POST` | `/admin/rbac/users/{name}/roles` | 同上 | 给用户分配角色 `{role}`（写 `g` 策略） |
+
+> C 端 8098 的 `psSession` 契约完全不变；本节端点只在 9108，**不进入** `API_CONTRACT.md` 的 57 条路由清单。
+
 ## 1. 举报列表
 
 `GET /admin/reports`
@@ -208,15 +237,18 @@ curl -fsS -H "Authorization: Bearer $PLANSTAR_OPS_TOKEN" \
 
 - 管理端口不参与业务网关路由，禁止公网直接暴露；compose 仅把 `9108` 发布到宿主机
   `127.0.0.1`，远程访问需经内网/跳板机或反向代理。
-- 所有 `/admin*` 请求必须携带 `Authorization: Bearer <PLANSTAR_OPS_TOKEN>`；可叠加
-  `PLANSTAR_OPS_ALLOWED_CIDRS` 限制来源。未授权返回 401，来源不允许返回 403。
+- 所有 `/admin*` 请求必须携带 `Authorization: Bearer <PLANSTAR_OPS_TOKEN>`（共享运维令牌）
+  或 ADR-0007 的个人账号 access JWT；可叠加 `PLANSTAR_OPS_ALLOWED_CIDRS` 限制来源。
+  未授权返回 401，来源不允许或越权返回 403。
 - 处理动作写入 `status`、`handle_note`、`handle_time`，保留业务留痕；同时输出
   `ops audit` 结构化日志与 `planstar_ops_audit_total` 指标。
 - 审计字段固定为 `audit/actor/action/target/result/remote_addr/status`，不记录令牌明文。
 - 令牌轮换需同步更新 `PLANSTAR_OPS_TOKEN`、`planstar_backend/.env` 与
   `planstar_backend/deploy/prometheus/ops_token`；否则 Prometheus 抓取失败并触发
   `PlanstarOpsAuthFailureSpike`。
-- 后续接入运营账号体系时，在 `OpsAuth` 之后增加 RBAC 中间件，不改动业务契约。
+- 运营账号体系已按 ADR-0007 接入：`OpsAuth` 认证成功后由仓内 Casbin 模型按
+  `method + path` 做 RBAC 判定，默认拒绝；共享运维令牌映射为显式 `superadmin` 策略，
+  不是代码里的绕过分支。端点与凭据见 §0.4。
 
 ## 7. 运营后台 API（admin.planstar.top）
 

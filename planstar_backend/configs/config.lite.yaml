@@ -46,14 +46,13 @@ data:
 auth:
   # 会话有效期（天）
   session_expire_days: 30
-  # 【临时】ICP 备案期间走 HTTP + 公网 IP 直连：Secure Cookie 在明文 HTTP 下
-  # 客户端不会保存，登录会失效，故暂时关闭。备案完成切回域名 HTTPS 后必须改回 true。
-  cookie_secure: false
-  # 显式豁免（ADR-0003）：生产 fail-fast 断言默认拒绝 cookie_secure=false，
-  # 只有本开关或 PLANSTAR_AUTH_ALLOW_INSECURE_COOKIE 显式开启才放行；
-  # ops.token/allowed_cidrs、DB 最小权限账号、短信通道等其余断言不受影响。
-  # 备案完成切换 HTTPS 后，删除本开关并把 cookie_secure 改回 true。
-  allow_insecure_cookie: true
+  # 生产会话 Cookie 必须经 HTTPS 传输（PRODUCTION_AUDIT S4）：Secure + HttpOnly + SameSite=Lax。
+  # 禁止明文 HTTP 直连：psSession 有效期 30 天，明文传输等于把会话令牌暴露给链路监听方。
+  cookie_secure: true
+  # 明文 Cookie 豁免已关闭（ADR-0003 的备案期技术债于 2026-11-19 结清）。
+  # conf.validateProductionInvariants 仍保留对 cookie_secure=false 的 fail-fast 断言；
+  # 本开关保留仅为兼容旧 env 名，任何值都不会使已启用的 Secure Cookie 降级。
+  allow_insecure_cookie: false
   # 同一手机号发送验证码的冷却秒数
   send_code_cooldown_seconds: 60
   # 同一 IP 每分钟发送验证码的最大次数
@@ -133,3 +132,16 @@ storage:
     access_secret: ""
     cdn_host: ""
     presign_ttl_seconds: 3600   # 0 表示使用默认 900 秒
+
+# 运营域 JWT + Casbin RBAC（ADR-0007）。
+# 密钥与账号目录只从 env 注入：PLANSTAR_SECURITY_JWT_SECRET / PLANSTAR_SECURITY_USERS_JSON。
+# C 端 psSession Cookie 契约完全不受影响。
+security:
+  jwt:
+    secret: ""
+    issuer: planstar.admin
+    audience: planstar.ops
+    access_ttl_seconds: 900
+    refresh_ttl_seconds: 604800
+    leeway_seconds: 30
+  users: []
