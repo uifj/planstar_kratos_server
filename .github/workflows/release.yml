@@ -5,9 +5,10 @@
 #
 # 部署所需 Secrets（缺失则自动跳过部署）：
 #   SERVER_HOST / SERVER_USER / SERVER_SSH_KEY / SERVER_PORT / APP_DIR / GHCR_TOKEN
-# 部署档位（可选仓库变量）：
-#   PLANSTAR_LITE=1  低配档位（4C8G，叠加 docker-compose.lite.yml + config.lite.yaml）
-#   未设置或为空     全量档位（COMPOSE_PROFILES=full + config.prod.yaml）
+# 部署档位：deploy job 固定使用 4C8G 低配档位（config.lite.yaml），
+# compose 由 docker-compose.yml + docker-compose.prod.yml + 可选 docker-compose.server.yml
+# 三文件合并；仓库中不存在 docker-compose.lite.yml，也没有 PLANSTAR_LITE 开关。
+# 全量档位（COMPOSE_PROFILES=full + config.prod.yaml）需在服务器上手工切换。
 name: Release
 
 on:

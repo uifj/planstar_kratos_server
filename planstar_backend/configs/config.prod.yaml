@@ -56,13 +56,15 @@ auth:
   # 短信验证码入库摘要密钥，仅由 PLANSTAR_AUTH_CODE_HMAC_KEY 注入
   code_hmac_key: ""
 
-# OTLP 链路追踪（经 otel-collector 转发到 Jaeger；endpoint 留空则关闭 tracing）
+# 链路追踪（OPEN_ITEMS C10 决策）：otel-collector / Loki / Promtail 当前均未在
+# compose 中编排，故 endpoint 留空关闭 tracing，避免 exporter 连不上端点导致数据静默缺失。
+# 启用前必须先在 compose 定义这些服务，并恢复 Prometheus/Grafana 中的相应引用。
 trace:
-  endpoint: otel-collector:4317
+  endpoint: ""
   insecure: true
   env: prod
   # 生产采样率：默认 10%，避免海量 span 压垮存储
-  sample_ratio: 0.1
+  sample_ratio: 0
 
 # RabbitMQ 异步事件（用户名密码由 PLANSTAR_MQ_ADDR 注入）
 mq:

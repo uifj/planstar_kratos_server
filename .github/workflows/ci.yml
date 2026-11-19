@@ -37,7 +37,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.26"
+          go-version: "1.26.5"
           cache: true
           cache-dependency-path: planstar_backend/go.sum
 
@@ -71,7 +71,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.26"
+          go-version: "1.26.5"
           cache: true
           cache-dependency-path: planstar_frontend/admin/go.sum
 
@@ -126,7 +126,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.26"
+          go-version: "1.26.5"
           cache: true
           cache-dependency-path: planstar_backend/go.sum
 
@@ -146,7 +146,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.26"
+          go-version: "1.26.5"
           cache: true
           cache-dependency-path: planstar_backend/go.sum
 
@@ -161,14 +161,39 @@ jobs:
       - name: Layout thresholds (strict)
         run: go test ./internal/governance -run TestLayoutThresholds -count=1 -v
 
-      # 报告式 lint：仓库尚无 .golangci.yml，P1 补齐配置后转为必过。
-      - name: golangci-lint (report only until .golangci.yml exists)
-        continue-on-error: true
+      # ADR-0001 D6 / OPEN_ITEMS A6：.golangci.yml 已落地并本地验证 0 issues，转为必过。
+      # 固定版本避免 latest 漂移；与 planstar_backend/.golangci.yml 的 v2 schema 匹配。
+      - name: golangci-lint (required)
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v2.15.0
           working-directory: planstar_backend
           args: --timeout=5m
+
+  quality:
+    name: Ops & Integration Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: planstar_backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.5"
+          cache: true
+          cache-dependency-path: planstar_backend/go.sum
+
+      # OPEN_ITEMS D2：运维面单测之前只在 make ops-check 里靠人工执行。
+      - name: Ops probes / authz / load tests
+        run: make ops-check-go
+
+      # 未配置 PLANSTAR_TEST_MYSQL_DSN 时集成测试自动 skip，任何环境可安全执行。
+      - name: Integration tests
+        run: make test-integration
 
   compose:
     name: Compose Config

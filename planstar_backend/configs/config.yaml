@@ -1,3 +1,8 @@
+# !! 本文件是 dev 本地开发基线：其中的 root/root 与 amqp://root:root 均为测试口令，
+# !! 仅允许在本机使用，严禁用于任何非本地环境。生产由 docker-compose.prod.yml 的
+# !! ${VAR:?} 强制注入、conf.validateProductionInvariants 启动断言兜底。
+# !! 所有敏感项可用 PLANSTAR_MYSQL_PASSWORD / PLANSTAR_REDIS_PASSWORD /
+# !! PLANSTAR_MQ_ADDR / PLANSTAR_OPS_TOKEN 等环境变量覆盖（见 conf.go）。
 server:
   # 运行环境：dev/prod；prod 且未显式配置 cookie_secure 时自动启用 Secure
   env: dev

@@ -6,7 +6,7 @@
 # 一键推送部署: ./deploy.sh  （见脚本头部说明）
 #
 # 可观测栈（对齐仓库 deploy/）:
-#   Prometheus + Alertmanager + Grafana + Loki/Promtail + Traefik
+#   Prometheus + Alertmanager + Grafana + Traefik（Loki/Promtail/otel-collector 未编排）
 #   mysqld-exporter / redis-exporter 基础设施指标
 # =====================================================================
 
@@ -62,7 +62,6 @@ x-app-env: &app-env
 x-admin-env: &admin-env
   TZ: Asia/Shanghai
   # 与 planstar 共用 OTel Collector；未配置 endpoint 时 admin 的 tracing 为 no-op。
-  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
   ADMIN_SERVER_ENV: prod
   ADMIN_SERVER_HTTP_ADDR: 0.0.0.0:9100
   ADMIN_SERVER_GRPC_ADDR: 0.0.0.0:9101
@@ -230,7 +229,7 @@ services:
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
-      # 仅暴露 UI；OTLP 接收统一由 otel-collector 承担，避免与 4317/4318 端口冲突
+      # 仅暴露 UI；otel-collector 未编排，tracing 已关闭，避免与 4317/4318 端口冲突
       - "127.0.0.1:16686:16686"
     logging: *default-logging
     networks: [planstar]

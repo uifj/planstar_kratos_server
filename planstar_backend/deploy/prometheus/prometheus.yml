@@ -40,11 +40,7 @@ scrape_configs:
         labels:
           service: admin.api
 
-  # OTel Collector 的 Prometheus exporter（collector.yaml 中 prometheus exporter
-  # 监听 0.0.0.0:8889）。用于确认 OTLP 接收与导出链路自身健康。
-  - job_name: otel-collector
-    static_configs:
-      - targets: ["otel-collector:8889"]
+  # otel-collector 未编排，其 exporter job 已移除（见 docs/OPEN_ITEMS.md C10）。
 
   - job_name: mysql
     static_configs:

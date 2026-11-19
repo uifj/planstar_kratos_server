@@ -284,3 +284,30 @@ groups:
             admin 5xx 占比连续 5 分钟高于 10%，运营后台已不可用。检查
             docker compose ps admin、/readyz、MySQL/Redis 以及 ops API 依赖；
             必要时回滚上一 ADMIN_TAG（见 docs/admin-integration.md）。
+
+  - name: planstar-mq
+    rules:
+      - alert: PlanstarMQDeadLetterGrowing
+        expr: increase(planstar_mq_dlq_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MQ 有消息进入死信队列"
+          description: "10 分钟内出现死信消息。检查 planstar_mq_consume_failed_total 与消费者日志，确认根因后用 scripts/dlq-replay.sh 重放（ADR-0004）。"
+      - alert: PlanstarMQConsumeFailures
+        expr: rate(planstar_mq_consume_failed_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MQ 消费失败率持续升高"
+          description: "检查 RabbitMQ 连通性、handler 错误与 x-retry-count；必要时查看 DLQ 深度。"
+      - alert: PlanstarMQPublishFailures
+        expr: rate(planstar_mq_publish_failed_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "领域事件发布失败"
+          description: "事件发布只影响站内通知与 ES 增量，不阻断主流程（ADR-0004）；检查 broker confirm 与网络。"

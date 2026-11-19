@@ -1,6 +1,6 @@
 module planstar
 
-go 1.26.0
+go 1.26.5
 
 require (
 	github.com/XSAM/otelsql v0.44.0
