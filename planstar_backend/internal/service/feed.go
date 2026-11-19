@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"planstar/internal/biz"
-	"planstar/internal/pkg/httpx"
+	"planstar/internal/platform/pkg/httpx"
 )
 
 func (s *Service) hotFeeds(w http.ResponseWriter, r *http.Request) {

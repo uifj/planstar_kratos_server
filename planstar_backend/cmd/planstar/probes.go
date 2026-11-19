@@ -6,10 +6,10 @@ import (
 
 	"github.com/hashicorp/consul/api"
 
-	"planstar/internal/conf"
 	"planstar/internal/data"
-	"planstar/internal/mq"
-	"planstar/internal/ops"
+	"planstar/internal/platform/conf"
+	"planstar/internal/platform/mq"
+	"planstar/internal/platform/ops"
 )
 
 // aggregateProbeStatus 汇总探针结果：任一关键依赖失败为 fail，非关键失败为 degraded。
@@ -48,9 +48,9 @@ func buildOpsChecks(c *conf.Config, d *data.Data, pub *mq.Publisher, consulCli *
 		rabbitProbe = pub.Health
 	}
 	if consulCli != nil {
-		consulProbe = func(ctx context.Context) error {
-			ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-			defer cancel()
+		// Consul Status().Leader() 不接受 context；超时由 ops.Readiness 的
+		// Check.Timeout 统一约束，避免创建一个不会被使用的派生 ctx。
+		consulProbe = func(context.Context) error {
 			_, err := consulCli.Status().Leader()
 			return err
 		}

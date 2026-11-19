@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"planstar/internal/conf"
-	"planstar/internal/observability"
+	"planstar/internal/platform/conf"
+	"planstar/internal/platform/observability"
 )
 
 func newTestOpsAuth(t *testing.T, c conf.Ops) (*OpsAuth, *bytes.Buffer) {

@@ -3,9 +3,14 @@ package shared
 import (
 	"context"
 	"crypto/rand"
+	"encoding/binary"
 	"encoding/hex"
+	"sync/atomic"
 	"time"
 )
+
+// eventSeq 只在 crypto/rand 不可用时参与降级 ID 生成，避免全零或常量 ID。
+var eventSeq uint64
 
 // 领域事件类型（RabbitMQ routing key）。
 const (
@@ -37,7 +42,12 @@ func (NopEventPublisher) Publish(context.Context, *DomainEvent) error { return n
 // NewEvent 组装一个带唯一 ID 的领域事件。
 func NewEvent(eventType string, userID int64, data map[string]any) *DomainEvent {
 	b := make([]byte, 16)
-	_, _ = rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		// 事件 ID 用于消费端幂等；随机源失败时不能退化为全零或可预测常量。
+		// 用纳秒时间 + 进程内自增序号生成降级 ID，仍保持唯一性。
+		binary.BigEndian.PutUint64(b[:8], uint64(time.Now().UnixNano()))
+		binary.BigEndian.PutUint64(b[8:], atomic.AddUint64(&eventSeq, 1))
+	}
 	return &DomainEvent{
 		ID:         hex.EncodeToString(b),
 		Type:       eventType,

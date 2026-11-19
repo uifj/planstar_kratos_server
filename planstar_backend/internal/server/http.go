@@ -14,17 +14,10 @@ import (
 
 	khttp "github.com/go-kratos/kratos/v3/transport/http"
 
-	"planstar/internal/conf"
-	"planstar/internal/observability"
-	"planstar/internal/pkg/errcode"
-	"planstar/internal/pkg/httpx"
-)
-
-const (
-	// uploadMaxBodyBytes 是上传类路径（/v1/upload 前缀）放宽后的请求体上限。
-	uploadMaxBodyBytes int64 = 20 << 20
-	// uploadPathPrefix 是上传类路径前缀；当前无 upload 端点，保留常量供后续启用。
-	uploadPathPrefix = "/v1/upload"
+	"planstar/internal/platform/conf"
+	"planstar/internal/platform/observability"
+	"planstar/internal/platform/pkg/errcode"
+	"planstar/internal/platform/pkg/httpx"
 )
 
 // NewHTTPServer 复用 kratos transport（优雅启停），业务路由通过标准 ServeMux 挂载。
@@ -179,25 +172,22 @@ func (tw *timeoutWriter) flush() {
 	}
 }
 
-// bodyLimit 限制请求体大小：默认 1 MiB，/v1/upload 前缀放宽到 20 MiB，超限直接 413。
+// bodyLimit 限制请求体大小：默认 1 MiB，超限直接 413。
+// 若将来新增上传端点，可在此按路径放宽，但必须同步 API_CONTRACT.md 与路由清单断言。
 func bodyLimit(maxBytes int64, logger *slog.Logger, next http.Handler) http.Handler {
 	if maxBytes <= 0 {
 		maxBytes = httpx.DefaultMaxBodyBytes
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		limit := maxBytes
-		if strings.HasPrefix(r.URL.Path, uploadPathPrefix) {
-			limit = uploadMaxBodyBytes
-		}
-		if r.ContentLength > limit {
+		if r.ContentLength > maxBytes {
 			if logger != nil {
 				logger.WarnContext(r.Context(), "request body too large",
-					"path", r.URL.Path, "content_length", r.ContentLength, "limit", limit)
+					"path", r.URL.Path, "content_length", r.ContentLength, "limit", maxBytes)
 			}
 			httpx.Error(w, r, http.StatusRequestEntityTooLarge, errcode.PayloadTooLarge, "请求体过大")
 			return
 		}
-		r.Body = http.MaxBytesReader(w, r.Body, limit)
+		r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 		next.ServeHTTP(w, r)
 	})
 }

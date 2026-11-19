@@ -54,6 +54,17 @@ lint:
 # 运维面校验（探针/鉴权/压测/告警配置）请单独执行 make ops-check
 check: fmt vet governance test
 
+.PHONY: ops-check-go
+# ops-check-go 只跑不依赖 Docker 的运维面单测（探针/鉴权/压测），供 CI 与本地快速校验。
+# 依赖 Docker 的 promtool/amtool/compose 校验仍在 make ops-check 中。
+ops-check-go:
+	go test ./internal/server -run 'TestOps|TestHealthz|TestReadyz' -count=1 -v
+
+.PHONY: check-all
+# check-all 本地全量门禁：格式/vet/治理/单测 + 运维面单测 + 集成测试
+# （PLANSTAR_TEST_MYSQL_DSN 缺失时集成测试自动 skip，任何环境可安全执行）。
+check-all: check ops-check-go test-integration
+
 .PHONY: ops-check
 # ops-check 运维面校验：探针/鉴权测试 + 端点压测；Docker 可用时额外校验
 # Prometheus 规则、Alertmanager 配置与 compose。Docker 缺失时跳过外部校验。

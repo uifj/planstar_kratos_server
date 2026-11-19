@@ -1,0 +1,31 @@
+# golangci-lint v2 配置（ADR-0001 D6 / OPEN_ITEMS A6）
+# 保守起步：只启用与 go vet 同族的确定性检查，避免把风格争议变成 CI 噪音。
+# 生成物与压测型单测单独放宽，保证 lint 报出的每一条都能在源头修复。
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: none
+  enable:
+    - govet
+    - ineffassign
+    - unused
+    - staticcheck
+  settings:
+    # 只启用 SA 系列（真实缺陷 / 弃用 API）；QF/ST 是可争议的 quickfix 风格建议，
+    # 放进 CI 会产生与功能无关的大面积噪音。
+    staticcheck:
+      checks:
+        - "SA*"
+  exclusions:
+    generated: lax
+    rules:
+      - path: _test\.go
+        linters:
+          - staticcheck
+      # 治理断言刻意读取仓库内文档/配置，不属于业务代码风格问题。
+      - path: internal/governance/
+        linters:
+          - staticcheck

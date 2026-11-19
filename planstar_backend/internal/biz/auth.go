@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"planstar/internal/biz/shared"
-	"planstar/internal/pkg/captcha"
-	"planstar/internal/pkg/secret"
-	sessiontoken "planstar/internal/pkg/token"
+	"planstar/internal/platform/pkg/captcha"
+	"planstar/internal/platform/pkg/secret"
+	sessiontoken "planstar/internal/platform/pkg/token"
 )
 
 // 兼容层（ADR-0001 P1）：通用领域错误已下沉到 biz/shared，errors.Is 语义不变。

@@ -7,12 +7,7 @@ import (
 )
 
 // 兼容层（ADR-0001 P1）：单位与时间换算的唯一实现在 biz/shared。
-// 小写函数保留给包内既有调用与 models_test.go；P2 分包时统一改用 shared 导出函数。
-
-func fen(v float64) int64        { return shared.Fen(v) }
-func fmtDT(t time.Time) string   { return shared.FmtDT(t) }
-func fmtDTp(t *time.Time) string { return shared.FmtDTp(t) }
-func birthTs(t *time.Time) int64 { return shared.BirthTs(t) }
+// 包内小写别名已删除（models_test.go 只测导出函数，data 层直接调用导出函数）。
 
 // 导出给 data 层使用的转换助手。
 

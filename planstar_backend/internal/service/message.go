@@ -3,7 +3,7 @@ package service
 import (
 	"net/http"
 
-	"planstar/internal/pkg/httpx"
+	"planstar/internal/platform/pkg/httpx"
 )
 
 func (s *Service) messages(w http.ResponseWriter, r *http.Request) {

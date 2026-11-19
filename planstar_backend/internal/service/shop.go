@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"planstar/internal/biz"
-	"planstar/internal/pkg/httpx"
+	"planstar/internal/platform/pkg/httpx"
 )
 
 // shopGoods 返回在售商品列表（匿名可访问）。

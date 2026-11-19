@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"planstar/internal/biz"
-	"planstar/internal/pkg/httpx"
+	"planstar/internal/platform/pkg/httpx"
 )
 
 // chatThreads 返回当前用户的会话列表。

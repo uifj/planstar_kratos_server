@@ -6,14 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/redis/go-redis/v9"
 	"math/rand"
 	"sync"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
-	"github.com/redis/go-redis/v9"
-
 	"planstar/internal/biz"
+	"planstar/internal/data/shared"
 )
 
 // quoteKeyPrefix 是 Redis 中报价快照的键前缀。
@@ -397,10 +396,9 @@ func orderByID(ctx context.Context, q rowQuerier, userID, orderID int64) (*biz.T
 	return o, nil
 }
 
-// isDuplicateKey 判断 MySQL 唯一键冲突（错误码 1062）。
+// isDuplicateKey 委托 data/shared 的统一驱动错误映射（ADR-0005）。
 func isDuplicateKey(err error) bool {
-	var me *mysql.MySQLError
-	return errors.As(err, &me) && me.Number == 1062
+	return shared.IsDuplicateKey(err)
 }
 
 // newOrderID 生成应用侧唯一订单 ID（毫秒时间戳 + 20 位随机），替代并发不安全的 MAX+1。

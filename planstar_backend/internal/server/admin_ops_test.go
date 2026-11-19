@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"planstar/internal/biz"
-	"planstar/internal/conf"
+	"planstar/internal/platform/conf"
 )
 
 func okSet(context.Context, int64, int32) error { return nil }

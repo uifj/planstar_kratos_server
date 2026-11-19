@@ -12,10 +12,10 @@ import (
 	khttp "github.com/go-kratos/kratos/v3/transport/http"
 
 	"planstar/internal/biz"
-	"planstar/internal/conf"
-	"planstar/internal/observability"
-	"planstar/internal/ops"
-	"planstar/internal/pkg/errcode"
+	"planstar/internal/platform/conf"
+	"planstar/internal/platform/observability"
+	"planstar/internal/platform/ops"
+	"planstar/internal/platform/pkg/errcode"
 )
 
 // NewProbeHandlers 返回 /healthz 与 /readyz 的 handler（admin 与测试复用同一套语义）。

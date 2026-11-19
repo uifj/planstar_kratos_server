@@ -3,7 +3,7 @@ package data
 import (
 	"testing"
 
-	"planstar/internal/conf"
+	"planstar/internal/platform/conf"
 )
 
 // 低配档位（config.lite.yaml）中 elastic.addr 为空，不应创建 ES 客户端。

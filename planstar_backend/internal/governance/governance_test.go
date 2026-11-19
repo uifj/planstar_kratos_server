@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"planstar/internal/pkg/errcode"
+	"planstar/internal/platform/pkg/errcode"
 )
 
 // repoRoot 返回仓库根（本包位于 <root>/planstar_backend/internal/governance）。
@@ -174,7 +174,7 @@ func TestErrorCodeSingleSource(t *testing.T) {
 	for _, c := range errcode.All() {
 		known[c] = true
 	}
-	errcodeDir := filepath.Join(root, "planstar_backend", "internal", "pkg", "errcode")
+	errcodeDir := filepath.Join(root, "planstar_backend", "internal", "platform", "pkg", "errcode")
 	for _, path := range goSources(t, filepath.Join(root, "planstar_backend", "internal"), false) {
 		if filepath.Dir(path) == errcodeDir {
 			continue
@@ -299,5 +299,31 @@ func TestLayoutThresholds(t *testing.T) {
 	lines := strings.Count(readFile(t, mainGo), "\n") + 1
 	if lines > maxMainLines {
 		report("cmd/planstar/main.go 有 %d 行，超过阈值 %d（P1 需拆 wiring.go）", lines, maxMainLines)
+	}
+}
+
+// TestGoToolchainPinned 保证 go.mod / Dockerfile / CI 的 Go 版本一致（OPEN_ITEMS D6/D7）。
+// 工具链漂移曾导致 http2.TrailerPrefix 与生成器崩溃（见 CODEGEN_VERIFICATION.md）。
+func TestGoToolchainPinned(t *testing.T) {
+	root := repoRoot(t)
+	goMod := readFile(t, root, "planstar_backend", "go.mod")
+	dockerfile := readFile(t, root, "planstar_backend", "Dockerfile")
+	ci := readFile(t, root, ".github", "workflows", "ci.yml")
+
+	m := regexp.MustCompile(`(?m)^go (\d+\.\d+\.\d+)\s*$`).FindStringSubmatch(goMod)
+	if m == nil {
+		t.Fatal("go.mod 缺少 go x.y.z 形式的版本声明")
+	}
+	want := m[1]
+	if !strings.Contains(dockerfile, "golang:"+want) {
+		t.Errorf("Dockerfile 的基础镜像不是 golang:%s", want)
+	}
+	pin := `go-version: "` + want + `"`
+	if strings.Count(ci, pin) == 0 {
+		t.Errorf("ci.yml 缺少 %s", pin)
+	}
+	tools, err := os.Stat(filepath.Join(root, "planstar_backend", ".golangci.yml"))
+	if err != nil || tools.IsDir() {
+		t.Error("缺少 planstar_backend/.golangci.yml（A6 必过门禁的配置）")
 	}
 }

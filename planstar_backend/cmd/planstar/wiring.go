@@ -18,12 +18,13 @@ import (
 	_ "go.uber.org/automaxprocs"
 
 	"planstar/internal/biz"
-	"planstar/internal/conf"
 	"planstar/internal/data"
-	"planstar/internal/mq"
-	"planstar/internal/observability"
-	"planstar/internal/ops"
-	"planstar/internal/pkg/notify"
+	"planstar/internal/platform/conf"
+	"planstar/internal/platform/mq"
+	"planstar/internal/platform/observability"
+	"planstar/internal/platform/ops"
+	"planstar/internal/platform/pkg/notify"
+	"planstar/internal/platform/pkg/storage"
 	"planstar/internal/server"
 	"planstar/internal/service"
 	"planstar/internal/service/events"
@@ -113,6 +114,14 @@ func run() error {
 		return err
 	}
 
+	// 对象存储：未启用返回 Noop，但装配点显式构造并注入 Service，
+	// 避免 conf.Storage.OSS 与 pkg/storage 处于「配置已写、能力未接线」状态（OPEN_ITEMS C2）。
+	objectStore, err := storage.NewObjectStorage(c.Storage.OSS, logger)
+	if err != nil {
+		logger.Error("init object storage failed", "err", err)
+		return err
+	}
+
 	// 按环境装配认证仓储：仅本地版本允许测试口令；
 	// 验证码以 HMAC 摘要入库，密钥由配置或运维令牌派生。
 	authRepo := data.NewAuthRepoForEnvironment(
@@ -178,7 +187,10 @@ func run() error {
 	}
 
 	mux := http.NewServeMux()
-	service.New(authUC, catalogUC, feedUC, messageUC, orderUC, userUC, projectUC, projectIdeaUC, paymentUC, walletUC, shopUC, chatUC, logger).Register(mux)
+	svc := service.New(authUC, catalogUC, feedUC, messageUC, orderUC, userUC, projectUC,
+		projectIdeaUC, paymentUC, walletUC, shopUC, chatUC, logger, objectStore)
+	svc.Register(mux)
+	logger.Info("object storage wired", "enabled", svc.ObjectStorageEnabled())
 
 	// 连接池指标在抓取时读取快照，不在后台轮询。
 	metrics.RegisterDBStats(d.DBStatsSnapshot)
@@ -186,6 +198,8 @@ func run() error {
 	data.RegisterCatalogMetrics(metrics.Registry)
 	// 业务指标（登录、报价、下单）同样注册到 /metrics。
 	service.RegisterBizMetrics(metrics.Registry)
+	// MQ 消费/发布/死信指标（ADR-0004），与业务指标共用同一独立 Registry。
+	mq.RegisterMQMetrics(metrics.Registry)
 
 	// 就绪探针：未配置的依赖 Probe 为 nil，会被标记为 skipped。
 	// 聚合状态变化时写一条审计日志，便于与告警时间线对齐。

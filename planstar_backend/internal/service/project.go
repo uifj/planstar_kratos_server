@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"planstar/internal/biz"
-	"planstar/internal/pkg/httpx"
+	"planstar/internal/platform/pkg/httpx"
 )
 
 // pathID 解析路径参数为 int64；非法或非正数返回 false。

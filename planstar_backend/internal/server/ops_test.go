@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"planstar/internal/ops"
+	"planstar/internal/platform/ops"
 )
 
 func newTestReadiness(t *testing.T, mysqlErr error) *ops.Readiness {

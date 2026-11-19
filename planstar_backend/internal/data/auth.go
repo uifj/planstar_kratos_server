@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"planstar/internal/biz"
-	"planstar/internal/pkg/secret"
+	"planstar/internal/platform/pkg/secret"
 )
 
 // AuthRepo 实现 biz.AuthRepo，落 planstar_user。

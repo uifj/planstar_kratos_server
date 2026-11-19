@@ -14,9 +14,9 @@ import (
 	"strings"
 	"sync"
 
-	"planstar/internal/conf"
-	"planstar/internal/observability"
-	"planstar/internal/pkg/errcode"
+	"planstar/internal/platform/conf"
+	"planstar/internal/platform/observability"
+	"planstar/internal/platform/pkg/errcode"
 )
 
 // anonymousActor 用于未通过鉴权或未配置令牌时的审计主体。

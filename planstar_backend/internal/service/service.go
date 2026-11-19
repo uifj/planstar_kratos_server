@@ -7,11 +7,12 @@ import (
 	"sort"
 
 	"planstar/internal/biz"
-	"planstar/internal/conf"
-	"planstar/internal/observability"
-	"planstar/internal/pkg/errcode"
-	"planstar/internal/pkg/httpx"
-	"planstar/internal/pkg/session"
+	"planstar/internal/platform/conf"
+	"planstar/internal/platform/observability"
+	"planstar/internal/platform/pkg/errcode"
+	"planstar/internal/platform/pkg/httpx"
+	"planstar/internal/platform/pkg/session"
+	"planstar/internal/platform/pkg/storage"
 )
 
 // Service 聚合各域用例并注册全部 HTTP 端点（Transport 适配层，DTO ↔ DO）。
@@ -36,6 +37,9 @@ type Service struct {
 	limit *authLimiter
 	// ideaVoteLimit 是企划创意投票的进程内频控（单用户 60 次/小时、单 IP 300 次/小时）。
 	ideaVoteLimit *ideaVoteLimiter
+	// objects 由装配层注入（OPEN_ITEMS C2）；当前无上传端点，未启用时为 storage.Noop。
+	// 保留注入点，后续新增端点无需再改装配主干。
+	objects storage.ObjectStorage
 }
 
 func New(
@@ -52,6 +56,7 @@ func New(
 	shop *biz.ShopUsecase,
 	chat *biz.ChatUsecase,
 	log *slog.Logger,
+	objects storage.ObjectStorage,
 ) *Service {
 	cfg := conf.Loaded()
 	return &Service{
@@ -59,7 +64,17 @@ func New(
 		project: project, projectIdea: projectIdea,
 		payment: payment, wallet: wallet, shop: shop, chat: chat, log: log,
 		authCfg: cfg.Auth, limit: newAuthLimiter(), ideaVoteLimit: newIdeaVoteLimiter(),
+		objects: objects,
 	}
+}
+
+// ObjectStorageEnabled 报告对象存储是否真正可用（未启用时装配层注入 storage.Noop）。
+func (s *Service) ObjectStorageEnabled() bool {
+	if s.objects == nil {
+		return false
+	}
+	_, noop := s.objects.(storage.Noop)
+	return !noop
 }
 
 // route 是注册表的一项：pattern 与 handler 一一对应。

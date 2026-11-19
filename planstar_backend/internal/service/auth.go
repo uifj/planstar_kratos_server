@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"planstar/internal/biz"
-	"planstar/internal/observability"
-	"planstar/internal/pkg/errcode"
-	"planstar/internal/pkg/httpx"
-	"planstar/internal/pkg/session"
+	"planstar/internal/platform/observability"
+	"planstar/internal/platform/pkg/errcode"
+	"planstar/internal/platform/pkg/httpx"
+	"planstar/internal/platform/pkg/session"
 )
 
 var mobileRe = regexp.MustCompile(`^1\d{10}$`)
@@ -90,7 +90,7 @@ func (s *Service) sendLoginCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 验证码由 notify 层下发：开发环境的日志实现会打印明文，生产环境不落明文。
+	// 验证码由 notify 层下发：任何环境都只打印不可逆指纹，绝不输出明文码。
 	if _, err := s.auth.SendLoginCode(r.Context(), mobile); err != nil {
 		s.log.ErrorContext(r.Context(), "send login code", "mobile", maskMobile(mobile), "err", err)
 		httpx.JSON(w, http.StatusOK, &biz.SendCodeResp{Success: false, ErrorMsg: "发送失败"})

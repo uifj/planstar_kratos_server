@@ -17,7 +17,7 @@ import (
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
-	"planstar/internal/conf"
+	"planstar/internal/platform/conf"
 )
 
 var (
@@ -112,7 +112,8 @@ func newElastic(c *conf.Data) (*elastic.Client, error) {
 		elastic.SetURL(c.Elastic.Addr),
 		elastic.SetSniff(false),
 		elastic.SetHealthcheck(false),
-		elastic.SetMaxRetries(2),
+		// SetMaxRetries 已弃用；olivere/elastic v7 默认重试策略即可满足低配档位，
+		// 需要自定义时改用 Retry 实现（ADR-0004 后续批次）。
 		elastic.SetHealthcheckTimeoutStartup(5*time.Second),
 	)
 	if err != nil {

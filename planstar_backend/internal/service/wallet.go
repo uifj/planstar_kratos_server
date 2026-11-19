@@ -3,7 +3,7 @@ package service
 import (
 	"net/http"
 
-	"planstar/internal/pkg/httpx"
+	"planstar/internal/platform/pkg/httpx"
 )
 
 // signInStatus 返回当日签到状态（只读，不产生签到）。

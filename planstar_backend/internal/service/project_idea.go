@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"planstar/internal/biz"
-	"planstar/internal/pkg/httpx"
+	"planstar/internal/platform/pkg/httpx"
 )
 
 // projectIdeaFeed 返回叠卡流；游客可访问，有会话时带 viewerID 回填 myVote。
