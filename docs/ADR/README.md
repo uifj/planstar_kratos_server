@@ -12,7 +12,7 @@
 
 **状态说明**：模板默认 `PROPOSED`；本台账中 `ACCEPTED` 表示**设计决策已选定**。ADR-0001/0002 的实施按 P0–P3 分批推进，进度见下表。
 
-> **目录重排已随本次提交完成**：`frontend/` → `planstar_frontend/`、`planstar/` → `planstar_backend/`，旧 `admin/` 重排一并纳入提交；CI paths、部署脚本与文档索引已同步（详见 `docs/local-deploy-verification.md` §1）。
+> **目录重排已随本次提交完成**：`frontend/` → `planstar_frontend/`、`planstar/` → `planstar_backend/`，旧 `admin/` 重排一并纳入提交 `e514842`；CI paths、部署脚本与文档索引已同步（详见 `docs/local-deploy-verification.md` §1）。
 
 ## 实施进度（2026-11-19）
 

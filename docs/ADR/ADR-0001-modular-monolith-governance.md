@@ -6,7 +6,7 @@
 - **影响维度**: 认知障碍 / 上下文膨胀 / 幻觉源 / 生产功能
 - **日期**: 2026-11-19
 - **来源**: 全仓代码审计（见根目录 `PLANSTAR_DEEP_STUDY.md`）+ `.archive/go-wind/{go-wind-cms,go-wind-admin}` 代码实践核对 + `docs/ADR/planstar_arch_optimize.md` 适用性复核
-- **修复 commit**: —（本 ADR 仅为设计文档）
+- **修复 commit**: `e514842`（P0/P1/P3、目录改名、装配拆分与本地 Docker 验证，2026-11-19；P2 剩余域分包待后续批次）
 
 ---
 

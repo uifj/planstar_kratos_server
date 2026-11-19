@@ -6,7 +6,7 @@
 - **影响维度**: 认知障碍 / 上下文膨胀 / 生产功能
 - **日期**: 2026-11-19
 - **来源**: `ADR-0001` 决策 D2/D3/D6 的落地细化；全仓审计 `PLANSTAR_DEEP_STUDY.md`；`.archive/go-wind/` 目录实践核对
-- **修复 commit**: —
+- **修复 commit**: `e514842`（P2 首批：`service/events` 子包与 `data/project.go` 拆分，2026-11-19）
 
 ---
 

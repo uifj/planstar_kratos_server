@@ -2,6 +2,7 @@
 
 > 日期：2026-11-19 · 环境：Windows 11 / Docker Desktop · 结论：**PASS**
 > 关联决策：`docs/ADR/ADR-0001`（模块化单体）、`docs/ADR/ADR-0002`（目录结构）
+> 对应提交：`e514842` — `refactor(repo): dir rename, wiring split, strict gates and local docker verification`
 
 ## 1. 本次变更范围
 
