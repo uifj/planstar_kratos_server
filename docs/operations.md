@@ -2,9 +2,9 @@
 
 # 运维手册（planstar 单体）
 
-本文以当前代码为准：探针实现在 `planstar/internal/ops/readiness.go` 与
-`planstar/internal/server/admin.go`，鉴权/审计在 `planstar/internal/server/ops_auth.go`，
-指标与追踪在 `planstar/internal/observability/observability.go`。
+本文以当前代码为准：探针实现在 `planstar_backend/internal/ops/readiness.go` 与
+`planstar_backend/internal/server/admin.go`，鉴权/审计在 `planstar_backend/internal/server/ops_auth.go`，
+指标与追踪在 `planstar_backend/internal/observability/observability.go`。
 
 ## 1. 探针契约
 
@@ -127,8 +127,8 @@ MQ 地址为空、Consul 地址为空。默认生产 compose 全部配置，因�
   head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n'
   ```
 
-  写入 `planstar/.env` 的 `PLANSTAR_OPS_TOKEN=...`，并同步到
-  `planstar/deploy/prometheus/ops_token`（见第 3.4 节）。
+  写入 `planstar_backend/.env` 的 `PLANSTAR_OPS_TOKEN=...`，并同步到
+  `planstar_backend/deploy/prometheus/ops_token`（见第 3.4 节）。
 - 校验使用常量时间比较；审计中的 actor 为 `token:<sha256 前 8 位>`，不记录令牌明文。
 
 ### 2.2 CIDR 白名单
@@ -197,7 +197,7 @@ Loki 查询：
 | `planstar_ops_metrics_scrape_rejected_total` | counter | — | `/metrics` 因超过并发上限被拒绝的抓取次数 |
 | `planstar_ops_auth_failed_total` | counter | `endpoint` | 运维端点鉴权失败次数（401/403） |
 | `planstar_ops_audit_total` | counter | `action`、`result` | 审计操作计数 |
-| `planstar_db_connections` | gauge | `domain`、`state`（`open`/`idle`/`in_use`/`max`） | 9 个 `planstar_*` 库连接池快照 |
+| `planstar_db_connections` | gauge | `domain`、`state`（`open`/`idle`/`in_use`/`max`） | 10 个域连接池快照（运行时 11 个 `planstar_*` 库） |
 | `planstar_db_wait_count_total` | counter | `domain` | 连接池累计等待连接次数 |
 | `planstar_db_wait_duration_seconds_total` | counter | `domain` | 连接池累计等待时长 |
 | `planstar_catalog_es_fallback_total` | counter | — | 目录查询因 ES 失败回退 MySQL 的次数 |
@@ -218,7 +218,7 @@ Loki 查询：
 - `route` 使用归一化模板：数字 ID 段替换为 `:id`，16 进制长 token 同样归一化，
   不按原始 URL 打点。
 - `check` 固定为 5 个依赖名；`endpoint` 固定为 `metrics`/`admin`；`status` 为标准
-  三位状态码；`domain` 固定为 9 个逻辑库。
+  三位状态码；`domain` 固定为 10 个域连接池 key。
 - 新增标签前必须评估组合数，禁止把用户 ID、手机号、订单号写入标签。
 
 ### 3.3 OpenMetrics 与 exemplar
@@ -230,7 +230,7 @@ exemplar（trace_id）。Grafana/Prometheus 需以 OpenMetrics 协商抓取；�
 
 ### 3.4 Prometheus 抓取与令牌文件
 
-`planstar/deploy/prometheus/prometheus.yml`：
+`planstar_backend/deploy/prometheus/prometheus.yml`：
 
 ```yaml
 - job_name: planstar-api
@@ -243,12 +243,12 @@ exemplar（trace_id）。Grafana/Prometheus 需以 OpenMetrics 协商抓取；�
 ```
 
 - `ops_token` 由 `deploy.sh` 从 `$PLANSTAR_OPS_TOKEN` 写入，权限 `0600`，已在
-  `planstar/.gitignore` 中忽略；compose 以只读方式挂载到
+  `planstar_backend/.gitignore` 中忽略；compose 以只读方式挂载到
   `/etc/prometheus/ops_token`。
 - 手动部署时必须自行创建该文件：
 
   ```bash
-  cd planstar
+  cd planstar_backend
   mkdir -p deploy/prometheus
   (umask 077; printf '%s' "$PLANSTAR_OPS_TOKEN" > deploy/prometheus/ops_token)
   chmod 600 deploy/prometheus/ops_token
@@ -262,7 +262,7 @@ exemplar（trace_id）。Grafana/Prometheus 需以 OpenMetrics 协商抓取；�
 
 ## 4. 告警清单与处置
 
-规则文件：`planstar/deploy/prometheus/rules/alerts.yml`（5 组，共 12 条）。
+规则文件：`planstar_backend/deploy/prometheus/rules/alerts.yml`（5 组，共 12 条）。
 
 | 告警 | 关键表达式 | 阈值 / 持续 | 级别 | 处置 |
 | --- | --- | --- | --- | --- |
@@ -281,7 +281,7 @@ exemplar（trace_id）。Grafana/Prometheus 需以 OpenMetrics 协商抓取；�
 
 ### 4.1 Alertmanager 邮件通知
 
-`planstar/deploy/alertmanager/alertmanager.yml` 只保留 `${AM_*}` 占位，由
+`planstar_backend/deploy/alertmanager/alertmanager.yml` 只保留 `${AM_*}` 占位，由
 `entrypoint.sh` 在启动前渲染到 `/tmp`（`umask 077`）后启动，避免把 SMTP 凭据写进仓库。
 
 | 环境变量 | 含义 |
@@ -340,7 +340,7 @@ planstar-api --OTLP/gRPC--> otel-collector:4317 --batch--> jaeger:4317
 
 ### 5.3 自动埋点范围
 
-- HTTP：`planstar/internal/observability.Middleware` 为业务与 9108 的每个请求创建
+- HTTP：`planstar_backend/internal/observability.Middleware` 为业务与 9108 的每个请求创建
   server span（`METHOD route`），记录 `http.method`/`http.target`/`http.route`/
   `http.status_code`。
 - MySQL：`otelsql.Register("mysql", ...)`，10 个库共用一个带埋点的驱动，span 属性
@@ -381,7 +381,7 @@ planstar-api --OTLP/gRPC--> otel-collector:4317 --batch--> jaeger:4317
 压测使用 `httptest` + 真实 `NewProbeHandlers`/`OpsAuth`，不依赖外部 MySQL/Redis：
 
 ```bash
-cd planstar
+cd planstar_backend
 go test ./internal/server -run TestOpsEndpointsLoad -count=1 -v
 ```
 
@@ -590,7 +590,7 @@ Loki 查询：
 - [ ] `planstar_ops_auth_failed_total` 无持续增长；`deploy/prometheus/ops_token` 与
       `.env` 中 `PLANSTAR_OPS_TOKEN` 一致，权限 `0600`。
 - [ ] 5xx 比例、P95 延迟、429 数量、在途请求、`planstar_db_wait_count_total` 在基线内。
-- [ ] MySQL 磁盘、连接数、慢查询、备份状态；9 个 `planstar_*` 库存在。
+- [ ] MySQL 磁盘、连接数、慢查询、备份状态；11 个 `planstar_*` 库存在（9 基线 + `planstar_shop` + `planstar_admin`）。
 - [ ] Redis 内存、evicted_keys、AOF 磁盘；无持续拒绝连接。
 - [ ] RabbitMQ 队列深度、消费者数、DLQ 是否为空。
 - [ ] Elasticsearch 集群 health、JVM 堆、磁盘水位；`planstar-activities` 文档数与上架活动数接近。

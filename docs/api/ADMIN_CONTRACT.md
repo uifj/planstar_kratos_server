@@ -13,7 +13,7 @@
 | Bearer 令牌 | `Authorization: Bearer <PLANSTAR_OPS_TOKEN>`；缺失或错误返回 `401 UNAUTHORIZED` 与 `WWW-Authenticate: Bearer` |
 | 来源白名单 | 可选 `PLANSTAR_OPS_ALLOWED_CIDRS`（逗号分隔 CIDR）；不在白名单返回 `403 FORBIDDEN`。取 TCP 对端地址，不信任 `X-Forwarded-For` |
 | 生产必填 | `server.env=prod` 且令牌为空时进程启动失败（`生产环境必须配置 PLANSTAR_OPS_TOKEN`） |
-| 本地开发 | 令牌为空时鉴权关闭，仅适合本地；每个端点打印一次 `ops auth disabled` 警告 |
+| 本地开发 | **fail-closed**：令牌为空时 `Wrap` 一律返回 `401 UNAUTHORIZED` + `WWW-Authenticate: Bearer`，不会放行；仅在主进程启动时打印一次 `PLANSTAR_OPS_TOKEN 未配置` 警告。探针 `/healthz`、`/readyz` 匿名可达 |
 
 示例：
 
@@ -46,13 +46,33 @@ curl -fsS -H "Authorization: Bearer $PLANSTAR_OPS_TOKEN" \
 | --- | --- |
 | `audit` | 固定 `true` |
 | `actor` | `token:<sha256 前 8 位>` / `anonymous` / `system` |
-| `action` | `ops.metrics.access`、`ops.admin.access`、`report.handle`、`project.review`、`ops.probe.state` |
-| `target` | 端点名、举报 ID、企划 ID、`readyz` |
+| `action` | `ops.metrics.access`、`ops.admin.access`、`ops.probe.state`、`report.handle`、`project.review`、`feed.status`、`goods.status`、`goods_sku.status`、`refund.review` |
+| `target` | 端点名、举报 ID、企划 ID、动态/商品/SKU/退款单 ID、`readyz` |
 | `result` | `ok`/`client_error`/`error`/`unauthorized`/`forbidden` 或业务结果（`success`/`blocked`/`not_found` 等） |
 | `remote_addr` | TCP 对端地址（仅端点访问） |
 | `status` | HTTP 状态码（仅端点访问） |
 
 审计不会记录令牌明文；Loki 查询：`{service="planstar-api"} |= "ops audit"`。
+
+### 0.3 运营写端点（9108 ops API）
+
+以下 4 个端点由 `planstar_backend/internal/server/admin.go` 注册，全部经过 `OpsAuth.Wrap("admin", …)`
+鉴权并通过 `auditWrite` 留痕。**它们不属于第 7 节 `admin.planstar.top` 的 `/v1/planstar/*` 服务**，
+调用方是同机运维/控制台后端，不是浏览器控制台前端。
+
+| 方法 | 路径 | 请求体 | 成功响应 | 审计 action |
+| --- | --- | --- | --- | --- |
+| `POST` | `/admin/feeds/{id}/status` | `{"status": 0\|1}`（0 隐藏 / 1 显示） | `{"id":<id>,"status":<status>}` | `feed.status` |
+| `POST` | `/admin/goods/{id}/status` | 同上（0 下架 / 1 上架） | `{"id":<id>,"status":<status>}` | `goods.status` |
+| `POST` | `/admin/goods-skus/{id}/status` | 同上 | `{"id":<id>,"status":<status>}` | `goods_sku.status` |
+| `POST` | `/admin/refunds/{id}/review` | `{"decision":"approve"\|"reject"}`（严格白名单） | `{"refundId","refundNo","orderId","status","orderStatus","refundAmount"}`（`refundAmount` 单位**分**） | `refund.review` |
+
+- 写操作统一使用 `http.MaxBytesReader(..., 16<<10)` 限制请求体；`id` 非法返回 `400 BAD_REQUEST`。
+- `status` 只接受 `0` / `1`，`decision` 只接受 `approve` / `reject`，其它值返回 `400 BAD_REQUEST`。
+- `approve` 会把退款单置 `success`、订单置 `7` 并回写已退金额；`reject` 只改退款单状态，订单不变。
+- 错误映射（`writeAdminError`）：`BAD_REQUEST` → 400、`REFUND_NOT_ALLOWED` → **400**（注意主站
+  `service.fail()` 对同一错误返回 409，两套映射刻意不同）、`NOT_FOUND` → 404、其余 → 500 `INTERNAL`。
+- 同值设置不算 not-found：`data/ops.go` 先 `SELECT 1` 判存在，不依赖 `RowsAffected`。
 
 ## 1. 举报列表
 
@@ -193,8 +213,8 @@ curl -fsS -H "Authorization: Bearer $PLANSTAR_OPS_TOKEN" \
 - 处理动作写入 `status`、`handle_note`、`handle_time`，保留业务留痕；同时输出
   `ops audit` 结构化日志与 `planstar_ops_audit_total` 指标。
 - 审计字段固定为 `audit/actor/action/target/result/remote_addr/status`，不记录令牌明文。
-- 令牌轮换需同步更新 `PLANSTAR_OPS_TOKEN`、`planstar/.env` 与
-  `planstar/deploy/prometheus/ops_token`；否则 Prometheus 抓取失败并触发
+- 令牌轮换需同步更新 `PLANSTAR_OPS_TOKEN`、`planstar_backend/.env` 与
+  `planstar_backend/deploy/prometheus/ops_token`；否则 Prometheus 抓取失败并触发
   `PlanstarOpsAuthFailureSpike`。
 - 后续接入运营账号体系时，在 `OpsAuth` 之后增加 RBAC 中间件，不改动业务契约。
 

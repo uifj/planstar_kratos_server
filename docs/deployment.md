@@ -4,10 +4,10 @@
 
 ## 1. 本地一键启动
 
-前置：Docker Desktop / Docker Engine + Compose v2，仓库完整克隆（compose 通过 `../docs/sql` 挂载建库脚本，不能只拷贝 `planstar/` 目录）。
+前置：Docker Desktop / Docker Engine + Compose v2，仓库完整克隆（compose 通过 `../docs/sql` 挂载建库脚本，不能只拷贝 `planstar_backend/` 目录）。
 
 ```bash
-cd planstar
+cd planstar_backend
 cp .env.example .env
 docker compose up -d --build
 ```
@@ -15,7 +15,7 @@ docker compose up -d --build
 PowerShell 等价：
 
 ```powershell
-cd planstar
+cd planstar_backend
 Copy-Item .env.example .env
 docker compose up -d --build
 ```
@@ -58,7 +58,7 @@ curl -D captcha.headers -o captcha.png http://127.0.0.1:8098/v1/user/captcha
 # 200 image/png，并下发 psCaptcha Cookie
 ```
 
-演示账号（来自 `planstar/sql/15_auth_support.sql`）：`13800000001` / `13800000002`，密码 `123456`。
+演示账号（来自 `planstar_backend/sql/15_auth_support.sql`）：`13800000001` / `13800000002`，密码 `123456`。
 
 ```bash
 curl -i -X POST http://127.0.0.1:8098/v1/user/login \
@@ -74,14 +74,14 @@ curl -i -X POST http://127.0.0.1:8098/v1/user/login \
 服务器一次性准备：
 
 1. 安装 Docker + Compose v2。
-2. 将仓库克隆到固定目录（默认 `/opt/planstar`），保持 `docs/sql` 与 `planstar/` 的相对路径。
+2. 将仓库克隆到固定目录（默认 `/opt/planstar`），保持 `docs/sql` 与 `planstar_backend/` 的相对路径。
 3. 如拉取私有 GHCR 镜像，执行 `docker login ghcr.io`。
 4. 配置 SSH 免密（供 `deploy.sh` / CI 使用）。
 
 服务器侧：
 
 ```bash
-cd /opt/planstar/planstar
+cd /opt/planstar_backend/planstar
 cp .env.example .env
 # 编辑 .env：数据库/Redis/RabbitMQ 口令、PLANSTAR_IMAGE、PLANSTAR_TAG、GRAFANA 口令、ACME_EMAIL
 # 生产必须设置运维令牌（/metrics 与 /admin* 的 Bearer 凭据）
@@ -104,7 +104,7 @@ docker compose pull
 docker compose up -d --remove-orphans
 ```
 
-`planstar/docker-compose.yml` 使用 `configs/config.prod.yaml`，并挂载为容器内
+`planstar_backend/docker-compose.yml` 使用 `configs/config.prod.yaml`，并挂载为容器内
 `/data/conf/config.yaml`；敏感口令通过 `PLANSTAR_MYSQL_PASSWORD`、
 `PLANSTAR_REDIS_PASSWORD`、`PLANSTAR_MQ_ADDR`、`PLANSTAR_OPS_TOKEN` 注入，不写入配置文件。
 `deploy.sh` 会自动把 `$PLANSTAR_OPS_TOKEN` 写入 `deploy/prometheus/ops_token`（权限
@@ -116,14 +116,14 @@ docker compose up -d --remove-orphans
 
 ### 2.2 一键推送部署
 
-`planstar/deploy.sh`（也可由 CI 执行）流程：
+`planstar_backend/deploy.sh`（也可由 CI 执行）流程：
 
 1. 本地 `docker build` 生成 `${PLANSTAR_IMAGE}:${PLANSTAR_TAG}`。
 2. `docker push` 推送到镜像仓库。
 3. SSH 到服务器执行 `git pull --ff-only`。
-4. 远程 `docker compose -f planstar/docker-compose.yml pull` + `up -d --remove-orphans`。
+4. 远程 `docker compose -f planstar_backend/docker-compose.yml pull` + `up -d --remove-orphans`。
 
-使用前在 `planstar/.env` 填写：`SERVER_HOST`、`SERVER_USER`、`SERVER_PORT`、`APP_DIR`、`PLANSTAR_IMAGE`、`PLANSTAR_TAG`。
+使用前在 `planstar_backend/.env` 填写：`SERVER_HOST`、`SERVER_USER`、`SERVER_PORT`、`APP_DIR`、`PLANSTAR_IMAGE`、`PLANSTAR_TAG`。
 
 ### 2.3 镜像发布（GitHub Actions）
 
@@ -131,7 +131,7 @@ docker compose up -d --remove-orphans
 - 手动构建：
 
 ```bash
-cd planstar
+cd planstar_backend
 docker build --build-arg VERSION=v0.1.0 -t ghcr.io/uifj/planstar-api:v0.1.0 .
 docker push ghcr.io/uifj/planstar-api:v0.1.0
 ```
@@ -160,7 +160,7 @@ collector 批处理后转发到 `jaeger:4317`：
 ### 2.5 Alertmanager 邮件通知
 
 `deploy/alertmanager/alertmanager.yml` 使用 `${AM_*}` 占位，`entrypoint.sh` 在启动前
-渲染到 `/tmp`（`umask 077`）。在 `planstar/.env` 配置：
+渲染到 `/tmp`（`umask 077`）。在 `planstar_backend/.env` 配置：
 
 | 环境变量 | 示例 | 说明 |
 | --- | --- | --- |
@@ -176,11 +176,11 @@ collector 批处理后转发到 `jaeger:4317`：
 
 ### 2.6 运营后台（admin）
 
-`admin`（API）与 `admin-web`（控制台静态站）由 `planstar/docker-compose.yml` 一并构建，入口为
+`admin`（API）与 `admin-web`（控制台静态站）由 `planstar_backend/docker-compose.yml` 一并构建，入口为
 `https://admin.planstar.top`；`/v1/*` 转发 `admin:9100`，其余转发 `admin-web:80`。
 
 ```bash
-cd /opt/planstar/planstar
+cd /opt/planstar_backend/planstar
 cp .env.example .env
 # 必填：ADMIN_AUTH_JWT_SECRET（>=32 字节）、ADMIN_PLANSTAR_OPS_TOKEN（与 PLANSTAR_OPS_TOKEN 相同）
 # 生产建议：ADMIN_DATA_DATABASE_SOURCE 使用最小权限账号，并同步修改 MYSQL_ROOT_PASSWORD
@@ -192,7 +192,7 @@ curl -fsS http://127.0.0.1:9110/healthz
 curl -fsS http://127.0.0.1:9110/readyz   # 依赖 MySQL/Redis
 ```
 
-- 首次启动前确认 `planstar/sql/19_admin_console.sql` 已执行（新库由 mysql 初始化挂载自动执行，已有库需手工执行）。
+- 首次启动前确认 `planstar_backend/sql/19_admin_console.sql` 已执行（新库由 mysql 初始化挂载自动执行，已有库需手工执行）。
 - `admin.planstar.top` 需与 `planstar.top` 使用同一 Traefik ACME resolver；HTTP 自动 301 到 HTTPS。
 - CORS 白名单直接写在 `admin/configs/config.docker.yaml`，域名变更时同步修改。
 - 风险、验收清单、回滚与短信/邮件/OSS 启用见 [admin-integration.md](admin-integration.md)。
@@ -213,7 +213,7 @@ curl -fsS http://127.0.0.1:9110/readyz   # 依赖 MySQL/Redis
 #### 2.7.2 部署命令
 
 ```bash
-cd /opt/planstar/planstar
+cd /opt/planstar_backend/planstar
 
 # 全量档位（默认，14+ 容器）
 COMPOSE_PROFILES=full PLANSTAR_CONFIG_FILE=config.prod.yaml \
@@ -341,7 +341,7 @@ ssh root@<SERVER_HOST> 'gunzip -c /tmp/planstar-api-v1.2.3.tar.gz | docker load'
 #### 2.7.6 回滚到全量档位
 
 ```bash
-cd /opt/planstar/planstar
+cd /opt/planstar_backend/planstar
 unset PLANSTAR_CONFIG_FILE
 export COMPOSE_PROFILES=full
 export PLANSTAR_CONFIG_FILE=config.prod.yaml
@@ -364,9 +364,9 @@ docker compose -f docker-compose.yml logs -f planstar-api | grep -Ei 'elasticsea
 cd /opt/planstar
 export PLANSTAR_IMAGE=ghcr.io/uifj/planstar-api
 export PLANSTAR_TAG=v0.1.0          # 上一个已验证版本
-docker compose -f planstar/docker-compose.yml pull planstar-api
-docker compose -f planstar/docker-compose.yml up -d --remove-orphans planstar-api
-docker compose -f planstar/docker-compose.yml ps
+docker compose -f planstar_backend/docker-compose.yml pull planstar-api
+docker compose -f planstar_backend/docker-compose.yml up -d --remove-orphans planstar-api
+docker compose -f planstar_backend/docker-compose.yml ps
 ```
 
 回滚后立即验证 `/healthz`、`/readyz`、带 Bearer 的 `/metrics` 与一条只读业务接口
@@ -385,7 +385,7 @@ docker compose -f planstar/docker-compose.yml ps
 ### 3.2 数据回滚
 
 - 应用回滚不自动回滚数据库；如新版本执行过 DDL/DML，先用备份恢复（见第 4 节）。
-- `docs/sql/90_teardown.sql` 会**逆序删除 9 个 `planstar_*` 库**，仅用于测试环境，生产禁止直接执行。
+- `docs/sql/90_teardown.sql` 会**逆序删除 9 个基线 `planstar_*` 库**（不含 `shop`/`admin` 增量库），仅用于测试环境，生产禁止直接执行。
 - DDL 隐式提交，不能用事务回滚。
 
 ## 4. 备份与恢复
@@ -395,10 +395,10 @@ docker compose -f planstar/docker-compose.yml ps
 仓库根目录的 `scripts/backup.sh` / `scripts/restore.sh` 是 kratos-shop 模板遗留，操作 **PostgreSQL `shop_*`** 库，**不可用于当前服务**。请使用以下命令：
 
 ```bash
-cd /opt/planstar/planstar
+cd /opt/planstar_backend/planstar
 set -a; . ./.env; set +a
 
-# 备份 9 个逻辑库
+# 备份 11 个 `planstar_*` 库（由 deploy/backup.sh 执行）
 docker compose exec -T mysql \
   mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" \
   --single-transaction --routines --triggers --default-character-set=utf8mb4 \
@@ -413,7 +413,7 @@ docker compose exec -T mysql \
 ### 4.2 恢复
 
 ```bash
-cd /opt/planstar/planstar
+cd /opt/planstar_backend/planstar
 set -a; . ./.env; set +a
 
 # 停业务写入
@@ -438,7 +438,7 @@ curl -fsS http://127.0.0.1:9108/readyz
 | RabbitMQ | 视情况 | 业务事件短期队列；DLQ 中可能有未处理消息，排障时保留 |
 | Docker volumes | 可选 | `mysql_data` 是核心；其余可重建 |
 
-## 5. 配置项（对应 `planstar/configs/config.prod.yaml`）
+## 5. 配置项（对应 `planstar_backend/configs/config.prod.yaml`）
 
 | 配置键 | 生产值 | 说明 |
 | --- | --- | --- |
@@ -495,7 +495,7 @@ curl -fsS http://127.0.0.1:9108/readyz
 部署前配置自检：
 
 ```bash
-docker compose -f planstar/docker-compose.yml config -q
+docker compose -f planstar_backend/docker-compose.yml config -q
 ```
 
 该命令只校验 compose 结构与环境变量插值，不会启动容器；CI 的
@@ -507,7 +507,7 @@ Alertmanager 配置。
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
 | `bind: address already in use` | 本机已有 MySQL/Redis/RabbitMQ/ES/Consul 或 8098/9108 占用 | `docker ps` 找到占用容器/进程并停止，或改 compose 端口映射 |
-| `no such file or directory: ../docs/sql/00_all.sql` | 只在 `planstar/` 目录单独部署，缺少仓库 `docs/` | 从仓库根完整部署；保持 `planstar/` 与 `docs/` 同级 |
+| `no such file or directory: ../docs/sql/00_all.sql` | 只在 `planstar_backend/` 目录单独部署，缺少仓库 `docs/` | 从仓库根完整部署；保持 `planstar_backend/` 与 `docs/` 同级 |
 | MySQL 初始化脚本未执行 | 脚本只在**数据卷首次创建**时执行 | 确认 `mysql_data` 为空；如需重建：`docker compose down -v`（**删除全部数据**）后重新 `up` |
 | 改了 `MYSQL_ROOT_PASSWORD` 后 `Access denied` | 已有数据卷仍使用旧密码 | 改回旧密码启动，或进入容器改密码；不要直接依赖 `.env` 覆盖已初始化实例 |
 | `planstar-api` 反复重启，日志 `init elasticsearch ...` | ES 未就绪或地址不可达；`NewData` 启动即检查 MySQL/Redis/ES | `docker compose logs elasticsearch`；等待健康检查通过；确认 `config.prod.yaml` 地址 |
@@ -520,6 +520,6 @@ Alertmanager 配置。
 | `/metrics` 403 | 来源不在 `PLANSTAR_OPS_ALLOWED_CIDRS` | 补充 CIDR（取 TCP 对端 IP）或留空关闭白名单 |
 | Consul 注册失败导致启动退出 | `registry.consul.address` 指向不可达 Consul，kratos registrar 注册失败 | 恢复 Consul；或清空 `registry.consul.address` 关闭注册 |
 | RabbitMQ 健康检查长时间未通过 | 首次启动初始化较慢 | 等待 1~2 分钟；查看 `docker compose logs rabbitmq` |
-| `planstar-api` 日志 `open /data/conf/config.yaml: no such file` | compose 挂载路径错误/未在 `planstar/` 目录执行 | 确认在 `planstar/` 下执行，且 `configs/config.prod.yaml` 存在 |
+| `planstar-api` 日志 `open /data/conf/config.yaml: no such file` | compose 挂载路径错误/未在 `planstar_backend/` 目录执行 | 确认在 `planstar_backend/` 下执行，且 `configs/config.prod.yaml` 存在 |
 | Traefik 启动失败（80/443 被占用） | 宿主机已有 Nginx/Apache | 停止占用服务，或移除 Traefik 端口映射 |
 | 修改 `.env` 后配置未生效 | Compose 环境变量在容器重建时注入 | `docker compose up -d --force-recreate planstar-api` |

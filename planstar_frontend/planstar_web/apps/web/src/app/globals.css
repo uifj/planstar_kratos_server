@@ -1,0 +1,179 @@
+@import 'tailwindcss';
+@import '../../../../packages/design-tokens/src/theme.css';
+
+/* packages/ui 的类名需要被 Tailwind 扫描到 */
+@source '../../../../packages/ui/src';
+
+/* 暗色主题由 <html class="dark"> 控制，与 Flutter 端主题切换对齐 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  /* 语义色 → Tailwind 工具类 */
+  --color-text-primary: var(--ps-text-primary);
+  --color-text-secondary: var(--ps-text-secondary);
+  --color-text-tertiary: var(--ps-text-tertiary);
+  --color-text-disabled: var(--ps-text-disabled);
+  --color-bg-page: var(--ps-bg-page);
+  --color-bg-card: var(--ps-bg-card);
+  --color-bg-subtle: var(--ps-bg-subtle);
+  --color-bg-overlay: var(--ps-bg-overlay);
+  --color-divider: var(--ps-divider);
+  --color-border: var(--ps-border);
+  --color-brand: var(--ps-brand);
+  --color-brand-pressed: var(--ps-brand-pressed);
+  --color-brand-disabled: var(--ps-brand-disabled);
+  --color-brand-subtle: var(--ps-brand-subtle);
+  --color-on-brand: var(--ps-on-brand);
+  --color-price: var(--ps-price);
+  --color-success: var(--ps-success);
+  --color-warning: var(--ps-warning);
+  --color-warning-bg: var(--ps-warning-bg);
+  --color-error: var(--ps-error);
+  --color-info: var(--ps-info);
+  --color-skeleton: var(--ps-skeleton);
+  --color-tab-active: var(--ps-tab-active);
+  --color-tab-inactive: var(--ps-tab-inactive);
+
+  /* 字体族 */
+  --font-sans: var(--ps-font-sans);
+
+  /* 字号阶梯：10 / 12 / 14 / 16 / 20 / 32 */
+  --text-label: var(--ps-text-label);
+  --text-label--line-height: 1.4;
+  --text-caption: var(--ps-text-caption);
+  --text-caption--line-height: 1.6;
+  --text-body: var(--ps-text-body);
+  --text-body--line-height: 1.6;
+  --text-subtitle: var(--ps-text-subtitle);
+  --text-subtitle--line-height: 1.5;
+  --text-title: var(--ps-text-title);
+  --text-title--line-height: 1.35;
+  --text-display: var(--ps-text-display);
+  --text-display--line-height: 1.25;
+
+  /* 圆角阶梯：4 / 8 / 12 / 16 / 20 / 999 */
+  --radius-xs: var(--ps-radius-xs);
+  --radius-sm: var(--ps-radius-sm);
+  --radius-md: var(--ps-radius-md);
+  --radius-lg: var(--ps-radius-lg);
+  --radius-xl: var(--ps-radius-xl);
+  --radius-full: var(--ps-radius-full);
+}
+
+@font-face {
+  font-family: 'ChillRoundGothic';
+  src: url('/fonts/ChillRoundGothic-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ChillRoundGothic';
+  src: url('/fonts/ChillRoundGothic-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ChillRoundGothic';
+  src: url('/fonts/ChillRoundGothic-Medium.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--ps-bg-page);
+    color: var(--ps-text-secondary);
+    font-family: var(--ps-font-sans);
+    font-size: var(--ps-text-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--ps-text-primary);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  ::selection {
+    background-color: var(--ps-brand);
+    color: var(--ps-on-brand);
+  }
+
+  /* 键盘可见焦点使用品牌色，鼠标点击不显示 */
+  :focus-visible {
+    outline: 2px solid var(--ps-brand);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* 内容容器：最大 1200，移动端 16px 边距，桌面 24px */
+  .ps-container {
+    width: 100%;
+    max-width: var(--ps-max-width);
+    margin-inline: auto;
+    padding-inline: 16px;
+  }
+
+  @media (min-width: 768px) {
+    .ps-container {
+      padding-inline: 24px;
+    }
+  }
+
+  /* 区块纵向节奏：移动端 40，桌面 56 */
+  .ps-section {
+    padding-block: 40px;
+  }
+
+  @media (min-width: 768px) {
+    .ps-section {
+      padding-block: 56px;
+    }
+  }
+
+  /* 顶部装饰网格，仅在 hero 使用 */
+  .ps-hero-grid {
+    background-image:
+      linear-gradient(to right, color-mix(in srgb, var(--ps-border) 65%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--ps-border) 65%, transparent) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 0%, black 20%, transparent 75%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -4,10 +4,10 @@
 
 本仓库实际运行两个服务：
 
-- [`planstar/`](../planstar) 业务 Go 单体（Kratos v3）：业务 HTTP `8098`，运维端口 `9108`（`/metrics`、`/healthz`、`/readyz`）。
+- [`planstar_backend/`](../planstar) 业务 Go 单体（Kratos v3）：业务 HTTP `8098`，运维端口 `9108`（`/metrics`、`/healthz`、`/readyz`）。
 - [`admin/`](../admin) 运营后台 Go 模块 + `admin/console` 控制台：HTTP `9100`、gRPC `9101`、运维 `9110`，通过 `https://admin.planstar.top` 暴露。
 
-仓库根目录的 `openapi.yaml`、根 `go.mod`、根 `docker-compose.yml` 等仍属于历史 kratos-shop 模板遗留，**不参与构建、不参与部署、不是架构事实**。CI 构建 `planstar/` 与 `admin/`。
+仓库根目录的 `openapi.yaml`、根 `go.mod`、根 `docker-compose.yml` 等仍属于历史 kratos-shop 模板遗留，**不参与构建、不参与部署、不是架构事实**。CI 构建 `planstar_backend/` 与 `admin/`。
 
 ## 阅读路径
 
@@ -25,20 +25,26 @@
 | --- | --- | --- |
 | [product/POSITIONING.md](product/POSITIONING.md) | 产品定位、品牌表达、用户分层、业务闭环与品类边界的唯一事实源 | 有效 |
 | [architecture.md](architecture.md) | 当前单体架构与技术事实 | 有效 |
-| [api/API_CONTRACT.md](api/API_CONTRACT.md) | 客户端接口契约（23 个已实现端点 + `GET /v1/user/` 尾斜杠别名；第 7.7 节为企划域契约定义，尚未实现） | 有效 |
-| [api/ADMIN_CONTRACT.md](api/ADMIN_CONTRACT.md) | 运营后台契约：9108 管理端口举报处理，以及 `admin.planstar.top` 的 `/v1/admins/*`、`/v1/planstar/*` | 有效 |
+| [api/API_CONTRACT.md](api/API_CONTRACT.md) | 客户端接口契约唯一事实源（57 条路由 / 56 个唯一端点，含企划域与创意投票；由 `planstar_backend/internal/server/routes_test.go` 机器校验） | 有效 |
+| [api/ADMIN_CONTRACT.md](api/ADMIN_CONTRACT.md) | 运营后台契约：9108 管理端口举报处理与运营写、以及 `admin.planstar.top` 的 `/v1/admins/*`、`/v1/planstar/*` | 有效 |
 | [admin-integration.md](admin-integration.md) | admin 与 planstar 的部署整合、风险、上线、回滚与外部服务 | 有效 |
 | [aliyun-sms-oss.md](aliyun-sms-oss.md) | 阿里云号码认证短信（Dypnsapi）开通、RAM 最小权限、签名模板、错误码与 OSS/CDN 接入 | 有效 |
 | [deployment.md](deployment.md) | 部署与回滚手册（含 4C8G/2M 低配档位） | 有效 |
 | [operations.md](operations.md) | 运维与故障处置手册 | 有效 |
-| [sql/README.md](sql/README.md) | 9 个 `planstar_*` 库建库脚本与演示数据说明 | 有效（数据基线） |
+| [sql/README.md](sql/README.md) | 9 个基线 `planstar_*` 库建库脚本与演示数据说明（另有 `shop`/`admin` 增量脚本，运行时共 11 库） | 有效（数据基线） |
+| [ADR/README.md](ADR/README.md) | 架构决策台账索引（ADR-0001 模块化单体 / ADR-0002 目录结构） | 有效（决策台账） |
+| [local-deploy-verification.md](local-deploy-verification.md) | 目录改名后的 Docker 配置调整与本地 local deploy 验证记录（2026-11-19，PASS） | 有效 |
 
 ## legacy 目录用途
 
-[legacy/](legacy/README.md) 存放与当前代码不符的历史资料，仅作对照，**不得作为实现或排障依据**：
+[legacy/](legacy/README.md) 存放与当前代码不符的历史资料，仅作对照，**不得作为实现或排障依据**。
 
-- [legacy/architecture-microservices.md](legacy/architecture-microservices.md)：已废弃的 kratos-shop 微服务拆分（gRPC、Consul、`shop_*`、PostgreSQL），顶部已标注 `Deprecated`。
-- [legacy/configuration.md](legacy/configuration.md)、[legacy/database.md](legacy/database.md)、[legacy/development.md](legacy/development.md)、[legacy/evolution-plan.md](legacy/evolution-plan.md)、[legacy/feasibility-p1.md](legacy/feasibility-p1.md)：旧模板时期的配置、库表、开发与演进说明，已整体迁入本目录，**不得作为当前实现依据**。
+> **2026-11-19 治理核查**：该目录当前只有 `README.md`。旧索引列出的
+> `architecture-microservices.md`、`configuration.md`、`database.md`、
+> `development.md`、`evolution-plan.md`、`feasibility-p1.md` **均未随本仓库检出**，
+> 原链接为死链，已移除。历史微服务方案（gRPC / Consul / `shop_*` / PostgreSQL）
+> 已被 `architecture.md` 与 [ADR-0001](ADR/ADR-0001-modular-monolith-governance.md) 否决；
+> 如需对照上游模板，请查 `.archive/` 只读快照。
 
 ## 文档维护约定
 
@@ -48,7 +54,7 @@
 
 ## 本地验收记录（2026-11-07）
 
-环境：Windows + Docker Desktop，`planstar/docker-compose.yml` 全栈（MySQL 8.4 / Redis 7 / RabbitMQ / Elasticsearch 7.17 / Consul / Jaeger / Prometheus / Grafana / Traefik）。
+环境：Windows + Docker Desktop，`planstar_backend/docker-compose.yml` 全栈（MySQL 8.4 / Redis 7 / RabbitMQ / Elasticsearch 7.17 / Consul / Jaeger / Prometheus / Grafana / Traefik）。
 
 | 检查项 | 结果 |
 |---|---|

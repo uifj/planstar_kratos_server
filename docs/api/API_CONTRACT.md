@@ -4,9 +4,9 @@
 
 ## 1. 契约范围与事实源
 
-- **唯一事实源**：`planstar/internal/service/service.go` 的 `Register` 路由表，以及同目录各 handler。
+- **唯一事实源**：`planstar_backend/internal/service/service.go` 的 `Register` 路由表，以及同目录各 handler。
 - 服务监听 `8098`；所有路径区分大小写，使用 `METHOD /path` 精确匹配。
-- 当前注册 56 条路由，对应 **55 个唯一端点**：`GET /v1/user/` 是 `GET /v1/user` 的尾斜杠别名，复用同一 handler，本契约只记录一次。
+- 当前注册 57 条路由，对应 **56 个唯一端点**：`GET /v1/user/` 是 `GET /v1/user` 的尾斜杠别名，复用同一 handler，本契约只记录一次。条数与集合由 `planstar_backend/internal/server/routes_test.go` 的 `TestRouteInventory` / `TestRoutesMatchContract` 双向断言，禁止只比集合不比条数。
 - 成功响应为裸 JSON（无 `{code,message,data}` 信封），`Content-Type: application/json; charset=utf-8`；图片端点返回 `image/png`。
 - 请求体字段大小写敏感，允许的字段别名已在各端点列出；未列出的字段当前被忽略。
 
@@ -32,6 +32,7 @@
 | 429 | `RATE_LIMITED` | 触发限流（如发码过于频繁） |
 | 413 | `PAYLOAD_TOO_LARGE` | 请求体超过限制 |
 | 500 | `INTERNAL` | 服务内部错误，不回显 SQL/堆栈 |
+| 503 | `SERVICE_UNAVAILABLE` | 仅运维面 `/metrics` 抓取并发超限（`planstar_http` 独立 Registry 的自我保护），业务端点不返回此码 |
 | 504 | `TIMEOUT` | 请求处理超时 |
 
 订单业务码（HTTP 409，`code` 取以下值）：`PRICE_CHANGED`（金额/版本不一致）、`SOLD_OUT`（售罄或库存不足）、`LIMIT_EXCEEDED`（超过限购）、`QUOTE_EXPIRED`（报价过期或不存在）。四个错误值定义在 `internal/biz/errors.go`，由 `service.fail` 映射为 409，错误体与其它失败一致。
@@ -66,13 +67,13 @@
 
 - 登录成功同时下发：
   - `Set-Cookie: psSession=<64 位 hex>; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`；生产环境（`server.env=prod` 或 `auth.cookie_secure=true`）追加 `Secure`
-  - 响应头 `psSession: <token>`（客户端两处都读）
   - `X-Trace-Id: <traceId>`
-- 后续请求使用 `Cookie: psSession=<token>`；**不是** `Authorization: Bearer`。也兼容读取 `psSession` 请求头（`internal/pkg/session`）。
+- **响应头不下发 `psSession`**：`internal/pkg/session/session.go` 明确禁止写入 JS 可读的响应头，令牌只经 HttpOnly Cookie 传递；仅 `dvid` 在新建设备号时额外写响应头。
+- 后续请求使用 `Cookie: psSession=<token>`；**不是** `Authorization: Bearer`。兼容读取 `psSession` **请求头**（历史客户端，`internal/pkg/session`）。
 - 服务端会话有效期由 `auth.session_expire_days` 控制（默认 30 天），写入 `login_session.expire_time` 与 Redis TTL；Cookie 的 `Max-Age` 固定为 30 天（`internal/pkg/session/session.go`）。
 - `dvid`：登录成功时若无设备号，服务端生成并同时写 `Set-Cookie: dvid=...` 与响应头 `dvid`。
 - 图形码：`GET /v1/user/captcha` 写 `psCaptcha` Cookie（HttpOnly，5 分钟），明文码存 Redis 并一次性消费。
-- 需要登录的端点：订单 8 个、消息 3 个、客服会话 4 个、用户资料/地址 6 个；其余目录与动态端点匿名可访问。
+- 需要登录的端点（`requireUser`）：订单 8 个、消息 3 个、客服会话 4 个、用户资料/地址 6 个；此外钱包 4 个、商城兑换 1 个、企划域写与本人支持单列表 4 个、创意投票 1 个同样要求登录。目录与动态读端点匿名可访问。
 - 发码风控：同一手机号默认 60 秒冷却，同一 IP 默认每分钟 10 次（`auth.send_code_cooldown_seconds` / `auth.send_code_ip_limit_per_minute`），超限返回 `429 RATE_LIMITED`；IP 取 TCP 对端地址，不信任 `X-Forwarded-For`，经反向代理部署时可能被计为同一 IP。
 - 登录失败风控：连续失败达到 `auth.login_fail_captcha_threshold`（默认 3）后要求图形码。发码/失败计数为**进程内**语义，多实例独立计数。
 
@@ -724,7 +725,7 @@ POST /v1/projectIdeas/{ideaId}/vote
 ### 8.10 企划域
 
 > 以下模型对应第 7.7 节，已在 `internal/biz/project.go` 落地，属于第 1 节所述
-> 55 个唯一端点。金额字段与第 3 节一致，均为**分**。
+> 56 个唯一端点。金额字段与第 3 节一致，均为**分**。
 
 `ProjectSummary`：
 `projectId(int64)`、`projectNo(string)`、`title(string)`、`subtitle(string,omitempty)`、`cover(string)`、`categoryId(int64)`、`categoryName(string)`、`projectType(string)`、`creatorId(int64)`、`creatorName(string)`、`goalAmount(int64)`、`raisedAmount(int64)`、`supporterCount(int)`、`deadline(毫秒时间戳)`、`remainingDays(int)`、`fundingStatus(string)`、`achievementRate(int, 千分比)`、`minSupportAmount(int64)`、`tags(string[])`、`isFeatured(bool)`

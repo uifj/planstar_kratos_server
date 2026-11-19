@@ -1,0 +1,130 @@
+/**
+ * Planstar 设计令牌 —— CSS 变量层。
+ *
+ * 由 `apps/web/src/app/globals.css` 以相对路径 @import，
+ * 保证色值只有一个来源（与 `tokens.ts` 同步维护）。
+ */
+
+:root {
+  color-scheme: light;
+
+  /* L0 原始色板 */
+  --ps-gray-light-1: #f9fafc;
+  --ps-gray-light-2: #f0f2f7;
+  --ps-gray-light-3: #e6e9f0;
+  --ps-gray-light-4: #d1d4de;
+  --ps-gray-light-5: #c0c3cc;
+  --ps-gray-dark-1: #131417;
+  --ps-gray-dark-2: #1f2024;
+  --ps-gray-dark-3: #2b2c30;
+  --ps-gray-dark-4: #3a3c42;
+  --ps-theme-light-1: #ebf3ff;
+  --ps-theme-light-2: #cce2ff;
+  --ps-theme-light-3: #adcfff;
+  --ps-theme-light-4: #7aafff;
+  --ps-theme-light-5: #4588f5;
+  --ps-theme-light-6: #1c66e5;
+  --ps-theme-light-7: #0d49bf;
+  --ps-theme-light-8: #033099;
+  --ps-theme-dark-2: #243047;
+  --ps-theme-dark-6: #4086ff;
+  --ps-theme-dark-7: #5c9dff;
+  --ps-green-light-1: #e1f7eb;
+  --ps-green-light-6: #0abf77;
+  --ps-green-dark-2: #22352c;
+  --ps-green-dark-6: #38a673;
+  --ps-red-light-1: #ffe7e6;
+  --ps-red-light-6: #e54545;
+  --ps-red-dark-6: #e6594c;
+  --ps-orange-light-1: #ffeedb;
+  --ps-orange-light-6: #ff7200;
+  --ps-orange-dark-2: #35231a;
+  --ps-orange-dark-6: #e37f32;
+
+  /* L1 语义槽 */
+  --ps-text-primary: rgba(0, 0, 0, 0.9);
+  --ps-text-secondary: rgba(0, 0, 0, 0.55);
+  --ps-text-tertiary: rgba(0, 0, 0, 0.4);
+  --ps-text-disabled: rgba(0, 0, 0, 0.25);
+  --ps-bg-page: var(--ps-gray-light-1);
+  --ps-bg-card: #ffffff;
+  --ps-bg-subtle: var(--ps-gray-light-2);
+  --ps-bg-overlay: rgba(0, 0, 0, 0.55);
+  --ps-divider: var(--ps-gray-light-2);
+  --ps-border: var(--ps-gray-light-3);
+  --ps-brand: var(--ps-theme-light-6);
+  --ps-brand-pressed: var(--ps-theme-light-7);
+  --ps-brand-disabled: var(--ps-theme-light-2);
+  --ps-brand-subtle: var(--ps-theme-light-1);
+  --ps-on-brand: #ffffff;
+  --ps-price: var(--ps-red-light-6);
+  --ps-success: var(--ps-green-light-6);
+  --ps-warning: var(--ps-orange-light-6);
+  --ps-warning-bg: var(--ps-orange-light-1);
+  --ps-error: var(--ps-red-light-6);
+  --ps-info: var(--ps-theme-light-5);
+  --ps-skeleton: var(--ps-gray-light-2);
+  --ps-tab-active: var(--ps-theme-light-6);
+  --ps-tab-inactive: rgba(0, 0, 0, 0.55);
+
+  /* 字体与版式 */
+  --ps-font-sans: 'ChillRoundGothic', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', system-ui,
+    sans-serif;
+  --ps-text-display: 32px;
+  --ps-text-title: 20px;
+  --ps-text-subtitle: 16px;
+  --ps-text-body: 14px;
+  --ps-text-caption: 12px;
+  --ps-text-label: 10px;
+
+  /* 间距 / 圆角 */
+  --ps-space-xxs: 4px;
+  --ps-space-xs: 8px;
+  --ps-space-sm: 12px;
+  --ps-space-md: 16px;
+  --ps-space-lg: 20px;
+  --ps-space-xl: 24px;
+  --ps-space-xxl: 32px;
+  --ps-space-section: 40px;
+  --ps-space-huge: 56px;
+  --ps-space-giant: 72px;
+  --ps-radius-xs: 4px;
+  --ps-radius-sm: 8px;
+  --ps-radius-md: 12px;
+  --ps-radius-lg: 16px;
+  --ps-radius-xl: 20px;
+  --ps-radius-full: 999px;
+
+  /* 布局 */
+  --ps-max-width: 1200px;
+  --ps-header-height: 64px;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --ps-text-primary: rgba(255, 255, 255, 0.93);
+  --ps-text-secondary: rgba(255, 255, 255, 0.55);
+  --ps-text-tertiary: rgba(255, 255, 255, 0.3);
+  --ps-text-disabled: rgba(255, 255, 255, 0.14);
+  --ps-bg-page: var(--ps-gray-dark-1);
+  --ps-bg-card: var(--ps-gray-dark-2);
+  --ps-bg-subtle: var(--ps-gray-dark-3);
+  --ps-bg-overlay: rgba(0, 0, 0, 0.55);
+  --ps-divider: var(--ps-gray-dark-3);
+  --ps-border: var(--ps-gray-dark-4);
+  --ps-brand: var(--ps-theme-dark-6);
+  --ps-brand-pressed: var(--ps-theme-dark-7);
+  --ps-brand-disabled: var(--ps-theme-dark-2);
+  --ps-brand-subtle: var(--ps-theme-dark-2);
+  --ps-on-brand: #ffffff;
+  --ps-price: var(--ps-red-dark-6);
+  --ps-success: var(--ps-green-dark-6);
+  --ps-warning: var(--ps-orange-dark-6);
+  --ps-warning-bg: var(--ps-orange-dark-2);
+  --ps-error: var(--ps-red-dark-6);
+  --ps-info: var(--ps-theme-dark-6);
+  --ps-skeleton: var(--ps-gray-dark-3);
+  --ps-tab-active: var(--ps-theme-dark-6);
+  --ps-tab-inactive: rgba(255, 255, 255, 0.55);
+}

@@ -58,3 +58,13 @@ bin/
 planstar-deploy*.tar.gz
 
 _archive
+
+# 只读参考快照、本地代理数据与前端依赖，均不纳入版本库。
+# .archive/go-wind 是架构对照材料（见 docs/ADR/ADR-0001 §1.1），不参与构建/CI/部署。
+.archive/
+.agents/
+.screenshots/
+node_modules/
+dist/
+.next/
+*.tsbuildinfo

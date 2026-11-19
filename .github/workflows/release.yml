@@ -148,19 +148,19 @@ jobs:
             export ENV_FILE=.env.prod
 
             # Prometheus 抓取 9108/metrics 需要 Bearer 令牌，从服务器本地 .env.prod 落盘
-            OPS_TOKEN="$(grep -E '^PLANSTAR_OPS_TOKEN=' planstar/.env.prod | tail -1 | cut -d= -f2-)"
+            OPS_TOKEN="$(grep -E '^PLANSTAR_OPS_TOKEN=' planstar_backend/.env.prod | tail -1 | cut -d= -f2-)"
             [ -n "${OPS_TOKEN}" ] || { echo "missing PLANSTAR_OPS_TOKEN in .env.prod" >&2; exit 1; }
-            ( umask 077; printf '%s' "${OPS_TOKEN}" > planstar/deploy/prometheus/ops_token )
-            chmod 600 planstar/deploy/prometheus/ops_token
+            ( umask 077; printf '%s' "${OPS_TOKEN}" > planstar_backend/deploy/prometheus/ops_token )
+            chmod 600 planstar_backend/deploy/prometheus/ops_token
 
-            COMPOSE="docker compose --env-file planstar/.env.prod -f planstar/docker-compose.yml -f planstar/docker-compose.prod.yml"
+            COMPOSE="docker compose --env-file planstar_backend/.env.prod -f planstar_backend/docker-compose.yml -f planstar_backend/docker-compose.prod.yml"
             # 部署侧覆盖（例如运行时关闭不兼容的 OSS）存在即叠加。
-            if [ -f planstar/docker-compose.server.yml ]; then
-              COMPOSE="${COMPOSE} -f planstar/docker-compose.server.yml"
+            if [ -f planstar_backend/docker-compose.server.yml ]; then
+              COMPOSE="${COMPOSE} -f planstar_backend/docker-compose.server.yml"
             fi
 
             # 先跑发布前门禁，再切换，避免半套配置或测试口令上线
-            ./planstar/deploy/preflight.sh
+            ./planstar_backend/deploy/preflight.sh
             ${COMPOSE} config -q
             ${COMPOSE} pull planstar-api admin admin-web
             ${COMPOSE} up -d --remove-orphans

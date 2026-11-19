@@ -112,7 +112,7 @@
 
 ```bash
 # 1) 让配置生效
-cd /opt/planstar/planstar
+cd /opt/planstar_backend/planstar
 docker compose up -d --force-recreate planstar-api
 docker compose logs --since 2m planstar-api | grep -E 'aliyun (sms|oss) provider enabled'
 

@@ -2,7 +2,7 @@
 
 # 当前架构（planstar 单体）
 
-本文件描述**当前实际运行**的 `planstar/` 服务，不包含 kratos-shop 微服务模板。历史微服务描述见 [legacy/architecture-microservices.md](legacy/architecture-microservices.md)。运营后台 `admin` 作为同实例部署的独立进程/容器，见第 11 节。
+本文件描述**当前实际运行**的 `planstar_backend/` 服务，不包含 kratos-shop 微服务模板。历史微服务描述已废弃，见 [legacy/README.md](legacy/README.md) 与 [ADR-0001](ADR/ADR-0001-modular-monolith-governance.md)（当前决策为模块化单体，不拆进程）。运营后台 `planstar_frontend/admin` 作为同实例部署的独立进程/容器，见第 11 节。
 
 ## 1. 进程与端口
 
@@ -24,7 +24,7 @@ flowchart LR
 | 业务 HTTP | `0.0.0.0:8098` | 24 条客户端路由（23 个唯一端点，`GET /v1/user/` 是 `GET /v1/user` 的尾斜杠别名） |
 | 运维 HTTP | `0.0.0.0:9108` | `/metrics`、`/healthz`、`/readyz`，与业务端口分离，避免指标暴露在公网 API |
 
-两个 HTTP server 都由 Kratos v3 transport 承载，随 `kratos.App` 启停；MQ 消费者作为第三个 `transport.Server` 接入同一生命周期。入口与依赖装配在 `planstar/cmd/planstar/main.go`，**没有 Wire 代码生成**。
+两个 HTTP server 都由 Kratos v3 transport 承载，随 `kratos.App` 启停；MQ 消费者作为第三个 `transport.Server` 接入同一生命周期。入口与依赖装配在 `planstar_backend/cmd/planstar_backend/main.go`，**没有 Wire 代码生成**。
 
 ## 2. internal 分层
 
@@ -64,7 +64,7 @@ client → DTO → service → DO → biz → DO → data → PO → storage
 
 ## 4. MySQL 多逻辑库
 
-`internal/data/data.go` 固定 9 个逻辑库，按域建连接池（`SetMaxOpenConns(20)`、`SetMaxIdleConns(5)`、`ConnMaxLifetime(30m)`），启动时逐个 `Ping`，任一失败即启动失败。
+`internal/data/data.go` 固定 10 个域连接池（运行时共 11 个 `planstar_*` 库：9 基线 + `shop` + `admin`），按域建连接池（`SetMaxOpenConns(20)`、`SetMaxIdleConns(5)`、`ConnMaxLifetime(30m)`），启动时逐个 `Ping`，任一失败即启动失败。
 
 | 逻辑库 | 当前主要用途 |
 | --- | --- |
@@ -165,7 +165,7 @@ Redis 不是数据源，只保存短期状态；未配置 `data.redis.addr` 时 
 
 ## 11. 运营后台（planstar/admin）
 
-`admin/` 是独立的 `planstar/admin` Go 模块（Kratos v3），与 `planstar/` 业务单体同实例部署、同 MySQL 数据源，但进程、端口、鉴权与 Cookie 完全隔离。控制台（Ant Design Pro / Umi Max）构建为静态资源，由独立 `admin-web`（nginx）容器托管。
+`admin/` 是独立的 `planstar/admin` Go 模块（Kratos v3），与 `planstar_backend/` 业务单体同实例部署、同 MySQL 数据源，但进程、端口、鉴权与 Cookie 完全隔离。控制台（Ant Design Pro / Umi Max）构建为静态资源，由独立 `admin-web`（nginx）容器托管。
 
 ```mermaid
 flowchart LR

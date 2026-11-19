@@ -1,6 +1,6 @@
 # 运营后台整合、上线与回滚
 
-本文覆盖 `planstar/admin` 与 `planstar/` 业务服务的部署整合：风险登记、上线检查单、回滚步骤，以及短信/邮件/OSS 外部服务的启用方式。架构背景见 [architecture.md](architecture.md)，接口契约见 [api/ADMIN_CONTRACT.md](api/ADMIN_CONTRACT.md)。
+本文覆盖 `planstar/admin` 与 `planstar_backend/` 业务服务的部署整合：风险登记、上线检查单、回滚步骤，以及短信/邮件/OSS 外部服务的启用方式。架构背景见 [architecture.md](architecture.md)，接口契约见 [api/ADMIN_CONTRACT.md](api/ADMIN_CONTRACT.md)。
 
 ## 1. 风险登记表
 
@@ -15,7 +15,7 @@
 | 5 | 默认口令与暴力破解 | 后台被接管 | 使用初始口令或短时间内大量失败登录时 | 首次登录强制改密；bcrypt cost≥12；登录限流、失败锁定、审计告警；上线后禁用/改密种子账号 | 限流/审计/告警已配；`19_admin_console.sql` 的种子账号 `must_change_password=1`，上线必须验证并立即改密 |
 | 6 | 角色越权 | 运营越权改数据 | 角色配置错误或直接调用写接口时 | 服务端逐方法校验 `viewer/operator/admin` 矩阵；仅 `admin` 可管理管理员账号；单测覆盖 | 已实现并有单测；新增端点必须同步矩阵 |
 | 7 | 直接读库造成 schema 耦合 | 企划星改表导致后台 500 | 业务库改表、字段下线或迁移未同步时 | 查询字段白名单、优先视图；禁止跨库 JOIN；迁移评审与契约测试 | 已按只读边界实现；改表需同步评审 admin 查询 |
-| 8 | ent `auto_migrate` 生产误用 | 隐式改表/锁表 | 生产启动或发布迁移时 | 生产 `auto_migrate=false`；`planstar/sql/19_admin_console.sql` 评审执行；启动时校验表存在 | compose 未开启 auto_migrate；首次部署由 MySQL 初始化挂载执行 19 |
+| 8 | ent `auto_migrate` 生产误用 | 隐式改表/锁表 | 生产启动或发布迁移时 | 生产 `auto_migrate=false`；`planstar_backend/sql/19_admin_console.sql` 评审执行；启动时校验表存在 | compose 未开启 auto_migrate；首次部署由 MySQL 初始化挂载执行 19 |
 | 9 | 数据库权限过大 | 误删/越权写业务库 | 复用高权限账号或 DSN 配置错误时 | 专用账号：业务库仅 `SELECT` + `planstar_user.user_info` 的 `UPDATE`；`planstar_admin` 全权限；连接池上限 | 本地默认 root 仅为开发；生产必须在 `.env` 设置最小权限 DSN |
 | 10 | 审核规则双写漂移 | 同一企划两套结论 | 审核规则在 admin 与 planstar 各实现一次时 | 审核/举报只调 ops API；超时/失败返回 503，不做本地规则兜底 | 已实现 503 语义；禁止在 admin 内加黑名单 |
 | 11 | 指标/链路标签冲突 | 监控误判 | 指标/服务名与 planstar 同名混用时 | 独立 service 名 `admin.api`、独立 job；9110 独立 `/metrics`；trace service name 区分 | 已增加 Prometheus job/告警/Grafana 面板 |
@@ -50,10 +50,10 @@
 
 ### 2.2 配置与密钥
 
-- [ ] `planstar/.env` 由 `.env.example` 复制，未提交真实密钥。
+- [ ] `planstar_backend/.env` 由 `.env.example` 复制，未提交真实密钥。
 - [ ] `ADMIN_AUTH_JWT_SECRET` 长度 ≥ 32 字节且与业务 JWT 密钥不同；轮换前评估所有管理员重新登录。
 - [ ] `ADMIN_AUTH_COOKIE_NAME` 保持 `psAdminToken`，不得复用 `psSession`；`ADMIN_AUTH_COOKIE_DOMAIN` 留空（host-only）或严格限定 `.planstar.top`。
-- [ ] `ADMIN_PLANSTAR_OPS_TOKEN` 与 `PLANSTAR_OPS_TOKEN` 值一致；`planstar/deploy/prometheus/ops_token` 同步更新。
+- [ ] `ADMIN_PLANSTAR_OPS_TOKEN` 与 `PLANSTAR_OPS_TOKEN` 值一致；`planstar_backend/deploy/prometheus/ops_token` 同步更新。
 - [ ] `ADMIN_DATA_DATABASE_SOURCE` 指向 `planstar_admin`，账号仅具备约定权限；密码含 `@`/`:`/`/` 时使用正确转义或专用账号。
 - [ ] `ADMIN_DATA_REDIS_ADDR` 与实际 Redis 鉴权方式匹配（见 1.1 已知差异）。
 - [ ] `ADMIN_AUTH_COOKIE_SECURE=true`、`ADMIN_SERVER_ENV=prod`。
@@ -69,7 +69,7 @@
 
 ### 2.4 构建与启动
 
-- [ ] `docker compose -f planstar/docker-compose.yml config -q` 通过。
+- [ ] `docker compose -f planstar_backend/docker-compose.yml config -q` 通过。
 - [ ] `docker compose build admin admin-web` 成功；`admin` 镜像内 `/app/server` 存在。
 - [ ] `docker compose up -d admin admin-web traefik` 后，`admin` 与 `admin-web` 均为 healthy。
 - [ ] `curl -fsS http://127.0.0.1:9110/healthz` 返回 200；`curl -fsS http://127.0.0.1:9110/readyz` 返回 200（Redis 鉴权问题需先解决）。
@@ -108,7 +108,7 @@
 ## 3. 回滚步骤
 
 1. **停止扩散**：将 `admin-api`/`admin-console` 路由指向维护页，或在 Traefik 启用 `admin-ip-allowlist` 仅保留运维出口。
-2. **回滚镜像**：在 `planstar/.env` 将 `ADMIN_IMAGE/ADMIN_TAG`、`ADMIN_WEB_IMAGE/ADMIN_WEB_TAG` 改回上一版本，执行 `docker compose up -d --no-deps admin admin-web`。
+2. **回滚镜像**：在 `planstar_backend/.env` 将 `ADMIN_IMAGE/ADMIN_TAG`、`ADMIN_WEB_IMAGE/ADMIN_WEB_TAG` 改回上一版本，执行 `docker compose up -d --no-deps admin admin-web`。
 3. **回滚配置**：将 `.env` 恢复为上一版本；若新增变量导致启动失败，先删除新增 `ADMIN_*` 再启动。`docker compose config` 确认解析结果。
 4. **数据库**：迁移遵循向后兼容；优先回滚应用而不是删表。若必须回退 `19_admin_console.sql`，先备份 `planstar_admin`，再在维护窗口执行评审过的回退 SQL（不自动删库）。
 5. **验证**：`curl -fsS http://127.0.0.1:9110/healthz`、`/readyz`；管理员登录、列表、审核/举报只读验证；Grafana 5xx/延迟恢复；Prometheus `job=admin` UP。
@@ -142,7 +142,7 @@
 ### 4.2 启用步骤
 
 1. 在供应商控制台创建最小权限子账号/密钥，限制来源 IP、短信签名与模板、OSS 桶前缀。
-2. 将密钥写入部署机 `planstar/.env`（不要提交仓库），同步更新密钥管理系统与轮换计划。
+2. 将密钥写入部署机 `planstar_backend/.env`（不要提交仓库），同步更新密钥管理系统与轮换计划。
 3. 先以 `enabled=false` → `true` 单项启用，执行 `docker compose up -d --no-deps admin`（及需要启用的 `planstar-api`）。
 4. 检查启动日志：Noop 标记消失，出现供应商初始化成功/失败信息；确认日志中无密钥明文。
 5. 用小流量测试账号验证：短信模板、邮件到达率/退信、OSS 上传/预签名下载；确认幂等（重复请求不重复扣费）。

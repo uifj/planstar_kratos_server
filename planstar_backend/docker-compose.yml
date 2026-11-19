@@ -1,0 +1,494 @@
+# =====================================================================
+# Planstar 生产编排（单机单服务器 · 全容器）
+# 用法:
+#   cp .env.example .env        # 修改口令/镜像目标
+#   docker compose up -d --build
+# 一键推送部署: ./deploy.sh  （见脚本头部说明）
+#
+# 可观测栈（对齐仓库 deploy/）:
+#   Prometheus + Alertmanager + Grafana + Loki/Promtail + Traefik
+#   mysqld-exporter / redis-exporter 基础设施指标
+# =====================================================================
+
+# 目录布局：本文件位于 planstar_backend/；所有 ./sql、./configs、./deploy 与
+# ../docs/sql 均相对本文件解析。生产由 ./docker-compose.prod.yml 与
+# ./docker-compose.server.yml 叠加；CI/Release 的工作目录已同步为该目录。
+name: planstar
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+x-app-env: &app-env
+  # 默认 root；生产建议在 .env 中改为最小权限账号
+  PLANSTAR_MYSQL_USER: ${PLANSTAR_MYSQL_USER:-root}
+  PLANSTAR_MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+  PLANSTAR_REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
+  PLANSTAR_MQ_ADDR: amqp://${RABBITMQ_USER:-root}:${RABBITMQ_PASS:-root}@rabbitmq:5672/
+  # 目录读模型周期全量重建间隔；0 表示只保留启动时一次同步
+  PLANSTAR_ES_SYNC_INTERVAL_SECONDS: ${PLANSTAR_ES_SYNC_INTERVAL_SECONDS:-300}
+  # 9108 运维端点鉴权令牌（/metrics 需要 Bearer；为空则 /metrics 返回 401）
+  PLANSTAR_OPS_TOKEN: ${PLANSTAR_OPS_TOKEN:-}
+  # 运维端点来源白名单（逗号分隔 CIDR；留空表示不限制）
+  PLANSTAR_OPS_ALLOWED_CIDRS: ${PLANSTAR_OPS_ALLOWED_CIDRS:-}
+  # 外部服务默认关闭；供应商参数留空时服务使用 Noop/Log 实现。
+  PLANSTAR_NOTIFY_SMS_ENABLED: ${PLANSTAR_NOTIFY_SMS_ENABLED:-false}
+  PLANSTAR_NOTIFY_SMS_PROVIDER: ${PLANSTAR_NOTIFY_SMS_PROVIDER:-}
+  PLANSTAR_NOTIFY_SMS_ENDPOINT: ${PLANSTAR_NOTIFY_SMS_ENDPOINT:-}
+  PLANSTAR_NOTIFY_SMS_ACCESS_KEY: ${PLANSTAR_NOTIFY_SMS_ACCESS_KEY:-}
+  PLANSTAR_NOTIFY_SMS_ACCESS_SECRET: ${PLANSTAR_NOTIFY_SMS_ACCESS_SECRET:-}
+  PLANSTAR_NOTIFY_SMS_SIGN_NAME: ${PLANSTAR_NOTIFY_SMS_SIGN_NAME:-}
+  PLANSTAR_NOTIFY_SMS_TEMPLATE_CODE: ${PLANSTAR_NOTIFY_SMS_TEMPLATE_CODE:-}
+  PLANSTAR_NOTIFY_EMAIL_ENABLED: ${PLANSTAR_NOTIFY_EMAIL_ENABLED:-false}
+  PLANSTAR_NOTIFY_EMAIL_PROVIDER: ${PLANSTAR_NOTIFY_EMAIL_PROVIDER:-}
+  PLANSTAR_NOTIFY_EMAIL_SMTP_HOST: ${PLANSTAR_NOTIFY_EMAIL_SMTP_HOST:-}
+  PLANSTAR_NOTIFY_EMAIL_SMTP_PORT: ${PLANSTAR_NOTIFY_EMAIL_SMTP_PORT:-0}
+  PLANSTAR_NOTIFY_EMAIL_USERNAME: ${PLANSTAR_NOTIFY_EMAIL_USERNAME:-}
+  PLANSTAR_NOTIFY_EMAIL_PASSWORD: ${PLANSTAR_NOTIFY_EMAIL_PASSWORD:-}
+  PLANSTAR_NOTIFY_EMAIL_FROM: ${PLANSTAR_NOTIFY_EMAIL_FROM:-}
+  PLANSTAR_STORAGE_OSS_ENABLED: ${PLANSTAR_STORAGE_OSS_ENABLED:-false}
+  PLANSTAR_STORAGE_OSS_PROVIDER: ${PLANSTAR_STORAGE_OSS_PROVIDER:-}
+  PLANSTAR_STORAGE_OSS_ENDPOINT: ${PLANSTAR_STORAGE_OSS_ENDPOINT:-}
+  PLANSTAR_STORAGE_OSS_REGION: ${PLANSTAR_STORAGE_OSS_REGION:-}
+  PLANSTAR_STORAGE_OSS_BUCKET: ${PLANSTAR_STORAGE_OSS_BUCKET:-}
+  PLANSTAR_STORAGE_OSS_ACCESS_KEY: ${PLANSTAR_STORAGE_OSS_ACCESS_KEY:-}
+  PLANSTAR_STORAGE_OSS_ACCESS_SECRET: ${PLANSTAR_STORAGE_OSS_ACCESS_SECRET:-}
+  PLANSTAR_STORAGE_OSS_CDN_HOST: ${PLANSTAR_STORAGE_OSS_CDN_HOST:-}
+  PLANSTAR_STORAGE_OSS_PRESIGN_TTL_SECONDS: ${PLANSTAR_STORAGE_OSS_PRESIGN_TTL_SECONDS:-0}
+
+# 管理后台（planstar/admin）环境变量。所有敏感值均来自 .env，配置文件中只留空占位。
+x-admin-env: &admin-env
+  TZ: Asia/Shanghai
+  # 与 planstar 共用 OTel Collector；未配置 endpoint 时 admin 的 tracing 为 no-op。
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+  ADMIN_SERVER_ENV: prod
+  ADMIN_SERVER_HTTP_ADDR: 0.0.0.0:9100
+  ADMIN_SERVER_GRPC_ADDR: 0.0.0.0:9101
+  ADMIN_SERVER_ADMIN_ADDR: 0.0.0.0:9110
+  ADMIN_DATA_DATABASE_DRIVER: mysql
+  # 本地默认 root/root；生产必须在 .env 显式设置为最小权限账号 DSN。
+  ADMIN_DATA_DATABASE_SOURCE: "${ADMIN_DATA_DATABASE_SOURCE:-root:root@tcp(mysql:3306)/planstar_admin?timeout=5s&parseTime=True&loc=Asia%2FShanghai&charset=utf8mb4}"
+  ADMIN_DATA_REDIS_ADDR: ${ADMIN_DATA_REDIS_ADDR:-redis:6379}
+  ADMIN_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
+  ADMIN_DATA_REDIS_DB: ${ADMIN_DATA_REDIS_DB:-0}
+  ADMIN_AUTH_JWT_SECRET: ${ADMIN_AUTH_JWT_SECRET:-}
+  ADMIN_AUTH_COOKIE_NAME: ${ADMIN_AUTH_COOKIE_NAME:-psAdminToken}
+  ADMIN_AUTH_COOKIE_DOMAIN: ${ADMIN_AUTH_COOKIE_DOMAIN:-}
+  ADMIN_AUTH_COOKIE_SECURE: ${ADMIN_AUTH_COOKIE_SECURE:-true}
+  ADMIN_PLANSTAR_OPS_BASE_URL: ${ADMIN_PLANSTAR_OPS_BASE_URL:-http://planstar:9108}
+  ADMIN_PLANSTAR_OPS_TOKEN: ${ADMIN_PLANSTAR_OPS_TOKEN:-}
+  # 外部服务默认关闭；供应商参数留空时服务使用 Noop/Log 实现。
+  ADMIN_NOTIFY_SMS_ENABLED: ${ADMIN_NOTIFY_SMS_ENABLED:-false}
+  ADMIN_NOTIFY_SMS_PROVIDER: ${ADMIN_NOTIFY_SMS_PROVIDER:-}
+  ADMIN_NOTIFY_SMS_ENDPOINT: ${ADMIN_NOTIFY_SMS_ENDPOINT:-}
+  ADMIN_NOTIFY_SMS_ACCESS_KEY: ${ADMIN_NOTIFY_SMS_ACCESS_KEY:-}
+  ADMIN_NOTIFY_SMS_ACCESS_SECRET: ${ADMIN_NOTIFY_SMS_ACCESS_SECRET:-}
+  ADMIN_NOTIFY_SMS_SIGN_NAME: ${ADMIN_NOTIFY_SMS_SIGN_NAME:-}
+  ADMIN_NOTIFY_SMS_TEMPLATE_CODE: ${ADMIN_NOTIFY_SMS_TEMPLATE_CODE:-}
+  ADMIN_NOTIFY_EMAIL_ENABLED: ${ADMIN_NOTIFY_EMAIL_ENABLED:-false}
+  ADMIN_NOTIFY_EMAIL_PROVIDER: ${ADMIN_NOTIFY_EMAIL_PROVIDER:-}
+  ADMIN_NOTIFY_EMAIL_SMTP_HOST: ${ADMIN_NOTIFY_EMAIL_SMTP_HOST:-}
+  ADMIN_NOTIFY_EMAIL_SMTP_PORT: ${ADMIN_NOTIFY_EMAIL_SMTP_PORT:-0}
+  ADMIN_NOTIFY_EMAIL_USERNAME: ${ADMIN_NOTIFY_EMAIL_USERNAME:-}
+  ADMIN_NOTIFY_EMAIL_PASSWORD: ${ADMIN_NOTIFY_EMAIL_PASSWORD:-}
+  ADMIN_NOTIFY_EMAIL_FROM: ${ADMIN_NOTIFY_EMAIL_FROM:-}
+  ADMIN_STORAGE_OSS_ENABLED: ${ADMIN_STORAGE_OSS_ENABLED:-false}
+  ADMIN_STORAGE_OSS_PROVIDER: ${ADMIN_STORAGE_OSS_PROVIDER:-}
+  ADMIN_STORAGE_OSS_ENDPOINT: ${ADMIN_STORAGE_OSS_ENDPOINT:-}
+  ADMIN_STORAGE_OSS_REGION: ${ADMIN_STORAGE_OSS_REGION:-}
+  ADMIN_STORAGE_OSS_BUCKET: ${ADMIN_STORAGE_OSS_BUCKET:-}
+  ADMIN_STORAGE_OSS_ACCESS_KEY: ${ADMIN_STORAGE_OSS_ACCESS_KEY:-}
+  ADMIN_STORAGE_OSS_ACCESS_SECRET: ${ADMIN_STORAGE_OSS_ACCESS_SECRET:-}
+  ADMIN_STORAGE_OSS_CDN_HOST: ${ADMIN_STORAGE_OSS_CDN_HOST:-}
+  ADMIN_STORAGE_OSS_PRESIGN_TTL_SECONDS: ${ADMIN_STORAGE_OSS_PRESIGN_TTL_SECONDS:-0}
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      # 内部服务仅绑定宿主机回环，公网只保留 Traefik 80/443
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # 首次初始化：建库建表 -> 演示数据 -> 认证支撑 -> 生产化补丁（按文件名字典序）
+      - ../docs/sql/00_all.sql:/docker-entrypoint-initdb.d/00_all.sql:ro
+      - ../docs/sql/14_mock_seed.sql:/docker-entrypoint-initdb.d/14_mock_seed.sql:ro
+      - ./sql/15_auth_support.sql:/docker-entrypoint-initdb.d/15_auth_support.sql:ro
+      - ./sql/16_production_hardening.sql:/docker-entrypoint-initdb.d/16_production_hardening.sql:ro
+      - ./sql/17_pay_refund_chat.sql:/docker-entrypoint-initdb.d/17_pay_refund_chat.sql:ro
+      - ./sql/18_star_coin_shop.sql:/docker-entrypoint-initdb.d/18_star_coin_shop.sql:ro
+      - ./sql/19_admin_console.sql:/docker-entrypoint-initdb.d/19_admin_console.sql:ro
+      - ./sql/20_project_idea.sql:/docker-entrypoint-initdb.d/20_project_idea.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+    logging: *default-logging
+    networks: [planstar]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-root}"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-root}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    logging: *default-logging
+    networks: [planstar]
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
+    profiles: ["full"]
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-root}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-root}
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - mq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    logging: *default-logging
+    networks: [planstar]
+
+  elasticsearch:
+    image: elasticsearch:7.17.22
+    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
+    profiles: ["full"]
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "false"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "127.0.0.1:9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9200/_cluster/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    logging: *default-logging
+    networks: [planstar]
+
+  consul:
+    image: hashicorp/consul:1.19.1
+    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
+    profiles: ["full"]
+    restart: unless-stopped
+    command: ["agent", "-server", "-bootstrap-expect=1", "-ui", "-client=0.0.0.0", "-bind=0.0.0.0"]
+    ports:
+      - "127.0.0.1:8500:8500"
+      - "127.0.0.1:8600:8600/udp"
+    volumes:
+      - consul_data:/consul/data
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    logging: *default-logging
+    networks: [planstar]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    # 重组件：仅在 COMPOSE_PROFILES=full（全量档位）时启动
+    profiles: ["full"]
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      # 仅暴露 UI；OTLP 接收统一由 otel-collector 承担，避免与 4317/4318 端口冲突
+      - "127.0.0.1:16686:16686"
+    logging: *default-logging
+    networks: [planstar]
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9093:9093"
+    volumes:
+      - ./deploy/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./deploy/alertmanager/entrypoint.sh:/etc/alertmanager/entrypoint.sh:ro
+    environment:
+      # 通知渠道凭据全部由 .env 注入，配置文件中只保留 AM_* 占位
+      AM_SMTP_SMARTHOST: ${AM_SMTP_SMARTHOST:-}
+      AM_SMTP_FROM: ${AM_SMTP_FROM:-}
+      AM_SMTP_AUTH_USERNAME: ${AM_SMTP_AUTH_USERNAME:-}
+      AM_SMTP_AUTH_PASSWORD: ${AM_SMTP_AUTH_PASSWORD:-}
+      AM_ALERT_EMAIL_TO: ${AM_ALERT_EMAIL_TO:-}
+    # Alertmanager 不支持 --config.expand-env（那是 Prometheus 的参数），
+    # 由 entrypoint.sh 把模板中的 AM_* 占位渲染到 /tmp 后再启动。
+    entrypoint: ["/bin/sh", "/etc/alertmanager/entrypoint.sh"]
+    command:
+      - --storage.path=/alertmanager
+    logging: *default-logging
+    networks: [planstar]
+
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.15.1
+    restart: unless-stopped
+    environment:
+      # v0.15 起不再读取 DATA_SOURCE_NAME，改用 --mysqld.* 参数 + 该环境变量传口令
+      MYSQLD_EXPORTER_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    command:
+      - --mysqld.address=mysql:3306
+      - --mysqld.username=root
+    ports:
+      - "127.0.0.1:9104:9104"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    logging: *default-logging
+    networks: [planstar]
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
+    ports:
+      - "127.0.0.1:9121:9121"
+    depends_on:
+      redis:
+        condition: service_healthy
+    logging: *default-logging
+    networks: [planstar]
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus/rules:/etc/prometheus/rules:ro
+      # 抓取 9108/metrics 的 Bearer 令牌；deploy.sh 从 $PLANSTAR_OPS_TOKEN 写入
+      - ./deploy/prometheus/ops_token:/etc/prometheus/ops_token:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    depends_on:
+      - alertmanager
+      - mysqld-exporter
+      - redis-exporter
+    logging: *default-logging
+    networks: [planstar]
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_started
+    logging: *default-logging
+    networks: [planstar]
+
+  traefik:
+    image: traefik:v3.1
+    restart: unless-stopped
+    ports:
+      # 公网仅保留 80/443；Dashboard 只绑定回环
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./deploy/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./deploy/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - acme_data:/acme
+    command:
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-ops@example.com}
+      - --certificatesresolvers.letsencrypt.acme.storage=/acme/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+    depends_on:
+      planstar-api:
+        condition: service_started
+      admin:
+        condition: service_started
+      admin-web:
+        condition: service_started
+      grafana:
+        condition: service_started
+      prometheus:
+        condition: service_started
+      # jaeger 属于 full profile，默认档位不启动
+      jaeger:
+        condition: service_started
+        required: false
+    logging: *default-logging
+    networks: [planstar]
+
+  planstar-api:
+    image: ${PLANSTAR_IMAGE:-ghcr.io/uifj/planstar-api}:${PLANSTAR_TAG:-latest}
+    build:
+      context: .
+      args:
+        VERSION: ${VERSION:-dev}
+    restart: unless-stopped
+    init: true
+    environment:
+      <<: *app-env
+      TZ: Asia/Shanghai
+    ports:
+      # 8098 只绑定回环，公网统一经 Traefik 80/443 进入
+      - "127.0.0.1:8098:8098"
+      # 运维端口仅绑定本机回环，生产通过内网/跳板机访问，不直接暴露公网
+      - "127.0.0.1:9108:9108"
+    volumes:
+      # 通过 PLANSTAR_CONFIG_FILE 切换 prod/lite 配置
+      - ./configs/${PLANSTAR_CONFIG_FILE:-config.prod.yaml}:/data/conf/config.yaml:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9108/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      # 以下重组件属于 full profile；required: false 保证默认档位组件不存在时仍可启动
+      rabbitmq:
+        condition: service_healthy
+        required: false
+      elasticsearch:
+        condition: service_healthy
+        required: false
+      consul:
+        condition: service_healthy
+        required: false
+      jaeger:
+        condition: service_started
+        required: false
+    logging: *default-logging
+    networks:
+      planstar:
+        aliases:
+          # admin 的 ADMIN_PLANSTAR_OPS_BASE_URL 默认使用 http://planstar:9108
+          - planstar
+          - planstar-api
+
+  # -------------------------------------------------------------------
+  # 运营后台 API（HTTP 9100 / gRPC 9101 / 运维 9110）
+  # 9100、9101 不发布到宿主机；9110 仅绑定回环，Prometheus 通过容器网络抓取。
+  # -------------------------------------------------------------------
+  admin:
+    image: ${ADMIN_IMAGE:-planstar-admin}:${ADMIN_TAG:-latest}
+    build:
+      context: ../admin
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      <<: *admin-env
+    volumes:
+      - ../admin/configs/config.docker.yaml:/data/conf/config.yaml:ro
+    ports:
+      # 运维端点仅绑定宿主机回环；管理 API 只经 Traefik 的 443 暴露。
+      - "127.0.0.1:9110:9110"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9110/readyz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging: *default-logging
+    networks:
+      planstar:
+        aliases:
+          - admin
+
+  # 控制台静态站点：仅容器网络 80，由 Traefik 按 admin.planstar.top 分流。
+  admin-web:
+    image: ${ADMIN_WEB_IMAGE:-planstar-admin-web}:${ADMIN_WEB_TAG:-latest}
+    build:
+      context: ../admin/console
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    logging: *default-logging
+    networks:
+      planstar:
+        aliases:
+          - admin-web
+
+volumes:
+  mysql_data:
+  redis_data:
+  mq_data:
+  es_data:
+  consul_data:
+  prometheus_data:
+  grafana_data:
+  acme_data:
+
+networks:
+  planstar:
+    driver: bridge

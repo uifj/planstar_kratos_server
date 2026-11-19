@@ -1,0 +1,45 @@
+{
+  "name": "@planstar/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "clean": "rimraf .next coverage playwright-report test-results"
+  },
+  "dependencies": {
+    "@planstar/api-client": "workspace:*",
+    "@planstar/design-tokens": "workspace:*",
+    "@planstar/ui": "workspace:*",
+    "next": "15.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.55.1",
+    "@planstar/config": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.14",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.5.2",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^4.6.0",
+    "eslint": "^9.36.0",
+    "eslint-config-next": "15.5.4",
+    "eslint-config-prettier": "^10.1.8",
+    "jsdom": "^26.1.0",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

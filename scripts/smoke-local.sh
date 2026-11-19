@@ -3,7 +3,7 @@
 # Planstar 本地烟雾测试（POSIX sh）
 #
 # 前置：
-#   cd planstar && cp .env.example .env && docker compose up -d --build
+#   cd planstar_backend && cp .env.example .env && docker compose up -d --build
 # 用法：
 #   sh scripts/smoke-local.sh
 #   PLANSTAR_OPS_TOKEN=<token> sh scripts/smoke-local.sh
@@ -172,7 +172,7 @@ fi
 
 if [ -z "$OPS_TOKEN" ]; then
 	echo "==> 3/6 /metrics 鉴权（无令牌）"
-	skip "PLANSTAR_OPS_TOKEN 未设置；服务端鉴权关闭，跳过 /metrics 鉴权检查"
+	skip "PLANSTAR_OPS_TOKEN 未设置；OpsAuth 为 fail-closed，无令牌时 /metrics 应返回 401，跳过 Bearer 抓取"
 	echo "==> 4/6 /metrics 构建信息（Bearer）"
 	skip "PLANSTAR_OPS_TOKEN 未设置，跳过 /metrics Bearer 抓取"
 else

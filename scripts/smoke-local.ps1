@@ -4,7 +4,7 @@
     Planstar 本地烟雾测试（Windows PowerShell 版，等价于 smoke-local.sh）。
 
 .DESCRIPTION
-    前置：cd planstar; Copy-Item .env.example .env; docker compose up -d --build
+    前置：cd planstar_backend; Copy-Item .env.example .env; docker compose up -d --build
     用法：
         powershell -ExecutionPolicy Bypass -File scripts\smoke-local.ps1
         $env:PLANSTAR_OPS_TOKEN='<token>'
@@ -164,7 +164,7 @@ else {
 
 if ([string]::IsNullOrEmpty($OpsToken)) {
     Write-Host "==> 3/6 /metrics 鉴权（无令牌）"
-    Write-Skip "PLANSTAR_OPS_TOKEN 未设置；服务端鉴权关闭，跳过 /metrics 鉴权检查"
+    Write-Skip "PLANSTAR_OPS_TOKEN 未设置；OpsAuth 为 fail-closed，无令牌时 /metrics 应返回 401，跳过 Bearer 抓取"
     Write-Host "==> 4/6 /metrics 构建信息（Bearer）"
     Write-Skip "PLANSTAR_OPS_TOKEN 未设置，跳过 /metrics Bearer 抓取"
 }

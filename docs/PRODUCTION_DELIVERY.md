@@ -3,7 +3,7 @@
 | 项 | 内容 |
 |---|---|
 | 交付日期 | 2026-11-08 |
-| 交付范围 | `planstar_kratos_server/planstar/`（Go 服务、配置、SQL、compose、CI、部署脚本）；依据工作区 `.trae/specs/*` 与上一轮 `planstar-code-review-2026-11-08.md` 的 P0/P1 未完成任务 |
+| 交付范围 | `planstar_kratos_server/planstar_backend/`（Go 服务、配置、SQL、compose、CI、部署脚本）；依据工作区 `.trae/specs/*` 与上一轮 `planstar-code-review-2026-11-08.md` 的 P0/P1 未完成任务 |
 | 资源约束 | 单台 4 核 8G / 2M 带宽阿里云 ECS；短信已开通 **Dypnsapi 与 Dysmsapi 两种**；对象存储实际为**火山引擎 TOS（S3 协议）**，与代码内置阿里云 OSS SDK 不兼容，运行时通过部署侧 overlay 关闭 |
 | 规范基线 | 《阿里巴巴 Java 开发手册（黄山版）》【强制】条款（Go 映射）+ GitHub 真实企业级项目实践，见 §9 |
 | 交付物 | **本地版**（允许测试口令）与**生产上线版**（禁用测试口令）两套可运行 Docker 编排 |
@@ -38,7 +38,7 @@
 
 | 编号 | 问题 | 修复落点 |
 |---|---|---|
-| P0-01 | 短信注册用户固定口令 `123456` | `internal/data/auth.go`：默认 `password_hash=""`；仅 `allow_test_credentials=true` 时下发；`cmd/planstar/main.go` 生产启动断言 `AssertNoTestCredentials`；`sql/21_disable_test_accounts.sql` 清空演示账号哈希并停用 |
+| P0-01 | 短信注册用户固定口令 `123456` | `internal/data/auth.go`：默认 `password_hash=""`；仅 `allow_test_credentials=true` 时下发；`cmd/planstar_backend/main.go` 生产启动断言 `AssertNoTestCredentials`；`sql/21_disable_test_accounts.sql` 清空演示账号哈希并停用 |
 | P0-02 | 运维鉴权 fail-open | `internal/server/ops_auth.go`：`Wrap` 无令牌直接 401；`Validate` 改用 `conf.IsProductionLikeEnv`；`internal/conf/conf.go` 默认拒绝环境判定 |
 | P0-03 | 会话令牌进可读响应头 | `internal/pkg/session/session.go` 删除 `Header().Set(CookieKey, token)`；`internal/server/http.go` 从 `Expose-Headers` 移除 `psSession`；`dvid` Cookie 补 HttpOnly/Secure/SameSite 并缩短为 7 天 |
 | P0-04 | 下单幂等键可缺失 | `internal/service/order.go` 新增 `deriveIdempotencyKey()`，缺头时按「用户+报价+订单要素」派生稳定 `auto:` 键 |
@@ -94,7 +94,7 @@ cp .env.prod.example .env.prod && chmod 600 .env.prod
 
 1. **SQL 层**：prod overlay 用 `sql/14_noop.sql` 覆盖 `14_mock_seed.sql` 挂载点（零演示数据）；追加 `sql/21_disable_test_accounts.sql` 清空演示账号 `password_hash`、置 `status=0`、清会话。
 2. **配置层**：`PLANSTAR_AUTH_ALLOW_TEST_CREDENTIALS="false"`；`conf.Validate()` → `validateProductionInvariants()` 在该开关为 true 时**拒绝启动**；`preflight.sh` 额外检查 env 与 YAML。
-3. **运行层**：`cmd/planstar/main.go` 的 `AssertNoTestCredentials` 扫描所有 `status=1` 账号的口令哈希，命中测试/弱口令即终止启动；`NewAuthRepoForEnvironment` 在生产给新注册用户写入空 `password_hash`，密码登录分支必然失败。
+3. **运行层**：`cmd/planstar_backend/main.go` 的 `AssertNoTestCredentials` 扫描所有 `status=1` 账号的口令哈希，命中测试/弱口令即终止启动；`NewAuthRepoForEnvironment` 在生产给新注册用户写入空 `password_hash`，密码登录分支必然失败。
 
 ---
 
@@ -132,54 +132,54 @@ cp .env.prod.example .env.prod && chmod 600 .env.prod
 
 ```
 .github/workflows/release.yml
-planstar/.gitignore                          # 忽略 .env.local / .env.prod / 校验临时文件
-planstar/cmd/planstar/main.go
-planstar/configs/config.docker.yaml          # 显式 env: local，避免默认推导成 prod
-planstar/configs/config.lite.yaml            # 显式禁测试口令
-planstar/configs/config.prod.yaml            # 显式禁测试口令
-planstar/deploy.sh                           # 只走 prod overlay + preflight + 标签校验
-planstar/deploy/backup.sh                    # 修正为真实 11 个库 + 空档校验
-planstar/deploy/preflight.sh                 # 发布前门禁：必填/占位/口令/备份/compose
-planstar/deploy/traefik/dynamic.yml          # 撤下公网面板路由 + 安全响应头
-planstar/deploy/traefik/traefik.yml          # 关闭 insecure dashboard
-planstar/internal/biz/auth.go                # 随机码失败返回 error、时序侧信道、nil-cache 保护
-planstar/internal/conf/conf.go               # 环境判定/测试口令开关/生产 fail-fast/验证码 HMAC 密钥
-planstar/internal/conf/conf_test.go          # 适配默认拒绝
-planstar/internal/data/auth.go               # 删除固定口令、原子消费验证码、HMAC 入库、弱口令断言
-planstar/internal/data/order.go              # 报价快照一次性消费
-planstar/internal/data/project.go            # 支持单单事务化 + 聚合指标
-planstar/internal/mq/consumer.go             # DLX/confirm/Nack/Qos/recover/退避（重写）
-planstar/internal/mq/publisher.go            # publisher confirm（重写）
-planstar/internal/mq/server.go               # 注入结构化 logger
-planstar/internal/pkg/notify/notify.go       # 生产 fail-closed、日志脱敏、环境统一
-planstar/internal/pkg/notify/notify_test.go
-planstar/internal/pkg/notify/aliyun_test.go
-planstar/internal/pkg/session/session.go     # 移除令牌响应头、Cookie 加固（重写）
-planstar/internal/pkg/session/session_test.go
-planstar/internal/server/http.go             # CORS/头部超时/panic 堆栈/不信任转发头
-planstar/internal/server/ops_auth.go         # fail-closed + 默认拒绝
-planstar/internal/server/ops_auth_test.go
-planstar/internal/service/auth.go            # Redis 全局风控接线、Cookie Secure
-planstar/internal/service/order.go           # 服务端派生幂等键
+planstar_backend/.gitignore                          # 忽略 .env.local / .env.prod / 校验临时文件
+planstar_backend/cmd/planstar_backend/main.go
+planstar_backend/configs/config.docker.yaml          # 显式 env: local，避免默认推导成 prod
+planstar_backend/configs/config.lite.yaml            # 显式禁测试口令
+planstar_backend/configs/config.prod.yaml            # 显式禁测试口令
+planstar_backend/deploy.sh                           # 只走 prod overlay + preflight + 标签校验
+planstar_backend/deploy/backup.sh                    # 修正为真实 11 个库 + 空档校验
+planstar_backend/deploy/preflight.sh                 # 发布前门禁：必填/占位/口令/备份/compose
+planstar_backend/deploy/traefik/dynamic.yml          # 撤下公网面板路由 + 安全响应头
+planstar_backend/deploy/traefik/traefik.yml          # 关闭 insecure dashboard
+planstar_backend/internal/biz/auth.go                # 随机码失败返回 error、时序侧信道、nil-cache 保护
+planstar_backend/internal/conf/conf.go               # 环境判定/测试口令开关/生产 fail-fast/验证码 HMAC 密钥
+planstar_backend/internal/conf/conf_test.go          # 适配默认拒绝
+planstar_backend/internal/data/auth.go               # 删除固定口令、原子消费验证码、HMAC 入库、弱口令断言
+planstar_backend/internal/data/order.go              # 报价快照一次性消费
+planstar_backend/internal/data/project.go            # 支持单单事务化 + 聚合指标
+planstar_backend/internal/mq/consumer.go             # DLX/confirm/Nack/Qos/recover/退避（重写）
+planstar_backend/internal/mq/publisher.go            # publisher confirm（重写）
+planstar_backend/internal/mq/server.go               # 注入结构化 logger
+planstar_backend/internal/pkg/notify/notify.go       # 生产 fail-closed、日志脱敏、环境统一
+planstar_backend/internal/pkg/notify/notify_test.go
+planstar_backend/internal/pkg/notify/aliyun_test.go
+planstar_backend/internal/pkg/session/session.go     # 移除令牌响应头、Cookie 加固（重写）
+planstar_backend/internal/pkg/session/session_test.go
+planstar_backend/internal/server/http.go             # CORS/头部超时/panic 堆栈/不信任转发头
+planstar_backend/internal/server/ops_auth.go         # fail-closed + 默认拒绝
+planstar_backend/internal/server/ops_auth_test.go
+planstar_backend/internal/service/auth.go            # Redis 全局风控接线、Cookie Secure
+planstar_backend/internal/service/order.go           # 服务端派生幂等键
 ```
 
 **新增（14 个，含本文档）**
 
 ```
 docs/PRODUCTION_DELIVERY.md                  ← 本文件
-planstar/.env.local.example
-planstar/.env.prod.example
-planstar/configs/config.local.yaml
-planstar/docker-compose.local.yml
-planstar/docker-compose.prod.yml
-planstar/internal/conf/production_test.go
-planstar/internal/service/order_idempotency_test.go
-planstar/sql/14_noop.sql
-planstar/sql/21_disable_test_accounts.sql
-planstar/sql/22_create_app_user.sh
-planstar/up-local.sh
-planstar/up-prod.sh
-planstar/verify-hardening.sh
+planstar_backend/.env.local.example
+planstar_backend/.env.prod.example
+planstar_backend/configs/config.local.yaml
+planstar_backend/docker-compose.local.yml
+planstar_backend/docker-compose.prod.yml
+planstar_backend/internal/conf/production_test.go
+planstar_backend/internal/service/order_idempotency_test.go
+planstar_backend/sql/14_noop.sql
+planstar_backend/sql/21_disable_test_accounts.sql
+planstar_backend/sql/22_create_app_user.sh
+planstar_backend/up-local.sh
+planstar_backend/up-prod.sh
+planstar_backend/verify-hardening.sh
 ```
 
 ---
@@ -188,7 +188,7 @@ planstar/verify-hardening.sh
 
 | # | 验证命令 | 结果 |
 |---|---|---|
-| 1 | `cd planstar && go build ./...` | ✅ 通过 |
+| 1 | `cd planstar_backend && go build ./...` | ✅ 通过 |
 | 2 | `go vet ./...` | ✅ 通过 |
 | 3 | `go test ./...` | ✅ 全绿（`conf`/`data`/`server`/`service`/`notify`/`session` 等 12 包） |
 | 4 | `gofmt -l internal cmd` | ✅ 无未格式化文件 |

@@ -1,20 +1,24 @@
-# CI：push / PR 时覆盖后端 Go、接口契约、Flutter 前端与 compose 配置校验
+# CI：push / PR 时覆盖后端 Go、架构治理、接口契约、前端与 compose 配置校验
+#
+# 目录布局（ADR-0001 Q11 / ADR-0002 §1）：admin/ 已迁往 planstar_frontend/admin/。
+# 本文件的 paths、working-directory、cache-dependency-path 必须与重排提交同批落地；
+# 若 planstar_frontend/ 仍是未跟踪目录，push 后 admin-go / admin-console 不会触发。
 name: CI
 
 on:
   push:
     branches: [main]
     paths:
-      - "planstar/**"
-      - "admin/**"
+      - "planstar_backend/**"
+      - "planstar_frontend/admin/**"
       - "docs/**"
       - "scripts/**"
       - ".github/workflows/ci.yml"
   pull_request:
     branches: [main]
     paths:
-      - "planstar/**"
-      - "admin/**"
+      - "planstar_backend/**"
+      - "planstar_frontend/admin/**"
       - "docs/**"
       - "scripts/**"
       - ".github/workflows/ci.yml"
@@ -25,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: planstar
+        working-directory: planstar_backend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,7 +39,7 @@ jobs:
         with:
           go-version: "1.26"
           cache: true
-          cache-dependency-path: planstar/go.sum
+          cache-dependency-path: planstar_backend/go.sum
 
       - name: Download dependencies
         run: go mod download
@@ -57,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: admin
+        working-directory: planstar_frontend/admin
     env:
       GOPROXY: https://goproxy.cn,direct
     steps:
@@ -69,7 +73,7 @@ jobs:
         with:
           go-version: "1.26"
           cache: true
-          cache-dependency-path: admin/go.sum
+          cache-dependency-path: planstar_frontend/admin/go.sum
 
       - name: Download dependencies
         run: go mod download
@@ -88,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: admin/console
+        working-directory: planstar_frontend/admin/console
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -98,7 +102,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: admin/console/package-lock.json
+          cache-dependency-path: planstar_frontend/admin/console/package-lock.json
 
       - name: Configure npm registry
         run: npm config set registry https://repo.huaweicloud.com/repository/npm/
@@ -114,7 +118,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: planstar
+        working-directory: planstar_backend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -124,10 +128,47 @@ jobs:
         with:
           go-version: "1.26"
           cache: true
-          cache-dependency-path: planstar/go.sum
+          cache-dependency-path: planstar_backend/go.sum
 
       - name: Contract test
         run: go test ./internal/server -run 'TestContract|TestRoutesMatchContract' -count=1 -v
+
+  governance:
+    name: Architecture Governance (ADR-0001)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: planstar_backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+          cache-dependency-path: planstar_backend/go.sum
+
+      - name: Dependency direction, error-code table, ADR index, contract quirks
+        run: go test ./internal/governance -count=1 -v
+
+      - name: Route inventory and contract parity
+        run: go test ./internal/server -run 'TestContract|TestRoutes|TestRouteInventory' -count=1 -v
+
+      # ADR-0001 G1/G2：阈值默认严格阻断（PLANSTAR_GOVERNANCE_STRICT=0 才降级为报告）。
+      # P1 已完成 main.go 拆分与 data/project.go 拆分，当前基线全部达标。
+      - name: Layout thresholds (strict)
+        run: go test ./internal/governance -run TestLayoutThresholds -count=1 -v
+
+      # 报告式 lint：仓库尚无 .golangci.yml，P1 补齐配置后转为必过。
+      - name: golangci-lint (report only until .golangci.yml exists)
+        continue-on-error: true
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: planstar_backend
+          args: --timeout=5m
 
   compose:
     name: Compose Config
@@ -137,10 +178,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate docker compose config
-        run: docker compose -f planstar/docker-compose.yml config -q
+        run: docker compose -f planstar_backend/docker-compose.yml config -q
 
       - name: Validate local compose
-        run: docker compose -f planstar/docker-compose.local.yml config -q
+        run: docker compose -f planstar_backend/docker-compose.local.yml config -q
 
   observability-config:
     name: Observability Config
@@ -152,7 +193,7 @@ jobs:
       - name: Check Prometheus rules
         run: |
           docker run --rm --entrypoint promtool \
-            -v "$PWD/planstar/deploy/prometheus/rules:/rules" \
+            -v "$PWD/planstar_backend/deploy/prometheus/rules:/rules" \
             prom/prometheus:v2.53.0 \
             check rules /rules/alerts.yml
 
@@ -163,7 +204,7 @@ jobs:
           import json
           import sys
 
-          files = sorted(glob.glob("planstar/deploy/grafana/dashboards/*.json"))
+          files = sorted(glob.glob("planstar_backend/deploy/grafana/dashboards/*.json"))
           if not files:
               sys.exit("no Grafana dashboard JSON found")
           for path in files:
@@ -180,7 +221,7 @@ jobs:
           import sys
 
           template = pathlib.Path(
-              "planstar/deploy/alertmanager/alertmanager.yml"
+              "planstar_backend/deploy/alertmanager/alertmanager.yml"
           ).read_text(encoding="utf-8")
           dummy = {
               "AM_SMTP_SMARTHOST": "smtp.example.com:587",
@@ -206,4 +247,4 @@ jobs:
             check-config /etc/alertmanager/alertmanager.yml
 
       - name: Validate docker compose config
-        run: docker compose -f planstar/docker-compose.yml config -q
+        run: docker compose -f planstar_backend/docker-compose.yml config -q
