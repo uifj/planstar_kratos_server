@@ -3,7 +3,8 @@
 -- ----------------------------------------------------------------------------
 -- 执行顺序：00_all.sql（或 01..13） → 15_project_domain.sql → 本脚本
 -- 数据基准日：2026-11-07 12:00（与 Flutter demo 的 DateTime.now() 对齐）。
--- 幂等说明：按单次执行设计，全部为普通 INSERT，不含 ON DUPLICATE KEY UPDATE。
+-- 幂等说明：主体按单次执行设计，为普通 INSERT；文件末尾的 legacy activity 兼容种子
+--           使用 ON DUPLICATE KEY UPDATE，可重复执行。
 --
 -- 产品定位：企划星 = 企划支持平台。用户支持的是「企划能否落地」，
 --           周边/内容/权益是回报，不是现货商品。
@@ -34,8 +35,10 @@
 --      JSON 列为合法 JSON 字符串（单引号包裹、内部双引号）。
 --   3) 企划状态覆盖：ongoing（进行中）/ achieved（已达成）/ delivered（已交付）/ failed（未达成退款）。
 --   4) 四大核心品类：游戏、小说、同人、面经；扩展：画集设定集、音乐影像、校园活动、其他。
---   5) 原演出票务、座位图、代抢、拼团数据不再生成；票务能力仅作为线下回报的可选履约方式保留在表结构中。
---   6) 未生成：banner / home_floor / search_keyword / wallet_* 等与本期定位无关的演示数据；
+--   5) 原演出票务主链路（座位图、代抢、拼团、票档）不再生成；仅在文件末尾保留
+--      activity / activity_event 最小占位数据，用于兼容旧版活动接口与首页 Banner。
+--   6) 未生成：home_floor / search_keyword / wallet_* 等与本期定位无关的演示数据；
+--      banner 由 planstar_backend/sql/15_auth_support.sql 基于 activity 自动补齐；
 --      project_review / project_report 为 P2 能力，仅生成已交付企划的评价与风控样本。
 -- ============================================================================
 
@@ -867,6 +870,54 @@ INSERT INTO `feed` (`feed_id`, `type`, `user_id`, `user`, `content`, `title`, `n
 
 -- feed_media · 仅保留有媒体内容的动态占位（URL 由客户端 CDN 补全）
 -- 说明：mock 未提供真实图片，feed_media 生成为空集，避免伪造资源地址。
+
+USE `planstar_catalog`;
+
+-- ----------------------------------------------------------------------------
+-- activity / activity_event · legacy 活动接口最小兼容种子
+--   仅用于 /v1/activities、/v1/activities/hot、/v3/activities/{id} 与首页 Banner。
+--   POSTER 留空，避免伪造资源地址；status=1、publish_status=1 才对外可见。
+--   可重复执行（ON DUPLICATE KEY UPDATE）。
+-- ----------------------------------------------------------------------------
+INSERT INTO `activity`
+  (`activity_id`, `name`, `shortname`, `activity_shortname`, `category_id`, `category_name`,
+   `city_id`, `city_name`, `venue_name`, `description`, `poster`, `img`,
+   `low_price`, `high_price`, `start_time`, `end_time`, `time_range`, `duration`,
+   `rank_weight`, `star`, `review_num`, `want_watch_num`,
+   `status`, `publish_status`, `is_searchable`, `display_tags`, `gmt_create`, `gmt_modified`)
+VALUES
+  (1001, '周杰伦「嘉年华」世界巡回演唱会 · 上海站', '嘉年华', '嘉年华', 1, '演唱会',
+   1, '上海', '上海体育场', '经典曲目与全新舞台设计的年度巡演上海站。', '', '',
+   580.00, 2580.00, '2026-12-20 19:30:00', '2026-12-20 22:00:00', '2026-12-20 19:30', '约150分钟',
+   100, 5, 88, 1200, 1, 1, 1, '["热门","演唱会"]', '2026-10-01 10:00:00', '2026-11-07 12:00:00'),
+  (2001, '音乐剧《剧院魅影》中文版', '剧院魅影', '剧院魅影', 2, '话剧歌剧',
+   1, '上海', '上海文化广场', '韦伯经典音乐剧中文版驻场演出。', '', '',
+   280.00, 1280.00, '2026-12-24 19:30:00', '2026-12-24 22:10:00', '2026-12-24 19:30', '约160分钟',
+   90, 5, 66, 980, 1, 1, 1, '["音乐剧","高分推荐"]', '2026-10-01 10:00:00', '2026-11-07 12:00:00'),
+  (5001, 'teamLab 无界美术馆 · 冬季特别展', 'teamLab 无界', 'teamLab 无界', 3, '展览休闲',
+   1, '上海', '上海无界美术馆', '沉浸式数字艺术常设展，冬季新增光影互动作品。', '', '',
+   199.00, 299.00, '2026-12-01 10:00:00', '2027-03-31 22:00:00', '2026-12-01 至 2027-03-31', '约120分钟',
+   80, 5, 54, 860, 1, 1, 1, '["展览","沉浸式"]', '2026-10-01 10:00:00', '2026-11-07 12:00:00')
+ON DUPLICATE KEY UPDATE
+  `name` = VALUES(`name`), `category_name` = VALUES(`category_name`),
+  `city_name` = VALUES(`city_name`), `venue_name` = VALUES(`venue_name`),
+  `description` = VALUES(`description`), `low_price` = VALUES(`low_price`),
+  `high_price` = VALUES(`high_price`), `start_time` = VALUES(`start_time`),
+  `end_time` = VALUES(`end_time`), `time_range` = VALUES(`time_range`),
+  `duration` = VALUES(`duration`), `status` = 1, `publish_status` = 1,
+  `is_searchable` = 1, `display_tags` = VALUES(`display_tags`);
+
+INSERT INTO `activity_event`
+  (`activity_event_id`, `activity_id`, `start_time`, `end_time`, `time_range`, `specification`,
+   `low_price`, `is_has_ticket`, `status`, `gmt_create`, `gmt_modified`)
+VALUES
+  (100101, 1001, '2026-12-20 19:30:00', '2026-12-20 22:00:00', '2026-12-20 19:30', '普通场', 580.00, 1, 1, '2026-10-01 10:00:00', '2026-11-07 12:00:00'),
+  (200101, 2001, '2026-12-24 19:30:00', '2026-12-24 22:10:00', '2026-12-24 19:30', '普通场', 280.00, 1, 1, '2026-10-01 10:00:00', '2026-11-07 12:00:00'),
+  (500101, 5001, '2026-12-01 10:00:00', '2027-03-31 22:00:00', '2026-12-01 至 2027-03-31', '全日场', 199.00, 1, 1, '2026-10-01 10:00:00', '2026-11-07 12:00:00')
+ON DUPLICATE KEY UPDATE
+  `activity_id` = VALUES(`activity_id`), `start_time` = VALUES(`start_time`),
+  `end_time` = VALUES(`end_time`), `time_range` = VALUES(`time_range`),
+  `low_price` = VALUES(`low_price`), `status` = 1, `is_has_ticket` = 1;
 
 -- ============================================================================
 -- EOF · 14_mock_seed.sql

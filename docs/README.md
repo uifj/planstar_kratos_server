@@ -37,6 +37,7 @@
 | [OPEN_ITEMS.md](OPEN_ITEMS.md) | **治理台账**：A 架构阶段 / B 功能 ADR / C 功能缺口 / D 测试工程 / E 文档归档共 33 项，逐项附证据与验收方式；**2026-11-19 已全部闭环**（顶部为闭环状态，后文保留原始盘点证据） | 有效（治理台账） |
 | [PRODUCTION_AUDIT.md](PRODUCTION_AUDIT.md) | **商用生产级审计结论**（2026-11-19）：16 项阻断 / 17 项高风险中风险，含 3 项本轮引入的 RBAC 提权与 4 项目录改名遗留；**本轮未修复、未提交推送** | 有效（审计报告） |
 | [FOLLOWUP_WORK.md](FOLLOWUP_WORK.md) | **后续工作台账**：从「闭环」中拆出的 26 项仍需代码/配置/验证动作的内容（TODO / DEBT / VERIFY / ENV / TRIGGER），含触发条件、证据与验收方式 | 有效（待办台账） |
+| [E2E_VERIFICATION.md](E2E_VERIFICATION.md) | 本地 Docker 端到端验证：8098 全 57 条、9108 运维/RBAC、admin 前后端、admin-web 静态资源；0 个 5xx，web 端受环境限制未运行 | 有效（验证报告） |
 
 ## 归档与研究材料（**不得作为实现或排障依据**）
 
