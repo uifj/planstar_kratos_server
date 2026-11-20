@@ -68,3 +68,6 @@ node_modules/
 dist/
 .next/
 *.tsbuildinfo
+
+# 本地运维命令手册（含服务器 IP / 域名 / 路径等敏感信息，仅本地保留，不提交）
+DEPLOY_COMMANDS.md

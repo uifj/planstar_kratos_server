@@ -4,7 +4,7 @@ http:
     planstar:
       rule: "Host(`localhost`) || Host(`127.0.0.1`)"
       entryPoints: [web]
-      middlewares: [compress, security-headers]
+      middlewares: [security-headers]
       service: planstar
 
     # 生产 HTTPS：api.planstar.top -> planstar-api:8098
@@ -12,13 +12,13 @@ http:
     planstar-http:
       rule: "Host(`api.planstar.top`)"
       entryPoints: [web]
-      middlewares: [https-redirect, compress]
+      middlewares: [https-redirect]
       service: planstar
 
     planstar-secure:
       rule: "Host(`api.planstar.top`)"
       entryPoints: [websecure]
-      middlewares: [compress, security-headers]
+      middlewares: [security-headers]
       service: planstar
       tls:
         certResolver: letsencrypt
@@ -32,27 +32,46 @@ http:
     admin-http:
       rule: "Host(`admin.planstar.top`)"
       entryPoints: [web]
-      middlewares: [https-redirect, compress]
+      middlewares: [https-redirect]
       service: admin-web
 
     admin-api:
       rule: "Host(`admin.planstar.top`) && PathPrefix(`/v1`)"
       entryPoints: [websecure]
-      middlewares: [compress, security-headers]
+      middlewares: [security-headers]
       service: admin
       priority: 100
       # 可选：叠加来源 IP 白名单后取消注释。
-      # middlewares: [compress, admin-ip-allowlist]
+      # middlewares: [admin-ip-allowlist]
       tls:
         certResolver: letsencrypt
 
     admin-console:
       rule: "Host(`admin.planstar.top`)"
       entryPoints: [websecure]
-      middlewares: [compress, security-headers]
+      middlewares: [security-headers]
       service: admin-web
       priority: 10
-      # middlewares: [compress, admin-ip-allowlist]
+      # middlewares: [admin-ip-allowlist]
+      tls:
+        certResolver: letsencrypt
+
+    # -----------------------------------------------------------------
+    # 官网（Next.js SSR）：仅 www.planstar.top（不启用裸域 planstar.top）。
+    #   浏览器侧 /api/backend/* 由 Next rewrites 代理到 planstar-api:8098，
+    #   因此官网自身不需要额外的 API 路由。
+    # -----------------------------------------------------------------
+    web-http:
+      rule: "Host(`www.planstar.top`)"
+      entryPoints: [web]
+      middlewares: [https-redirect]
+      service: web
+
+    web-secure:
+      rule: "Host(`www.planstar.top`)"
+      entryPoints: [websecure]
+      middlewares: [security-headers]
+      service: web
       tls:
         certResolver: letsencrypt
 
@@ -67,9 +86,6 @@ http:
     # -----------------------------------------------------------------
 
   middlewares:
-    # 响应压缩，降低 2M 带宽占用（planstar 与 admin 路由共用）。
-    compress: {}
-
     # 统一安全响应头（对齐 OWASP Secure Headers）。
     security-headers:
       headers:
@@ -107,6 +123,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://admin-web:80"
+    web:
+      loadBalancer:
+        servers:
+          - url: "http://web:3000"
     grafana:
       loadBalancer:
         servers:

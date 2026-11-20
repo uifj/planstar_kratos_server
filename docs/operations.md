@@ -5,13 +5,13 @@
 > 下文涉及 Loki / OTel / Jaeger 的排障与巡检条目描述的是**未来启用后的目标态**，
 > 未编排时应跳过；启用步骤见 `planstar_backend/deploy/{loki,promtail,otel}/README.md`。
 > 日志中的 `trace_id` / `span_id` 仍可用于单机日志关联。
-> 适用版本：planstar 单体 · 最后核对：2026-11-07 · 维护：后端组
+> 适用版本：planstar 单体 · 最后核对：2026-11-20 · 维护：后端组
 
 # 运维手册（planstar 单体）
 
-本文以当前代码为准：探针实现在 `planstar_backend/internal/ops/readiness.go` 与
+本文以当前代码为准：探针实现在 `planstar_backend/internal/platform/ops/readiness.go` 与
 `planstar_backend/internal/server/admin.go`，鉴权/审计在 `planstar_backend/internal/server/ops_auth.go`，
-指标与追踪在 `planstar_backend/internal/observability/observability.go`。
+指标与追踪在 `planstar_backend/internal/platform/observability/observability.go`。
 
 ## 1. 探针契约
 
@@ -347,7 +347,7 @@ planstar-api --OTLP/gRPC--> otel-collector:4317 --batch--> jaeger:4317
 
 ### 5.3 自动埋点范围
 
-- HTTP：`planstar_backend/internal/observability.Middleware` 为业务与 9108 的每个请求创建
+- HTTP：`planstar_backend/internal/platform/observability` 的 `Metrics.Middleware` 为业务与 9108 的每个请求创建
   server span（`METHOD route`），记录 `http.method`/`http.target`/`http.route`/
   `http.status_code`。
 - MySQL：`otelsql.Register("mysql", ...)`，10 个库共用一个带埋点的驱动，span 属性
@@ -390,13 +390,6 @@ planstar-api --OTLP/gRPC--> otel-collector:4317 --batch--> jaeger:4317
 ```bash
 cd planstar_backend
 go test ./internal/server -run TestOpsEndpointsLoad -count=1 -v
-```
-
-仓库根提供等价包装：
-
-```bash
-bash scripts/ops-loadtest.sh
-powershell -ExecutionPolicy Bypass -File scripts\ops-loadtest.ps1
 ```
 
 输出示例（数字随机器变化）：
@@ -552,10 +545,10 @@ docker compose logs --tail=200 planstar-api | grep 'ops audit'
   连接对端地址，不信任 `X-Forwarded-For`。
 - 生命周期日志：`application starting` → `application started` → `application stopping`
   → `application stopped`。
-- Promtail 采集 Docker 日志，Loki 标签包含 `container` 与 `service`
-  （`deploy/promtail/promtail-config.yml`）。
+- Promtail / Loki 当前**未编排**（见顶部能力边界）；启用后将由 `deploy/promtail/` 采集
+  Docker 日志，Loki 标签包含 `container` 与 `service`。
 
-Loki 查询：
+Loki 查询（未来启用后）：
 
 ```logql
 {service="planstar-api"} |= "trace_id"

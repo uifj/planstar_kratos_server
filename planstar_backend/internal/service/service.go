@@ -30,6 +30,7 @@ type Service struct {
 	wallet      *biz.WalletUsecase
 	shop        *biz.ShopUsecase
 	chat        *biz.ChatUsecase
+	update      *biz.UpdateUsecase
 	log         *slog.Logger
 	// authCfg 保存认证风控配置（由 conf.Loaded 注入，零值时使用安全默认值）。
 	authCfg conf.Auth
@@ -55,6 +56,7 @@ func New(
 	wallet *biz.WalletUsecase,
 	shop *biz.ShopUsecase,
 	chat *biz.ChatUsecase,
+	update *biz.UpdateUsecase,
 	log *slog.Logger,
 	objects storage.ObjectStorage,
 ) *Service {
@@ -62,7 +64,7 @@ func New(
 	return &Service{
 		auth: auth, catalog: catalog, feed: feed, message: message, order: order, user: user,
 		project: project, projectIdea: projectIdea,
-		payment: payment, wallet: wallet, shop: shop, chat: chat, log: log,
+		payment: payment, wallet: wallet, shop: shop, chat: chat, update: update, log: log,
 		authCfg: cfg.Auth, limit: newAuthLimiter(), ideaVoteLimit: newIdeaVoteLimiter(),
 		objects: objects,
 	}
@@ -158,6 +160,10 @@ func (s *Service) routes() []route {
 		{"GET /v1/projectIdeas/feed", s.projectIdeaFeed},
 		{"GET /v1/projectIdeas/{ideaId}", s.projectIdeaDetail},
 		{"POST /v1/projectIdeas/{ideaId}/vote", s.projectIdeaVote},
+
+		// 应用自更新（匿名可访问）。
+		{"GET /v1/update/check", s.updateCheck},
+		{"GET /v1/update/appcast.xml", s.updateAppcast},
 	}
 }
 

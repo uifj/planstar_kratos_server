@@ -1,4 +1,4 @@
-// Package storage 提供对象存储抽象；当前内置 Noop 与阿里云 OSS 实现。
+// Package storage 提供对象存储抽象；当前内置 Noop、阿里云 OSS 与火山引擎 TOS 实现。
 package storage
 
 import (
@@ -26,7 +26,8 @@ func (Noop) Delete(context.Context, string) error                           { re
 func (Noop) URL(context.Context, string) (string, error)                    { return "", nil }
 
 // NewObjectStorage 按配置构造对象存储：enabled=false 返回 Noop；
-// provider 为 aliyun/oss 时构造真实客户端，未知 provider 仍降级为 Noop。
+// provider 为 aliyun/oss 构造阿里云 OSS，tos/volcengine 构造火山引擎 TOS，
+// 未知 provider 仍降级为 Noop。
 func NewObjectStorage(cfg conf.OSS, log *slog.Logger) (ObjectStorage, error) {
 	if log == nil {
 		log = slog.Default()
@@ -37,6 +38,8 @@ func NewObjectStorage(cfg conf.OSS, log *slog.Logger) (ObjectStorage, error) {
 	switch strings.ToLower(strings.TrimSpace(cfg.Provider)) {
 	case "aliyun", "oss":
 		return newAliyunStorage(cfg, log)
+	case "tos", "volcengine":
+		return newTOSStorage(cfg, log)
 	default:
 		log.Warn("oss provider not implemented, object storage is disabled", "provider", cfg.Provider)
 		return Noop{}, nil

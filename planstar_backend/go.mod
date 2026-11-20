@@ -20,6 +20,7 @@ require (
 	github.com/rabbitmq/amqp091-go v1.13.0
 	github.com/redis/go-redis/extra/redisotel/v9 v9.7.3
 	github.com/redis/go-redis/v9 v9.7.3
+	github.com/volcengine/ve-tos-golang-sdk/v2 v2.9.10
 	go.opentelemetry.io/otel v1.46.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.45.0
 	go.opentelemetry.io/otel/sdk v1.46.0

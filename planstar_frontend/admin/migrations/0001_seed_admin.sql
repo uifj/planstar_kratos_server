@@ -5,7 +5,7 @@
 --
 -- Credentials: admin / admin
 --
--- The password below is a bcrypt hash (cost 10, matching bcrypt.DefaultCost in
+-- The password below is a bcrypt hash (cost 12, matching bcryptCost in
 -- internal/biz) of the string "admin". It is a throwaway credential for local
 -- development — change it before exposing the service to a network.
 
@@ -28,7 +28,7 @@ SELECT
   '',
   -- Matches HasAdminAccess in pkg/auth, which compares against "admin".
   'admin',
-  '$2a$10$HVdqJaqApfGNMIn0SzInd.2l7AH4lg7.OrU1vRFlWqmOazgtTwZKW',
+  '$2a$12$QMzox/Vapf4EWBDpaHSGEufyhOWiCQVjxWjoqFFwYTAw6X6KiPW1S',
   -- 1 is kratos.admin.v1.Admin.Status.ACTIVE.
   1
 FROM DUAL

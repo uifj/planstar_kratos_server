@@ -120,13 +120,14 @@ notify:
     password: ""
     from: ""
 
-# 对象存储 OSS（默认关闭；密钥仅由 PLANSTAR_STORAGE_OSS_* 环境变量注入）
+# 对象存储（默认关闭；密钥仅由 PLANSTAR_STORAGE_OSS_* 环境变量注入。
+#   provider 支持 aliyun/oss 与 tos/volcengine；生产用 TOS，由 compose 注入。）
 storage:
   oss:
     enabled: false
-    provider: ""                # aliyun（兼容 oss）
-    endpoint: ""
-    region: ""
+    provider: ""                # aliyun（oss）/ tos（volcengine）
+    endpoint: ""                # TOS 例：tos-cn-beijing.volces.com（不含 https://）
+    region: ""                  # TOS 例：cn-beijing（provider=tos 时必填）
     bucket: ""
     access_key: ""
     access_secret: ""

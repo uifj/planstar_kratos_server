@@ -33,6 +33,8 @@ x-app-env: &app-env
   PLANSTAR_OPS_TOKEN: ${PLANSTAR_OPS_TOKEN:-}
   # 运维端点来源白名单（逗号分隔 CIDR；留空表示不限制）
   PLANSTAR_OPS_ALLOWED_CIDRS: ${PLANSTAR_OPS_ALLOWED_CIDRS:-}
+  # 运营域 JWT 签名密钥（生产启动校验要求 >= 32 字节，缺失会导致 api 启动失败）
+  PLANSTAR_SECURITY_JWT_SECRET: ${PLANSTAR_SECURITY_JWT_SECRET:-}
   # 外部服务默认关闭；供应商参数留空时服务使用 Noop/Log 实现。
   PLANSTAR_NOTIFY_SMS_ENABLED: ${PLANSTAR_NOTIFY_SMS_ENABLED:-false}
   PLANSTAR_NOTIFY_SMS_PROVIDER: ${PLANSTAR_NOTIFY_SMS_PROVIDER:-}
@@ -127,6 +129,7 @@ services:
       - ./sql/18_star_coin_shop.sql:/docker-entrypoint-initdb.d/18_star_coin_shop.sql:ro
       - ./sql/19_admin_console.sql:/docker-entrypoint-initdb.d/19_admin_console.sql:ro
       - ./sql/20_project_idea.sql:/docker-entrypoint-initdb.d/20_project_idea.sql:ro
+      - ./sql/22_app_release.sql:/docker-entrypoint-initdb.d/22_app_release.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
@@ -477,6 +480,37 @@ services:
       planstar:
         aliases:
           - admin-web
+
+  # 官网（Next.js SSR）：容器内 3000，由 Traefik 按 www.planstar.top 分流。
+  # 构建上下文在 planstar_frontend/planstar_web（pnpm monorepo 根）。
+  web:
+    image: ${WEB_IMAGE:-planstar-web}:${WEB_TAG:-latest}
+    build:
+      context: ../planstar_frontend/planstar_web
+      dockerfile: Dockerfile
+      args:
+        PLANSTAR_API_BASE: ${WEB_API_BASE:-http://planstar-api:8098}
+        NEXT_PUBLIC_SITE_URL: ${WEB_SITE_URL:-https://www.planstar.top}
+    restart: unless-stopped
+    init: true
+    environment:
+      TZ: Asia/Shanghai
+      NODE_ENV: production
+      # SSR 直连后端走容器网络，不经过公网与 Traefik
+      PLANSTAR_API_BASE: ${WEB_API_BASE:-http://planstar-api:8098}
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
+    networks:
+      planstar:
+        aliases:
+          - web
 
 volumes:
   mysql_data:

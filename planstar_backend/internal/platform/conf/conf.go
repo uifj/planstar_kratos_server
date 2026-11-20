@@ -59,7 +59,7 @@ type Storage struct {
 	OSS OSS `yaml:"oss"`
 }
 
-// OSS 是对象存储（阿里云 OSS / S3 等）配置。
+// OSS 是对象存储（阿里云 OSS / 火山引擎 TOS）配置。
 type OSS struct {
 	Enabled           bool   `yaml:"enabled"`
 	Provider          string `yaml:"provider"`
@@ -510,15 +510,22 @@ func (c *Config) validateProductionInvariants() error {
 	}
 	// OSS 是可选项；一旦启用就必须完整配置，避免运行期才报错。
 	if c.Storage.OSS.Enabled {
-		if p := strings.ToLower(strings.TrimSpace(c.Storage.OSS.Provider)); p != "aliyun" && p != "oss" {
-			return fail("storage.oss.provider 必须是 aliyun")
+		p := strings.ToLower(strings.TrimSpace(c.Storage.OSS.Provider))
+		switch p {
+		case "aliyun", "oss", "tos", "volcengine":
+		default:
+			return fail("storage.oss.provider 必须是 aliyun 或 tos")
 		}
-		for _, item := range []struct{ field, value string }{
+		required := []struct{ field, value string }{
 			{"storage.oss.endpoint", c.Storage.OSS.Endpoint},
 			{"storage.oss.bucket", c.Storage.OSS.Bucket},
 			{"storage.oss.access_key", c.Storage.OSS.AccessKey},
 			{"storage.oss.access_secret", c.Storage.OSS.AccessSecret},
-		} {
+		}
+		if p == "tos" || p == "volcengine" {
+			required = append(required, struct{ field, value string }{"storage.oss.region", c.Storage.OSS.Region})
+		}
+		for _, item := range required {
 			if strings.TrimSpace(item.value) == "" {
 				return fail("%s 不能为空", item.field)
 			}

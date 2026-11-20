@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =====================================================================
 # 发布前配置预检（生产上线强制门禁）
-#   COMPOSE_DIR=/opt/planstar_backend/planstar ENV_FILE=.env.prod ./preflight.sh
+#   COMPOSE_DIR=/opt/planstar/planstar_backend ENV_FILE=.env.prod ./deploy/preflight.sh
 #
 # 检查：必需变量、<REPLACE_ME> 占位、固定版本标签、禁止测试口令、
 #       环境文件权限、生产 compose 可解析、备份脚本库名与建库脚本一致。
@@ -31,7 +31,8 @@ get() {
 missing=0
 REQUIRED_KEYS=(
   PLANSTAR_IMAGE PLANSTAR_TAG PLANSTAR_OPS_TOKEN PLANSTAR_OPS_ALLOWED_CIDRS
-  PLANSTAR_AUTH_CODE_HMAC_KEY ADMIN_AUTH_JWT_SECRET ADMIN_DATA_DATABASE_SOURCE
+  PLANSTAR_AUTH_CODE_HMAC_KEY ADMIN_AUTH_JWT_SECRET PLANSTAR_SECURITY_JWT_SECRET
+  ADMIN_DATA_DATABASE_SOURCE
   ADMIN_PLANSTAR_OPS_TOKEN MYSQL_ROOT_PASSWORD REDIS_PASSWORD
   PLANSTAR_APP_DB_PASSWORD GF_SECURITY_ADMIN_PASSWORD ACME_EMAIL
   PLANSTAR_NOTIFY_SMS_ACCESS_KEY PLANSTAR_NOTIFY_SMS_ACCESS_SECRET
@@ -84,8 +85,8 @@ for db in planstar_user planstar_catalog planstar_ticket planstar_order \
 done
 
 # 生产 compose 必须可解析（所有 ${VAR:?} 在此处被强制求值）。
-# 部署侧若存在 docker-compose.server.yml（例如运行时关闭不兼容的 OSS），
-# 必须与线上一样叠加后再校验，避免「门禁过了、实际启动的配置没过」。
+# 部署侧若存在 docker-compose.server.yml，必须与线上一样叠加后再校验，
+# 避免「门禁过了、实际启动的配置没过」。
 COMPOSE_ARGS="-f docker-compose.yml -f docker-compose.prod.yml"
 if [ -f docker-compose.server.yml ]; then
   COMPOSE_ARGS="${COMPOSE_ARGS} -f docker-compose.server.yml"

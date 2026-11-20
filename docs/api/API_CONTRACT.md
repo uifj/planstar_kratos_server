@@ -6,7 +6,7 @@
 
 - **唯一事实源**：`planstar_backend/internal/service/service.go` 的 `Register` 路由表，以及同目录各 handler。
 - 服务监听 `8098`；所有路径区分大小写，使用 `METHOD /path` 精确匹配。
-- 当前注册 57 条路由，对应 **56 个唯一端点**：`GET /v1/user/` 是 `GET /v1/user` 的尾斜杠别名，复用同一 handler，本契约只记录一次。条数与集合由 `planstar_backend/internal/server/routes_test.go` 的 `TestRouteInventory` / `TestRoutesMatchContract` 双向断言，禁止只比集合不比条数。
+- 当前注册 59 条路由，对应 **58 个唯一端点**：`GET /v1/user/` 是 `GET /v1/user` 的尾斜杠别名，复用同一 handler，本契约只记录一次。条数与集合由 `planstar_backend/internal/server/routes_test.go` 的 `TestRouteInventory` / `TestRoutesMatchContract` 双向断言，禁止只比集合不比条数。
 - 成功响应为裸 JSON（无 `{code,message,data}` 信封），`Content-Type: application/json; charset=utf-8`；图片端点返回 `image/png`。
 - 请求体字段大小写敏感，允许的字段别名已在各端点列出；未列出的字段当前被忽略。
 
@@ -672,6 +672,47 @@ POST /v1/projectIdeas/{ideaId}/vote
   - `hot_score` 由定时任务刷新，投票事务内不更新
 - 错误：`400 BAD_REQUEST`（`voteType` 非法或文本超长）、`400 INVALID_COIN_TIER`（档位不在 5/10/20）、`400 REASON_REQUIRED`（缺少 `reasonCode`，或 `other` 未填 `reasonText`）、`400 INVALID_REASON_CODE`（理由不在字典）、`401 UNAUTHORIZED`、`403 IDEA_SELF_VOTE_FORBIDDEN`、`404 IDEA_NOT_FOUND`、`429 RATE_LIMITED`（频控：单用户 60 次/小时、单 IP 300 次/小时）、`500 INTERNAL`
 
+## 7.10 应用自更新
+
+应用自更新为匿名能力：移动端 APK 走 `GET /v1/update/check`（JSON 版本比较），桌面端 EXE 走 `GET /v1/update/appcast.xml`（WinSparkle 兼容的 Sparkle appcast）。数据源为 `planstar_meta.app_release`，包体放自有 OSS/CDN，`download_url` 存直链。
+
+GET /v1/update/check
+
+- 鉴权：否
+- 请求：
+  | 参数 | 类型 | 必填 | 说明 |
+  | --- | --- | --- | --- |
+  | `platform` | string | 否 | 默认 `android`；取值 `android` / `windows` / `ios` |
+  | `channel` | string | 否 | 默认 `stable`；取值 `stable` / `beta` |
+  | `versionCode` | int64 | 否 | 客户端当前版本号；缺省按 0 处理 |
+- 响应：无更新或已最新返回 `{"latest":true}`；有更新返回：
+  ```json
+  {
+    "latest": false,
+    "versionCode": 1002,
+    "versionName": "1.0.2",
+    "downloadUrl": "https://cdn.example.com/app/planstar-1.0.2.apk",
+    "sha256": "小写十六进制 64 位",
+    "sizeBytes": 12345678,
+    "force": false,
+    "changelog": "更新日志纯文本"
+  }
+  ```
+- 说明：取该平台/渠道最新 `is_active=1` 且 `version_code > 请求 versionCode` 的记录；`force` 由 `force_upgrade=1` 或 `versionCode < min_version_code` 判定
+- 错误：`500 INTERNAL`
+
+GET /v1/update/appcast.xml
+
+- 鉴权：否
+- 请求：
+  | 参数 | 类型 | 必填 | 说明 |
+  | --- | --- | --- | --- |
+  | `platform` | string | 否 | 默认 `windows`；桌面端固定传 `windows` |
+  | `channel` | string | 否 | 默认 `stable` |
+- 响应：`application/xml; charset=utf-8`，WinSparkle/Sparkle 兼容的 RSS2.0 appcast；`<item><enclosure>` 的 `sparkle:version` 为 `version_name`、`length` 为 `size_bytes`、`url` 为 `download_url`；无记录时返回仅含 `<channel>` 的空 appcast
+- 说明：签名（EdDSA/DSA）暂未启用，登记为 follow-up；桌面端经 `auto_updater`（WinSparkle）消费
+- 错误：`500 INTERNAL`
+
 ## 8. 响应模型
 
 字段名以 `internal/biz` 包内的模型文件为准；同义字段为兼容客户端而重复输出。
@@ -725,7 +766,7 @@ POST /v1/projectIdeas/{ideaId}/vote
 ### 8.10 企划域
 
 > 以下模型对应第 7.7 节，已在 `internal/biz/project.go` 落地，属于第 1 节所述
-> 56 个唯一端点。金额字段与第 3 节一致，均为**分**。
+> 58 个唯一端点。金额字段与第 3 节一致，均为**分**。
 
 `ProjectSummary`：
 `projectId(int64)`、`projectNo(string)`、`title(string)`、`subtitle(string,omitempty)`、`cover(string)`、`categoryId(int64)`、`categoryName(string)`、`projectType(string)`、`creatorId(int64)`、`creatorName(string)`、`goalAmount(int64)`、`raisedAmount(int64)`、`supporterCount(int)`、`deadline(毫秒时间戳)`、`remainingDays(int)`、`fundingStatus(string)`、`achievementRate(int, 千分比)`、`minSupportAmount(int64)`、`tags(string[])`、`isFeatured(bool)`
@@ -817,6 +858,7 @@ POST /v1/projectIdeas/{ideaId}/vote
 | 订单 | `planstar_order.order_info` |
 | 用户资料 | `planstar_user.user_info`、`user_statistic` |
 | 地址 | `planstar_user.user_address` |
+| 应用自更新 | `planstar_meta.app_release` |
 
 ## 10. 文件下载约定（前瞻，ADR-0010 P1④）
 

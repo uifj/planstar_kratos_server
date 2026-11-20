@@ -1,9 +1,10 @@
 # 企划星后端 · 服务器端代码更新与版本升级全流程
 
 > 适用版本：planstar 生产部署（4C8G / 2M 带宽单机，Docker Compose 三文件合并）
-> 最后核对：2026-11-10 · 维护：运维
+> 最后核对：2026-11-20 · 维护：运维
 > 衔接：[`first_depoly.md`](./first_depoly.md) 是**首次部署**教程；本文档负责**之后的每一次更新与升级**。
-> 场景：常规 Linux 服务器 + Docker Compose v2（无需 K8s/Swarm/CI 平台等额外工具）。
+> 平台：常规 Linux 服务器 + Docker Compose v2（无需 K8s/Swarm/CI 平台等额外工具）。
+> 网络：`planstar.top` 已完成 ICP 备案，生产仅经 HTTPS 对外（业务/运维端口全部绑 `127.0.0.1`）。
 
 ---
 
@@ -23,10 +24,21 @@
 | **B 全量版本** | 新版本（含数据库结构变更） | 全量重建 + 数据库迁移 | §4 |
 | **C 仅配置** | 改了 `.env.prod` / `config*.yaml` / compose 文件 | 重建或重启，**不重建镜像** | §5 |
 
+> **对象存储 TOS（变更提示）**：存储从「运行时关闭（Noop）」切换为「火山引擎 TOS」
+> （provider=`tos`，代码 `internal/platform/pkg/storage/tos.go`）。属 **场景 A（增量代码）+ 场景 C（配置变更）**，
+> **无数据库迁移**（不走 §4.2 的 SQL）。部署动作：同步代码（§2）→ 更新 `.env.prod` 的 TOS AK/SK（§5）→
+> `$C up -d --build planstar-api`（代码 + 环境变量均变更，重建容器）。
+
+> **官网 `www.planstar.top`（变更提示）**：`planstar_frontend/planstar_web`（Next.js SSR）新增
+> compose 服务 `web` + Traefik 路由，镜像 `ghcr.io/uifj/planstar-web`。首次上线需
+> `$C up -d --build web traefik`；此后只改官网 → `$C up -d --build web`。
+> 前置条件：DNS 增加 `www.planstar.top` 一条 A 记录（不启用裸域）；证书由 DNS Challenge 自动签发。
+> 属 **场景 A（增量代码）+ 场景 C（配置变更）**，无数据库迁移。
+
 > 先记下全文档统一使用的变量别名（服务器上每次新开会话都要重新定义）：
 
 ```bash
-cd /opt/planstar_backend/planstar
+cd /opt/planstar/planstar_backend
 export C="docker compose --env-file .env.prod \
   -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.server.yml"
 ```
@@ -35,7 +47,7 @@ export C="docker compose --env-file .env.prod \
 
 ## 1. 部署前检查项（Checklist）
 
-**动手前逐项确认，任何一项不过就停下来：**
+**动手前逐项确认，任何一项不过就停下来**（本节命令在仓库根目录 `/opt/planstar` 执行）：
 
 | # | 检查项 | 命令/方法 |
 |---|---|---|
@@ -45,14 +57,14 @@ export C="docker compose --env-file .env.prod \
 | 4 | `.env.prod` 存在且权限 600 | `ls -l planstar_backend/.env.prod`（应为 `-rw-------`） |
 | 5 | `.env.prod` 与本地一致（改过配置时） | 本地 `diff` 或直接按 §5 重新上传 |
 | 6 | `ops_token` 与 `PLANSTAR_OPS_TOKEN` 一致 | `cmp planstar_backend/deploy/prometheus/ops_token <(printf '%s' "$(grep '^PLANSTAR_OPS_TOKEN=' planstar_backend/.env.prod | cut -d= -f2-)")` |
-| 7 | 发布前门禁 | `export ENV_FILE=.env.prod COMPOSE_DIR=$PWD PLANSTAR_CONFIG_FILE=config.lite.yaml && ./deploy/preflight.sh` |
+| 7 | 发布前门禁 | `cd planstar_backend && export ENV_FILE=.env.prod COMPOSE_DIR=$PWD PLANSTAR_CONFIG_FILE=config.lite.yaml && ./deploy/preflight.sh` |
 | 8 | compose 合并可解析 | `$C config -q`（无输出 = 通过） |
-| 9 | **备份就绪（必做）** | `./deploy/backup.sh pre-deploy`（产出 `mysql.sql.gz` + `env.backup`） |
+| 9 | **备份就绪（必做）** | `cd planstar_backend && ./deploy/backup.sh pre-deploy`（产出 `mysql.sql.gz` + `env.backup`） |
 | 10 | DNS / 证书状态 | `curl -I https://api.planstar.top`（返回 200 且非证书过期）；证书在 Traefik `/acme`，到期自动续 |
 | 11 | 时机 | 避开业务高峰；2M 带宽下镜像构建可能 10~30 分钟，确认窗口足够 |
 
 > 第 9 项**不要跳过**。`backup.sh` 会把 11 个库全量 mysqldump 到
-> `/opt/planstar_backend/backups/pre-deploy/<时间戳>/`，保留 7 天自动轮转。
+> `/opt/planstar_backend/backups/pre-deploy/<时间戳>/`（脚本默认 `BACKUP_DIR`，可用该变量改到别的目录），保留 7 天自动轮转。
 
 ---
 
@@ -84,10 +96,12 @@ cd /opt/planstar && git pull --ff-only
 
 ```powershell
 # 本地打包
-tar -czf planstar-update.tar.gz --exclude='.git' --exclude='node_modules' `
+tar -czf planstar-update.tar.gz `
+  --exclude='.git' --exclude='.archive' --exclude='node_modules' `
+  --exclude='planstar_web' --exclude='.turbo' --exclude='bin' `
   --exclude='dist' --exclude='.umi' --exclude='.umi-production' --exclude='*.log' `
-  --exclude='planstar_backend/.env' --exclude='planstar_backend/.env.local' `
-  -C d:\workspaces\flutter_projects planstar_kratos_server
+  --exclude='.env' --exclude='.env.local' `
+  -C d:\workspaces\flutter_projects\planstar_app planstar_kratos_server
 # 上传
 scp planstar-update.tar.gz root@<服务器IP>:/opt/
 ```
@@ -97,6 +111,10 @@ scp planstar-update.tar.gz root@<服务器IP>:/opt/
 ```bash
 tar -xzf /opt/planstar-update.tar.gz -C /opt/planstar --strip-components=1
 rm -f /opt/planstar-update.tar.gz   # 包内不含密钥，但别留垃圾
+# compose 的 admin/admin-web 构建上下文是 ../admin
+[ -e /opt/planstar/admin ] || ln -s planstar_frontend/admin /opt/planstar/admin
+# Windows 打的 tar 不带可执行位，补齐（git 方式同步可跳过）
+chmod +x /opt/planstar/planstar_backend/*.sh /opt/planstar/planstar_backend/deploy/*.sh /opt/planstar/planstar_backend/sql/*.sh
 ```
 
 ⚠️ **方式 B 铁律**：
@@ -110,7 +128,7 @@ rm -f /opt/planstar-update.tar.gz   # 包内不含密钥，但别留垃圾
 只改了 Go 业务代码 / admin 控制台 / 部署脚本，数据库结构没变。
 
 ```bash
-cd /opt/planstar_backend/planstar
+cd /opt/planstar/planstar_backend
 export C="docker compose --env-file .env.prod \
   -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.server.yml"
 
@@ -121,8 +139,10 @@ export ENV_FILE=.env.prod COMPOSE_DIR=$PWD PLANSTAR_CONFIG_FILE=config.lite.yaml
 
 # 3) 只重建有变化的服务（--build 触发重新构建镜像）
 #    Go 代码改动 → planstar-api；后台改动 → admin（+ admin-web，若控制台也改了）
+#    官网改动 → web（Next.js，pnpm 构建，首次较慢）
 $C up -d --build planstar-api
 #    （若 admin 也改：$C up -d --build planstar-api admin admin-web）
+#    （若官网也改：$C up -d --build planstar-api web）
 
 # 4) 验证（§7）
 ```
@@ -154,7 +174,7 @@ VERSION=v1.1.0
 ### 4.2 流程
 
 ```bash
-cd /opt/planstar_backend/planstar
+cd /opt/planstar/planstar_backend
 export C="docker compose --env-file .env.prod \
   -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.server.yml"
 
@@ -167,11 +187,15 @@ export C="docker compose --env-file .env.prod \
 #    原因：MySQL 初始化脚本只在"数据卷为空"时执行；存量库升级必须手工补 SQL。
 #    a) 看本次版本带了哪些新迁移文件（planstar_backend/sql/）
 ls -l sql/ | tail
-#    b) 手工执行本次新增的迁移（例：23_xxx.sql）——用 root 密码
-$C exec -T mysql mysql -uroot -p'<MYSQL_ROOT_PASSWORD>' < ./sql/23_xxx.sql
+#    b) 手工执行本次新增的迁移（例：22_app_release.sql / 23_xxx.sql）——用 root 密码
+$C exec -T mysql mysql -uroot -p'<MYSQL_ROOT_PASSWORD>' < ./sql/22_app_release.sql
 #    ⚠️ 生产环境【禁止】执行 14_mock_seed.sql（演示数据）！
 #    ⚠️ 不推荐整包执行 `make sql-apply`：它会连演示种子一起灌，只适合本地。
 #    c) 若只是幂等补丁，可重复执行；建表语句带 IF NOT EXISTS 的可安全重放。
+#    d) 存量库补丁清单（按需执行，均为幂等脚本）：
+#       - 22_app_release.sql        → planstar_meta.app_release（客户端自更新，必需）
+#       - 21_disable_test_accounts.sql → 演示账号口令清空并停用
+#       - sql/22_create_app_user.sh  → 创建最小权限 DB 账号（首次上线已执行过的不必重跑）
 
 # 3) 更新 .env.prod 版本号 + 校验（§1 7/8/9 项）
 ./deploy/preflight.sh && $C config -q
@@ -246,7 +270,7 @@ curl -s -X POST http://127.0.0.1:8098/v1/user/send-code \
 # 5) 日志无异常
 $C logs --tail=50 planstar-api | grep -iE 'error|panic' || echo "无异常日志"
 
-# 6) HTTPS 入口（ICP 备案完成后）
+# 6) HTTPS 入口（已备案，证书自动续期）
 curl -I https://api.planstar.top
 ```
 
@@ -280,9 +304,10 @@ $C up -d planstar-api
 ### 8.3 配置回滚
 
 ```bash
+cd /opt/planstar/planstar_backend
 # .env.prod 用备份里的 env.backup 覆盖（backup.sh pre-deploy 产物）
-cp /opt/planstar_backend/backups/pre-deploy/<时间戳>/env.backup planstar_backend/.env.prod
-chmod 600 planstar_backend/.env.prod
+cp /opt/planstar_backend/backups/pre-deploy/<时间戳>/env.backup .env.prod
+chmod 600 .env.prod
 # config 文件同理（若有备份）→ 恢复后
 $C up -d planstar-api
 ```
@@ -292,6 +317,7 @@ $C up -d planstar-api
 只有部署导致**数据写坏**且必须恢复时才用。恢复会**覆盖当前数据**，先确认根因：
 
 ```bash
+cd /opt/planstar/planstar_backend
 # 用发布前快照恢复 11 个库
 zcat /opt/planstar_backend/backups/pre-deploy/<时间戳>/mysql.sql.gz \
   | $C exec -T mysql mysql -uroot -p'<MYSQL_ROOT_PASSWORD>'
@@ -311,7 +337,7 @@ $C restart planstar-api admin
 
 1. **语义化版本 + 每版一个 tag**：`v1.0.0 → v1.1.0`；`PLANSTAR_TAG` 与 `VERSION` 同步改。
 2. **每次发布前 `./deploy/backup.sh pre-deploy`**（自动 7 天轮转）。
-3. **配置每日备份**：服务器 cron 加一条 `0 3 * * * cd /opt/planstar_backend/planstar && COMPOSE_DIR=/opt/planstar_backend/planstar ENV_FILE=.env.prod ./deploy/backup.sh daily`。
+3. **配置每日备份**：服务器 cron 加一条 `0 3 * * * cd /opt/planstar/planstar_backend && COMPOSE_DIR=/opt/planstar/planstar_backend ENV_FILE=.env.prod ./deploy/backup.sh daily`。
 4. **小步快跑**：频繁小版本优于一次大版本；每版变更集中在 §4.1 的 tag 上，回滚点清晰。
 5. **发布留痕**：每次发布记 `版本号 + 时间 + 变更摘要`（文件或运维笔记）。
 6. **密钥纪律**：`.env.prod` 权限 600、不进 git、随备份归档；改密钥只改一处后全链路核对（§1 第 6 项）。
@@ -324,7 +350,7 @@ $C restart planstar-api admin
 
 ```bash
 # 会话别名（每次新开会话执行）
-cd /opt/planstar_backend/planstar
+cd /opt/planstar/planstar_backend
 export C="docker compose --env-file .env.prod \
   -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.server.yml"
 
@@ -335,7 +361,7 @@ export ENV_FILE=.env.prod COMPOSE_DIR=$PWD PLANSTAR_CONFIG_FILE=config.lite.yaml
 # 备份（发布前）
 ./deploy/backup.sh pre-deploy
 
-# 一键部署（含 ops_token 落盘 + server.yml 自动叠加，等价于手动三文件流程）
+# 一键部署（preflight + ops_token 落盘 + server.yml 自动叠加；不含 --build，需镜像已构建）
 ./up-prod.sh
 
 # 常用操作

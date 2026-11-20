@@ -221,6 +221,7 @@ func run() error {
 	walletUC := biz.NewWalletUsecase(data.NewWalletRepo(d))
 	shopUC := biz.NewShopUsecase(data.NewShopRepo(d))
 	chatUC := biz.NewChatUsecase(data.NewChatRepo(d))
+	updateUC := biz.NewUpdateUsecase(data.NewUpdateRepo(d))
 
 	// 所有后台 goroutine 绑定到应用生命周期 context，停机时统一取消并等待收尾，
 	// 避免优雅停机后同步任务继续访问已关闭的 DB/ES（阿里手册并发处理规约）。
@@ -247,7 +248,7 @@ func run() error {
 
 	mux := http.NewServeMux()
 	svc := service.New(authUC, catalogUC, feedUC, messageUC, orderUC, userUC, projectUC,
-		projectIdeaUC, paymentUC, walletUC, shopUC, chatUC, logger, objectStore)
+		projectIdeaUC, paymentUC, walletUC, shopUC, chatUC, updateUC, logger, objectStore)
 	svc.Register(mux)
 	logger.Info("object storage wired", "enabled", svc.ObjectStorageEnabled())
 

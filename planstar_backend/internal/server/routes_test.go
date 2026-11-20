@@ -63,8 +63,8 @@ func TestRoutesMatchContract(t *testing.T) {
 // routeInventoryCount / routeInventoryUnique 与 docs/api/API_CONTRACT.md §1 的口径一致。
 // 修改 service.routes() 时必须同步这两个常量与契约文档，避免「只比集合不比条数」的漂移。
 const (
-	routeInventoryCount  = 57
-	routeInventoryUnique = 56
+	routeInventoryCount  = 59
+	routeInventoryUnique = 58
 )
 
 // TestRouteInventory 校验路由条数、唯一端点数与尾斜杠别名数量。
