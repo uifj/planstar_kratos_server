@@ -32,10 +32,10 @@ jobs:
         working-directory: planstar_backend
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: "1.26.5"
           cache: true
@@ -66,10 +66,10 @@ jobs:
       GOPROXY: https://goproxy.cn,direct
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: "1.26.5"
           cache: true
@@ -95,10 +95,10 @@ jobs:
         working-directory: planstar_frontend/admin/console
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
@@ -121,10 +121,10 @@ jobs:
         working-directory: planstar_backend
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: "1.26.5"
           cache: true
@@ -141,10 +141,10 @@ jobs:
         working-directory: planstar_backend
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: "1.26.5"
           cache: true
@@ -164,7 +164,7 @@ jobs:
       # ADR-0001 D6 / OPEN_ITEMS A6：.golangci.yml 已落地并本地验证 0 issues，转为必过。
       # 固定版本避免 latest 漂移；与 planstar_backend/.golangci.yml 的 v2 schema 匹配。
       - name: golangci-lint (required)
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.15.0
           working-directory: planstar_backend
@@ -178,10 +178,10 @@ jobs:
         working-directory: planstar_backend
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: "1.26.5"
           cache: true
@@ -200,7 +200,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Validate docker compose config
         run: docker compose -f planstar_backend/docker-compose.yml config -q
@@ -213,7 +213,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check Prometheus rules
         run: |
