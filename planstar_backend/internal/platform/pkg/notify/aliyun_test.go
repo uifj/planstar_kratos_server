@@ -43,7 +43,7 @@ func TestAliyunSMSSendCodeMapsRequest(t *testing.T) {
 	if got.TemplateCode != "SMS_001" {
 		t.Errorf("TemplateCode = %q", got.TemplateCode)
 	}
-	if got.TemplateParam != `{"code":"246810"}` {
+	if got.TemplateParam != `{"code":"246810","min":"5"}` {
 		t.Errorf("TemplateParam = %q", got.TemplateParam)
 	}
 	if got.CodeLength != 6 {

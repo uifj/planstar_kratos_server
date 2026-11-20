@@ -50,7 +50,7 @@ func (s *aliyunSMS) SendCode(ctx context.Context, mobile, code string) error {
 		Mobile:        mobile,
 		SignName:      s.signName,
 		TemplateCode:  s.templateCode,
-		TemplateParam: fmt.Sprintf(`{"code":%q}`, code),
+		TemplateParam: fmt.Sprintf(`{"code":%q,"min":"%d"}`, code, dypnsValidTime/60),
 		CodeLength:    dypnsCodeLength,
 		ValidTime:     dypnsValidTime,
 	})
